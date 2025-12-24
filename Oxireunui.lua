@@ -1,5 +1,6 @@
--- OXIREUN UI Library
--- GitHub için hazırlanmıştır
+
+-- OXIREUN UI Library v2.0
+-- GitHub: https://raw.githubusercontent.com/oxireun/User/refs/heads/main/Oxireunui.lua
 
 local Library = {}
 Library.__index = Library
@@ -9,11 +10,13 @@ local COLORS = {
     Background = Color3.fromRGB(25, 20, 45),
     Secondary = Color3.fromRGB(30, 25, 55),
     Accent = Color3.fromRGB(0, 150, 255),
-    Text = Color3.fromRGB(220, 220, 240)
+    Text = Color3.fromRGB(220, 220, 240),
+    TopBar = Color3.fromRGB(30, 25, 60)
 }
 
 -- CoreGui değişkeni
 local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 
 -- Yeni Window oluşturma fonksiyonu
 function Library:NewWindow(title)
@@ -22,7 +25,7 @@ function Library:NewWindow(title)
     
     -- ScreenGui oluştur
     window.Gui = Instance.new("ScreenGui")
-    window.Gui.Name = title .. "GUI"
+    window.Gui.Name = "OxireunGUI"
     window.Gui.ResetOnSpawn = false
     window.Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     window.Gui.Parent = CoreGui
@@ -38,7 +41,8 @@ function Library:NewWindow(title)
     window.MainFrame.Parent = window.Gui
     
     -- Köşe yuvarlatma
-    Instance.new("UICorner", window.MainFrame).CornerRadius = UDim.new(0, 12)
+    local mainCorner = Instance.new("UICorner", window.MainFrame)
+    mainCorner.CornerRadius = UDim.new(0, 12)
     
     -- Neon border
     local glow = Instance.new("UIStroke", window.MainFrame)
@@ -50,11 +54,13 @@ function Library:NewWindow(title)
     local topBar = Instance.new("Frame")
     topBar.Size = UDim2.new(1, 0, 0, 45)
     topBar.Position = UDim2.new(0, 0, 0, 0)
-    topBar.BackgroundColor3 = Color3.fromRGB(30, 25, 60)
+    topBar.BackgroundColor3 = COLORS.TopBar
     topBar.BorderSizePixel = 0
+    topBar.Name = "TopBar"
     topBar.Parent = window.MainFrame
     
-    Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 12, 0, 0)
+    local topBarCorner = Instance.new("UICorner", topBar)
+    topBarCorner.CornerRadius = UDim.new(0, 12, 0, 0)
     
     -- Üst bar çizgisi
     local topBarLine = Instance.new("Frame")
@@ -65,16 +71,43 @@ function Library:NewWindow(title)
     topBarLine.Parent = topBar
     
     -- Başlık
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(0, 200, 1, 0)
-    titleLabel.Position = UDim2.new(0, 15, 0, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = title
-    titleLabel.TextColor3 = Color3.fromRGB(180, 200, 255)
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 16
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = topBar
+    window.TitleLabel = Instance.new("TextLabel")
+    window.TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+    window.TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+    window.TitleLabel.BackgroundTransparency = 1
+    window.TitleLabel.Text = title
+    window.TitleLabel.TextColor3 = Color3.fromRGB(180, 200, 255)
+    window.TitleLabel.Font = Enum.Font.GothamBold
+    window.TitleLabel.TextSize = 16
+    window.TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    window.TitleLabel.Parent = topBar
+    
+    -- Kontrol butonları container
+    local controlButtons = Instance.new("Frame")
+    controlButtons.Size = UDim2.new(0, 90, 1, 0)
+    controlButtons.Position = UDim2.new(1, -95, 0, 0)
+    controlButtons.BackgroundTransparency = 1
+    controlButtons.Parent = topBar
+    
+    -- KÜÇÜLTME BUTONU (EKLENDİ)
+    local minimizeBtn = Instance.new("TextButton")
+    minimizeBtn.Size = UDim2.new(0, 26, 0, 26)
+    minimizeBtn.Position = UDim2.new(0, 0, 0.5, -13)
+    minimizeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    minimizeBtn.BackgroundTransparency = 0.6
+    minimizeBtn.BorderSizePixel = 0
+    minimizeBtn.Text = ""
+    minimizeBtn.Parent = controlButtons
+    
+    local minimizeCorner = Instance.new("UICorner", minimizeBtn)
+    minimizeCorner.CornerRadius = UDim.new(0, 6)
+    
+    local minimizeLine = Instance.new("Frame")
+    minimizeLine.Size = UDim2.new(0, 10, 0, 2)
+    minimizeLine.Position = UDim2.new(0.5, -5, 0.5, -1)
+    minimizeLine.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+    minimizeLine.BorderSizePixel = 0
+    minimizeLine.Parent = minimizeBtn
     
     -- Kapatma butonu
     local closeBtn = Instance.new("TextButton")
@@ -84,9 +117,10 @@ function Library:NewWindow(title)
     closeBtn.BackgroundTransparency = 0.6
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = ""
-    closeBtn.Parent = topBar
+    closeBtn.Parent = controlButtons
     
-    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+    local closeCorner = Instance.new("UICorner", closeBtn)
+    closeCorner.CornerRadius = UDim.new(0, 6)
     
     local closeLine1 = Instance.new("Frame")
     closeLine1.Size = UDim2.new(0, 12, 0, 2)
@@ -104,6 +138,17 @@ function Library:NewWindow(title)
     closeLine2.Rotation = -45
     closeLine2.Parent = closeBtn
     
+    -- Buton hover efektleri
+    minimizeBtn.MouseEnter:Connect(function()
+        minimizeBtn.BackgroundTransparency = 0.4
+        minimizeLine.BackgroundColor3 = Color3.fromRGB(240, 240, 255)
+    end)
+    
+    minimizeBtn.MouseLeave:Connect(function()
+        minimizeBtn.BackgroundTransparency = 0.6
+        minimizeLine.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+    end)
+    
     closeBtn.MouseEnter:Connect(function()
         closeBtn.BackgroundTransparency = 0.4
         closeLine1.BackgroundColor3 = Color3.fromRGB(255, 140, 150)
@@ -116,42 +161,162 @@ function Library:NewWindow(title)
         closeLine2.BackgroundColor3 = Color3.fromRGB(240, 120, 130)
     end)
     
-    closeBtn.MouseButton1Click:Connect(function()
-        window.Gui:Destroy()
-    end)
+    -- Tab container (Yeni eklendi)
+    window.TabContainer = Instance.new("Frame")
+    window.TabContainer.Size = UDim2.new(1, -20, 0, 35)
+    window.TabContainer.Position = UDim2.new(0, 10, 0, 50)
+    window.TabContainer.BackgroundTransparency = 1
+    window.TabContainer.Parent = window.MainFrame
     
-    -- Section container
-    window.SectionContainer = Instance.new("ScrollingFrame")
-    window.SectionContainer.Size = UDim2.new(1, -20, 1, -60)
-    window.SectionContainer.Position = UDim2.new(0, 10, 0, 50)
-    window.SectionContainer.BackgroundColor3 = COLORS.Secondary
-    window.SectionContainer.BackgroundTransparency = 0
-    window.SectionContainer.BorderSizePixel = 0
-    window.SectionContainer.ScrollBarThickness = 4
-    window.SectionContainer.ScrollBarImageColor3 = COLORS.Accent
-    window.SectionContainer.ScrollBarImageTransparency = 0.7
-    window.SectionContainer.Parent = window.MainFrame
+    -- Active tab line
+    window.ActiveTabLine = Instance.new("Frame", window.TabContainer)
+    window.ActiveTabLine.Size = UDim2.new(0.33, -10, 0, 3)
+    window.ActiveTabLine.Position = UDim2.new(0, 5, 1, -3)
+    window.ActiveTabLine.BackgroundColor3 = COLORS.Accent
+    window.ActiveTabLine.BorderSizePixel = 0
+    Instance.new("UICorner", window.ActiveTabLine).CornerRadius = UDim.new(1, 0)
     
-    Instance.new("UICorner", window.SectionContainer).CornerRadius = UDim.new(0, 8)
+    -- Tab butonları
+    window.Tabs = {}
+    window.CurrentTab = 1
     
-    -- Sections list
-    window.Sections = {}
+    -- Tab içerik alanı
+    window.ContentArea = Instance.new("Frame")
+    window.ContentArea.Size = UDim2.new(1, -20, 1, -100)
+    window.ContentArea.Position = UDim2.new(0, 10, 0, 90)
+    window.ContentArea.BackgroundColor3 = COLORS.Secondary
+    window.ContentArea.BackgroundTransparency = 0
+    window.ContentArea.BorderSizePixel = 0
+    window.ContentArea.ClipsDescendants = true
+    window.ContentArea.Parent = window.MainFrame
+    
+    local contentCorner = Instance.new("UICorner", window.ContentArea)
+    contentCorner.CornerRadius = UDim.new(0, 8)
+    
+    -- Tab içerik container'ı
+    window.ContentContainer = Instance.new("Frame")
+    window.ContentContainer.Size = UDim2.new(3, 0, 1, 0)
+    window.ContentContainer.Position = UDim2.new(0, 0, 0, 0)
+    window.ContentContainer.BackgroundTransparency = 1
+    window.ContentContainer.Parent = window.ContentArea
+    
+    -- Tüm section'ları tutacak tablolar
+    window.Sections = {{}, {}, {}}
+    
+    -- Tab oluşturma fonksiyonu
+    function window:CreateTab(name)
+        local tabIndex = #self.Tabs + 1
+        if tabIndex > 3 then return end -- Maksimum 3 tab
+        
+        local tab = Instance.new("TextButton")
+        tab.Size = UDim2.new(0.33, -5, 1, 0)
+        tab.Position = UDim2.new((tabIndex-1) * 0.33, 0, 0, 0)
+        tab.BackgroundTransparency = 1
+        tab.BorderSizePixel = 0
+        tab.Text = name
+        tab.TextColor3 = Color3.fromRGB(150, 150, 180)
+        tab.Font = Enum.Font.GothamMedium
+        tab.TextSize = 12
+        tab.Parent = self.TabContainer
+        
+        -- Tab içerik frame'i
+        local tabContent = Instance.new("ScrollingFrame")
+        tabContent.Size = UDim2.new(0.3333, 0, 1, 0)
+        tabContent.Position = UDim2.new((tabIndex-1) * 0.3333, 0, 0, 0)
+        tabContent.BackgroundTransparency = 1
+        tabContent.BorderSizePixel = 0
+        tabContent.ScrollBarThickness = 4
+        tabContent.ScrollBarImageColor3 = COLORS.Accent
+        tabContent.ScrollBarImageTransparency = 0.7
+        tabContent.ScrollingDirection = Enum.ScrollingDirection.Y
+        tabContent.HorizontalScrollBarInset = Enum.ScrollBarInset.None
+        tabContent.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+        tabContent.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right
+        tabContent.Visible = tabIndex == 1
+        tabContent.Parent = self.ContentContainer
+        
+        -- Scroll content
+        local scrollContent = Instance.new("Frame")
+        scrollContent.Size = UDim2.new(1, 0, 0, 0)
+        scrollContent.BackgroundTransparency = 1
+        scrollContent.Parent = tabContent
+        
+        -- Mouse events
+        tab.MouseEnter:Connect(function()
+            if self.CurrentTab ~= tabIndex then
+                tab.TextColor3 = Color3.fromRGB(200, 220, 255)
+            end
+        end)
+        
+        tab.MouseLeave:Connect(function()
+            if self.CurrentTab ~= tabIndex then
+                tab.TextColor3 = Color3.fromRGB(150, 150, 180)
+            end
+        end)
+        
+        tab.MouseButton1Click:Connect(function()
+            self:SwitchTab(tabIndex)
+        end)
+        
+        -- Tab bilgilerini kaydet
+        self.Tabs[tabIndex] = {
+            Button = tab,
+            Content = tabContent,
+            ScrollContent = scrollContent,
+            Sections = {}
+        }
+        
+        return {
+            TabIndex = tabIndex,
+            Content = tabContent,
+            ScrollContent = scrollContent
+        }
+    end
+    
+    -- Tab değiştirme fonksiyonu
+    function window:SwitchTab(tabIndex)
+        if not self.Tabs[tabIndex] then return end
+        
+        -- Eski tab'ı devre dışı bırak
+        if self.CurrentTab then
+            self.Tabs[self.CurrentTab].Button.TextColor3 = Color3.fromRGB(150, 150, 180)
+            self.Tabs[self.CurrentTab].Content.Visible = false
+        end
+        
+        -- Yeni tab'ı aktif et
+        self.CurrentTab = tabIndex
+        self.Tabs[tabIndex].Button.TextColor3 = COLORS.Accent
+        self.Tabs[tabIndex].Content.Visible = true
+        
+        -- Active line pozisyonunu güncelle
+        local targetPosition = (tabIndex-1) * 0.33
+        self.ActiveTabLine:TweenPosition(
+            UDim2.new(targetPosition, 5, 1, -3),
+            Enum.EasingDirection.Out,
+            Enum.EasingStyle.Quad,
+            0.2,
+            true
+        )
+    end
     
     -- NewSection metodu
-    function window:NewSection(name)
-        local section = {}
-        section.Name = name
+    function window:NewSection(name, tabIndex)
+        if not tabIndex then tabIndex = 1 end
+        if not self.Tabs[tabIndex] then return end
+        
+        local tab = self.Tabs[tabIndex]
+        local sectionCount = #tab.Sections
         
         -- Section frame
-        section.Frame = Instance.new("Frame")
-        section.Frame.Size = UDim2.new(1, -10, 0, 50)
-        section.Frame.Position = UDim2.new(0, 5, 0, (#window.Sections * 60) + 10)
-        section.Frame.BackgroundColor3 = Color3.fromRGB(35, 30, 65)
-        section.Frame.BackgroundTransparency = 0.2
-        section.Frame.BorderSizePixel = 0
-        section.Frame.Parent = window.SectionContainer
+        local sectionFrame = Instance.new("Frame")
+        sectionFrame.Size = UDim2.new(1, -10, 0, 50)
+        sectionFrame.Position = UDim2.new(0, 5, 0, (sectionCount * 55) + 10)
+        sectionFrame.BackgroundColor3 = Color3.fromRGB(35, 30, 65)
+        sectionFrame.BackgroundTransparency = 0.2
+        sectionFrame.BorderSizePixel = 0
+        sectionFrame.Parent = tab.ScrollContent
         
-        Instance.new("UICorner", section.Frame).CornerRadius = UDim.new(0, 8)
+        Instance.new("UICorner", sectionFrame).CornerRadius = UDim.new(0, 8)
         
         -- Section title
         local title = Instance.new("TextLabel")
@@ -161,9 +326,9 @@ function Library:NewWindow(title)
         title.Text = name
         title.TextColor3 = COLORS.Accent
         title.Font = Enum.Font.GothamBold
-        title.TextSize = 14
+        title.TextSize = 13
         title.TextXAlignment = Enum.TextXAlignment.Left
-        title.Parent = section.Frame
+        title.Parent = sectionFrame
         
         -- Section line
         local line = Instance.new("Frame")
@@ -172,23 +337,30 @@ function Library:NewWindow(title)
         line.BackgroundColor3 = COLORS.Accent
         line.BorderSizePixel = 0
         line.Transparency = 0.3
-        line.Parent = section.Frame
+        line.Parent = sectionFrame
         
         -- Elements container
-        section.ElementsFrame = Instance.new("Frame")
-        section.ElementsFrame.Size = UDim2.new(1, 0, 1, -30)
-        section.ElementsFrame.Position = UDim2.new(0, 0, 0, 30)
-        section.ElementsFrame.BackgroundTransparency = 1
-        section.ElementsFrame.Parent = section.Frame
+        local elementsFrame = Instance.new("Frame")
+        elementsFrame.Size = UDim2.new(1, 0, 1, -30)
+        elementsFrame.Position = UDim2.new(0, 0, 0, 30)
+        elementsFrame.BackgroundTransparency = 1
+        elementsFrame.Parent = sectionFrame
         
         -- Element yükseklik sayacı
-        section.ElementYOffset = 0
+        local elementYOffset = 0
+        
+        local section = {
+            Frame = sectionFrame,
+            ElementsFrame = elementsFrame,
+            ElementYOffset = elementYOffset,
+            TabIndex = tabIndex
+        }
         
         -- CreateButton metodu
         function section:CreateButton(name, callback)
             local button = Instance.new("TextButton")
             button.Size = UDim2.new(1, -20, 0, 30)
-            button.Position = UDim2.new(0, 10, 0, section.ElementYOffset)
+            button.Position = UDim2.new(0, 10, 0, self.ElementYOffset)
             button.BackgroundColor3 = Color3.fromRGB(45, 45, 70)
             button.BackgroundTransparency = 0.5
             button.BorderSizePixel = 0
@@ -196,7 +368,7 @@ function Library:NewWindow(title)
             button.TextColor3 = COLORS.Accent
             button.Font = Enum.Font.Gotham
             button.TextSize = 12
-            button.Parent = section.ElementsFrame
+            button.Parent = self.ElementsFrame
             
             Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
             
@@ -218,8 +390,16 @@ function Library:NewWindow(title)
             end)
             
             -- Yükseklik güncelleme
-            section.ElementYOffset = section.ElementYOffset + 35
-            section.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + section.ElementYOffset))
+            self.ElementYOffset = self.ElementYOffset + 35
+            self.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + self.ElementYOffset))
+            
+            -- CanvasSize güncelleme
+            local totalHeight = 0
+            for _, s in ipairs(tab.Sections) do
+                totalHeight = totalHeight + s.Frame.Size.Y.Offset + 5
+            end
+            tab.ScrollContent.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
+            tab.Content.CanvasSize = tab.ScrollContent.CanvasSize
             
             return button
         end
@@ -228,9 +408,9 @@ function Library:NewWindow(title)
         function section:CreateTextbox(name, callback)
             local textboxFrame = Instance.new("Frame")
             textboxFrame.Size = UDim2.new(1, -20, 0, 30)
-            textboxFrame.Position = UDim2.new(0, 10, 0, section.ElementYOffset)
+            textboxFrame.Position = UDim2.new(0, 10, 0, self.ElementYOffset)
             textboxFrame.BackgroundTransparency = 1
-            textboxFrame.Parent = section.ElementsFrame
+            textboxFrame.Parent = self.ElementsFrame
             
             local label = Instance.new("TextLabel")
             label.Size = UDim2.new(0, 80, 1, 0)
@@ -273,8 +453,16 @@ function Library:NewWindow(title)
             end)
             
             -- Yükseklik güncelleme
-            section.ElementYOffset = section.ElementYOffset + 35
-            section.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + section.ElementYOffset))
+            self.ElementYOffset = self.ElementYOffset + 35
+            self.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + self.ElementYOffset))
+            
+            -- CanvasSize güncelleme
+            local totalHeight = 0
+            for _, s in ipairs(tab.Sections) do
+                totalHeight = totalHeight + s.Frame.Size.Y.Offset + 5
+            end
+            tab.ScrollContent.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
+            tab.Content.CanvasSize = tab.ScrollContent.CanvasSize
             
             return textbox
         end
@@ -283,9 +471,9 @@ function Library:NewWindow(title)
         function section:CreateToggle(name, callback)
             local toggleFrame = Instance.new("Frame")
             toggleFrame.Size = UDim2.new(1, -20, 0, 30)
-            toggleFrame.Position = UDim2.new(0, 10, 0, section.ElementYOffset)
+            toggleFrame.Position = UDim2.new(0, 10, 0, self.ElementYOffset)
             toggleFrame.BackgroundTransparency = 1
-            toggleFrame.Parent = section.ElementsFrame
+            toggleFrame.Parent = self.ElementsFrame
             
             local label = Instance.new("TextLabel")
             label.Size = UDim2.new(0.7, 0, 1, 0)
@@ -359,19 +547,27 @@ function Library:NewWindow(title)
             end)
             
             -- Yükseklik güncelleme
-            section.ElementYOffset = section.ElementYOffset + 35
-            section.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + section.ElementYOffset))
+            self.ElementYOffset = self.ElementYOffset + 35
+            self.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + self.ElementYOffset))
+            
+            -- CanvasSize güncelleme
+            local totalHeight = 0
+            for _, s in ipairs(tab.Sections) do
+                totalHeight = totalHeight + s.Frame.Size.Y.Offset + 5
+            end
+            tab.ScrollContent.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
+            tab.Content.CanvasSize = tab.ScrollContent.CanvasSize
             
             return {Button = toggleBtn, State = state}
         end
         
-        -- CreateDropdown metodu
+        -- CreateDropdown metodu (DÜZELTİLDİ - UI sınırları içinde kalacak)
         function section:CreateDropdown(name, options, default, callback)
             local dropdownFrame = Instance.new("Frame")
             dropdownFrame.Size = UDim2.new(1, -20, 0, 30)
-            dropdownFrame.Position = UDim2.new(0, 10, 0, section.ElementYOffset)
+            dropdownFrame.Position = UDim2.new(0, 10, 0, self.ElementYOffset)
             dropdownFrame.BackgroundTransparency = 1
-            dropdownFrame.Parent = section.ElementsFrame
+            dropdownFrame.Parent = self.ElementsFrame
             
             local label = Instance.new("TextLabel")
             label.Size = UDim2.new(0, 80, 1, 0)
@@ -398,24 +594,34 @@ function Library:NewWindow(title)
             
             Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 6)
             
-            -- Dropdown options panel
+            -- Dropdown options panel (MainFrame'in içinde olacak)
             local dropdownOptions = Instance.new("Frame")
-            dropdownOptions.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, (#options * 30) + 10)
-            dropdownOptions.Position = UDim2.new(0, 0, 1, 5)
+            dropdownOptions.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, math.min((#options * 30) + 10, 150))
             dropdownOptions.BackgroundColor3 = Color3.fromRGB(40, 35, 70)
             dropdownOptions.BackgroundTransparency = 0
             dropdownOptions.BorderSizePixel = 0
             dropdownOptions.Visible = false
             dropdownOptions.ZIndex = 100
-            dropdownOptions.Parent = dropdownBtn
+            dropdownOptions.ClipsDescendants = true
+            dropdownOptions.Parent = window.MainFrame
             
             Instance.new("UICorner", dropdownOptions).CornerRadius = UDim.new(0, 8)
+            
+            local optionsScroll = Instance.new("ScrollingFrame")
+            optionsScroll.Size = UDim2.new(1, 0, 1, 0)
+            optionsScroll.Position = UDim2.new(0, 0, 0, 0)
+            optionsScroll.BackgroundTransparency = 1
+            optionsScroll.BorderSizePixel = 0
+            optionsScroll.ScrollBarThickness = 4
+            optionsScroll.ScrollBarImageColor3 = COLORS.Accent
+            optionsScroll.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+            optionsScroll.Parent = dropdownOptions
             
             -- Options
             for i, option in ipairs(options) do
                 local optionBtn = Instance.new("TextButton")
                 optionBtn.Size = UDim2.new(1, -10, 0, 25)
-                optionBtn.Position = UDim2.new(0, 5, 0, (i-1) * 30 + 5)
+                optionBtn.Position = UDim2.new(0, 5, 0, (i-1) * 30)
                 optionBtn.BackgroundColor3 = Color3.fromRGB(55, 45, 85)
                 optionBtn.BackgroundTransparency = 0.5
                 optionBtn.BorderSizePixel = 0
@@ -424,7 +630,7 @@ function Library:NewWindow(title)
                 optionBtn.Font = Enum.Font.Gotham
                 optionBtn.TextSize = 12
                 optionBtn.ZIndex = 101
-                optionBtn.Parent = dropdownOptions
+                optionBtn.Parent = optionsScroll
                 
                 Instance.new("UICorner", optionBtn).CornerRadius = UDim.new(0, 5)
                 
@@ -447,9 +653,32 @@ function Library:NewWindow(title)
                 end)
             end
             
-            -- Dropdown toggle
+            -- Dropdown toggle ve pozisyon ayarlama
             dropdownBtn.MouseButton1Click:Connect(function()
                 dropdownOptions.Visible = not dropdownOptions.Visible
+                
+                if dropdownOptions.Visible then
+                    -- Dropdown'un UI sınırları içinde kalmasını sağla
+                    local btnPos = dropdownBtn.AbsolutePosition
+                    local mainPos = window.MainFrame.AbsolutePosition
+                    local mainSize = window.MainFrame.AbsoluteSize
+                    
+                    local x = btnPos.X - mainPos.X
+                    local y = btnPos.Y - mainPos.Y + dropdownBtn.AbsoluteSize.Y
+                    
+                    -- Sağa taşmayı kontrol et
+                    if x + dropdownOptions.Size.X.Offset > mainSize.X then
+                        x = mainSize.X - dropdownOptions.Size.X.Offset - 10
+                    end
+                    
+                    -- Aşağıya taşmayı kontrol et
+                    if y + dropdownOptions.Size.Y.Offset > mainSize.Y then
+                        dropdownOptions.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, 150)
+                        optionsScroll.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+                    end
+                    
+                    dropdownOptions.Position = UDim2.new(0, x, 0, y)
+                end
             end)
             
             -- Hover efekti
@@ -461,12 +690,33 @@ function Library:NewWindow(title)
                 dropdownBtn.BackgroundTransparency = 0.5
             end)
             
-            -- CanvasSize güncelleme
-            window.SectionContainer.CanvasSize = UDim2.new(0, 0, 0, (#window.Sections * 60) + section.ElementYOffset + 50)
+            -- Dışarı tıklayınca kapat
+            UserInputService.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    local mousePos = input.Position
+                    local dropdownPos = dropdownOptions.AbsolutePosition
+                    local dropdownSize = dropdownOptions.AbsoluteSize
+                    
+                    if dropdownOptions.Visible then
+                        if not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
+                               mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
+                            dropdownOptions.Visible = false
+                        end
+                    end
+                end
+            end)
             
             -- Yükseklik güncelleme
-            section.ElementYOffset = section.ElementYOffset + 35
-            section.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + section.ElementYOffset))
+            self.ElementYOffset = self.ElementYOffset + 35
+            self.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + self.ElementYOffset))
+            
+            -- CanvasSize güncelleme
+            local totalHeight = 0
+            for _, s in ipairs(tab.Sections) do
+                totalHeight = totalHeight + s.Frame.Size.Y.Offset + 5
+            end
+            tab.ScrollContent.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
+            tab.Content.CanvasSize = tab.ScrollContent.CanvasSize
             
             return dropdownBtn
         end
@@ -475,9 +725,9 @@ function Library:NewWindow(title)
         function section:CreateSlider(name, min, max, default, callback)
             local sliderFrame = Instance.new("Frame")
             sliderFrame.Size = UDim2.new(1, -20, 0, 40)
-            sliderFrame.Position = UDim2.new(0, 10, 0, section.ElementYOffset)
+            sliderFrame.Position = UDim2.new(0, 10, 0, self.ElementYOffset)
             sliderFrame.BackgroundTransparency = 1
-            sliderFrame.Parent = section.ElementsFrame
+            sliderFrame.Parent = self.ElementsFrame
             
             local label = Instance.new("TextLabel")
             label.Size = UDim2.new(0.5, 0, 0, 20)
@@ -538,13 +788,12 @@ function Library:NewWindow(title)
             sliderHandleStroke.Thickness = 2
             
             -- Slider logic
-            local UserInputService = game:GetService("UserInputService")
             local RunService = game:GetService("RunService")
             local sliding = false
             local currentValue = default
             
             local function updateSlider(value)
-                currentValue = math.clamp(value, min, max)
+                currentValue = math.clamp(math.floor(value), min, max)
                 local percent = (currentValue - min) / (max - min)
                 
                 sliderFill.Size = UDim2.new(percent, 0, 1, 0)
@@ -599,20 +848,68 @@ function Library:NewWindow(title)
             updateSlider(default)
             
             -- Yükseklik güncelleme
-            section.ElementYOffset = section.ElementYOffset + 45
-            section.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + section.ElementYOffset))
+            self.ElementYOffset = self.ElementYOffset + 45
+            self.Frame.Size = UDim2.new(1, -10, 0, math.max(50, 30 + self.ElementYOffset))
+            
+            -- CanvasSize güncelleme
+            local totalHeight = 0
+            for _, s in ipairs(tab.Sections) do
+                totalHeight = totalHeight + s.Frame.Size.Y.Offset + 5
+            end
+            tab.ScrollContent.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
+            tab.Content.CanvasSize = tab.ScrollContent.CanvasSize
             
             return {Value = currentValue, Update = updateSlider}
         end
         
-        -- Section'ı listeye ekle
-        table.insert(window.Sections, section)
+        -- Section'ı tab'a ekle
+        table.insert(tab.Sections, section)
         
         -- CanvasSize güncelle
-        window.SectionContainer.CanvasSize = UDim2.new(0, 0, 0, (#window.Sections * 60) + section.ElementYOffset + 50)
+        local totalHeight = 0
+        for _, s in ipairs(tab.Sections) do
+            totalHeight = totalHeight + s.Frame.Size.Y.Offset + 5
+        end
+        tab.ScrollContent.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
+        tab.Content.CanvasSize = tab.ScrollContent.CanvasSize
         
         return section
     end
+    
+    -- Küçültme butonu fonksiyonu
+    local minimized = false
+    minimizeBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        
+        if minimized then
+            -- Küçült
+            window.MainFrame.Size = UDim2.fromScale(0.4, 0.12)
+            window.ContentArea.Visible = false
+            window.TabContainer.Visible = false
+            topBarLine.Visible = false
+            window.TitleLabel.Text = title
+            topBarCorner.CornerRadius = UDim.new(0, 12)
+        else
+            -- Büyüt
+            window.MainFrame.Size = UDim2.fromScale(0.4, 0.75)
+            window.ContentArea.Visible = true
+            window.TabContainer.Visible = true
+            topBarLine.Visible = true
+            window.TitleLabel.Text = title
+            topBarCorner.CornerRadius = UDim.new(0, 12, 0, 0)
+        end
+    end)
+    
+    -- Kapatma butonu fonksiyonu
+    closeBtn.MouseButton1Click:Connect(function()
+        window.Gui:Destroy()
+    end)
+    
+    -- İlk tab'ı oluştur
+    window:CreateTab("Tab 1")
+    window:CreateTab("Tab 2")
+    window:CreateTab("Tab 3")
+    window:SwitchTab(1)
     
     return window
 end
