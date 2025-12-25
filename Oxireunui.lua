@@ -1,125 +1,137 @@
--- Oxireun UI Library
+-- Oxireun Wizard UI Library
 local Oxireun = {
+    Windows = {},
+    Tabs = {},
     Elements = {},
     Flags = {},
-    Connections = {},
+    Notifications = {},
+    Config = {
+        AutoSave = false,
+        Folder = "OxireunConfigs"
+    },
     Theme = {
         Main = Color3.fromRGB(25, 20, 45),
-        Second = Color3.fromRGB(30, 25, 60),
-        Stroke = Color3.fromRGB(0, 150, 255),
-        Divider = Color3.fromRGB(0, 150, 255),
+        Secondary = Color3.fromRGB(30, 25, 60),
+        Accent = Color3.fromRGB(0, 150, 255),
         Text = Color3.fromRGB(180, 200, 255),
         TextDark = Color3.fromRGB(150, 150, 180)
-    },
-    ConfigFolder = "OxireunConfig",
-    SaveConfig = false
+    }
 }
 
-local Player = game.Players.LocalPlayer
+-- Services
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 
--- Ekran GUI
-local ScreenGui = Instance.new("ScreenGui")
-if gethui then
-    ScreenGui.Parent = gethui()
-else
-    ScreenGui.Parent = game.CoreGui
-end
-ScreenGui.Name = "OxireunUI"
-ScreenGui.ResetOnSpawn = false
-
--- Temel fonksiyonlar
-local function Create(className, properties, children)
+-- Helper functions
+local function Create(className, properties)
     local obj = Instance.new(className)
     for prop, value in pairs(properties or {}) do
-        obj[prop] = value
-    end
-    for _, child in pairs(children or {}) do
-        child.Parent = obj
+        if prop ~= "Parent" then
+            obj[prop] = value
+        end
     end
     return obj
 end
 
-local function AddConnection(signal, callback)
-    local conn = signal:Connect(callback)
-    table.insert(Oxireun.Connections, conn)
-    return conn
+local function AddCorner(parent, radius)
+    local corner = Create("UICorner", {
+        CornerRadius = UDim.new(0, radius or 8),
+        Parent = parent
+    })
+    return corner
 end
 
--- Notification sistemi
+local function AddStroke(parent, color, thickness)
+    local stroke = Create("UIStroke", {
+        Color = color or Color3.fromRGB(255, 255, 255),
+        Thickness = thickness or 1,
+        Parent = parent
+    })
+    return stroke
+end
+
+-- Notification System
 function Oxireun:Notify(title, message, duration)
-    duration = duration or 5
+    duration = duration or 3
     
     local notification = Create("Frame", {
-        Size = UDim2.new(0.25, 0, 0, 70),
-        Position = UDim2.new(0.75, 0, 1, 0),
+        Size = UDim2.new(0.3, 0, 0, 70),
+        Position = UDim2.new(0.7, 0, 1, 0),
         BackgroundColor3 = Color3.fromRGB(35, 30, 65),
-        BackgroundTransparency = 0,
         BorderSizePixel = 0,
-        ZIndex = 1000,
-        Parent = ScreenGui
-    }, {
-        Create("UICorner", {CornerRadius = UDim.new(0, 10)}),
-        Create("UIStroke", {
-            Color = Color3.fromRGB(0, 150, 255),
-            Thickness = 3,
-            Transparency = 0.3
-        }),
-        Create("Frame", {
-            Size = UDim2.new(1, 0, 0, 2),
-            Position = UDim2.new(0, 0, 0, 0),
-            BackgroundColor3 = Color3.fromRGB(0, 150, 255),
-            BorderSizePixel = 0
-        }),
-        Create("TextLabel", {
-            Size = UDim2.new(0, 40, 1, 0),
-            Position = UDim2.new(0, 10, 0, 0),
-            BackgroundTransparency = 1,
-            Text = "🔔",
-            TextColor3 = Color3.fromRGB(255, 200, 100),
-            Font = Enum.Font.GothamBold,
-            TextSize = 20,
-            Name = "Icon"
-        }),
-        Create("TextLabel", {
-            Size = UDim2.new(1, -60, 0, 25),
-            Position = UDim2.new(0, 50, 0, 10),
-            BackgroundTransparency = 1,
-            Text = title,
-            TextColor3 = Color3.fromRGB(180, 200, 255),
-            Font = Enum.Font.GothamBold,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Name = "Title"
-        }),
-        Create("TextLabel", {
-            Size = UDim2.new(1, -60, 0, 20),
-            Position = UDim2.new(0, 50, 0, 35),
-            BackgroundTransparency = 1,
-            Text = message,
-            TextColor3 = Color3.fromRGB(200, 220, 240),
-            Font = Enum.Font.Gotham,
-            TextSize = 11,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Name = "Message"
-        })
+        ZIndex = 1000
     })
     
-    -- Animasyon
+    AddCorner(notification, 10)
+    AddStroke(notification, Color3.fromRGB(0, 150, 255), 3)
+    
+    local topLine = Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 2),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(0, 150, 255),
+        BorderSizePixel = 0,
+        Parent = notification
+    })
+    
+    local icon = Create("TextLabel", {
+        Size = UDim2.new(0, 40, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "🔔",
+        TextColor3 = Color3.fromRGB(255, 200, 100),
+        Font = Enum.Font.GothamBold,
+        TextSize = 20,
+        Parent = notification
+    })
+    
+    local titleLabel = Create("TextLabel", {
+        Size = UDim2.new(1, -60, 0, 25),
+        Position = UDim2.new(0, 50, 0, 10),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = Color3.fromRGB(180, 200, 255),
+        Font = Enum.Font.GothamBold,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = notification
+    })
+    
+    local messageLabel = Create("TextLabel", {
+        Size = UDim2.new(1, -60, 0, 20),
+        Position = UDim2.new(0, 50, 0, 35),
+        BackgroundTransparency = 1,
+        Text = message,
+        TextColor3 = Color3.fromRGB(200, 220, 240),
+        Font = Enum.Font.Gotham,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = notification
+    })
+    
+    -- Insert into game
+    if gethui then
+        notification.Parent = gethui()
+    else
+        notification.Parent = game.CoreGui
+    end
+    
+    -- Animate in
     notification:TweenPosition(
-        UDim2.new(0.75, 0, 0.75, 0),
+        UDim2.new(0.7, 0, 0.8, 0),
         Enum.EasingDirection.Out,
         Enum.EasingStyle.Back,
         0.4,
         true
     )
     
+    -- Wait and animate out
     task.delay(duration, function()
         notification:TweenPosition(
-            UDim2.new(0.75, 0, 1, 0),
+            UDim2.new(0.7, 0, 1, 0),
             Enum.EasingDirection.In,
             Enum.EasingStyle.Quad,
             0.3,
@@ -128,51 +140,64 @@ function Oxireun:Notify(title, message, duration)
         task.wait(0.3)
         notification:Destroy()
     end)
+    
+    return notification
 end
 
--- Pencere oluşturma
+-- Window Creation
 function Oxireun:CreateWindow(config)
     config = config or {}
-    config.Name = config.Name or "Oxireun"
-    config.SaveConfig = config.SaveConfig or false
-    config.ConfigFolder = config.ConfigFolder or "OxireunConfig"
+    config.Name = config.Name or "Oxireun UI"
+    config.AutoSave = config.AutoSave or false
+    config.Theme = config.Theme or "Default"
     
-    Oxireun.ConfigFolder = config.ConfigFolder
-    Oxireun.SaveConfig = config.SaveConfig
+    local windowId = #Oxireun.Windows + 1
+    local window = {}
+    window.Id = windowId
+    window.Tabs = {}
+    window.Config = config
     
-    -- ANA PENCERE
-    local mainWindow = Create("Frame", {
+    -- Main GUI
+    local gui = Create("ScreenGui", {
+        Name = "OxireunGUI_" .. windowId,
+        ResetOnSpawn = false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    })
+    
+    if gethui then
+        gui.Parent = gethui()
+    else
+        gui.Parent = game.CoreGui
+    end
+    
+    -- Main Frame
+    local main = Create("Frame", {
         Size = UDim2.fromScale(0.4, 0.75),
         Position = UDim2.fromScale(0.03, 0.1),
         BackgroundColor3 = Oxireun.Theme.Main,
-        BackgroundTransparency = 0,
         BorderSizePixel = 0,
         Active = true,
         Draggable = true,
-        Parent = ScreenGui
-    }, {
-        Create("UICorner", {CornerRadius = UDim.new(0, 12)}),
-        Create("UIStroke", {
-            Color = Oxireun.Theme.Stroke,
-            Thickness = 3,
-            Transparency = 0.2
-        })
+        Parent = gui
     })
     
-    -- ÜST BAR
+    AddCorner(main, 12)
+    AddStroke(main, Oxireun.Theme.Accent, 3)
+    
+    -- Top Bar
     local topBar = Create("Frame", {
         Size = UDim2.new(1, 0, 0, 45),
         Position = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = Oxireun.Theme.Second,
+        BackgroundColor3 = Oxireun.Theme.Secondary,
         BorderSizePixel = 0,
-        Name = "TopBar",
-        Parent = mainWindow
-    }, {
-        Create("UICorner", {CornerRadius = UDim.new(0, 12, 0, 0)})
+        Parent = main
     })
     
-    -- Başlık
-    Create("TextLabel", {
+    AddCorner(topBar, 12)
+    topBar.Corner.CornerRadius = UDim.new(0, 12, 0, 0)
+    
+    -- Title
+    local titleLabel = Create("TextLabel", {
         Size = UDim2.new(0, 200, 1, 0),
         Position = UDim2.new(0, 15, 0, 0),
         BackgroundTransparency = 1,
@@ -189,19 +214,19 @@ function Oxireun:CreateWindow(config)
         Size = UDim2.new(1, -20, 0, 35),
         Position = UDim2.new(0, 10, 0, 50),
         BackgroundTransparency = 1,
-        Parent = mainWindow
+        Parent = main
     })
     
-    -- Active Tab Line
+    -- Active Tab Indicator
     local activeTabLine = Create("Frame", {
         Size = UDim2.new(0.25, -10, 0, 3),
         Position = UDim2.new(0, 5, 1, -3),
-        BackgroundColor3 = Oxireun.Theme.Stroke,
+        BackgroundColor3 = Oxireun.Theme.Accent,
         BorderSizePixel = 0,
         Parent = tabContainer
-    }, {
-        Create("UICorner", {CornerRadius = UDim.new(1, 0)})
     })
+    
+    AddCorner(activeTabLine, 10)
     
     -- Content Area
     local contentArea = Create("Frame", {
@@ -210,25 +235,23 @@ function Oxireun:CreateWindow(config)
         BackgroundColor3 = Color3.fromRGB(30, 25, 55),
         BorderSizePixel = 0,
         ClipsDescendants = true,
-        Parent = mainWindow
-    }, {
-        Create("UICorner", {CornerRadius = UDim.new(0, 8)})
+        Parent = main
     })
     
-    local currentTab = 1
-    local tabs = {}
-    local tabFrames = {}
+    AddCorner(contentArea, 8)
     
-    -- Tab Functions
-    local TabFunctions = {}
-    
-    function TabFunctions:AddTab(tabName)
-        local tabIndex = #tabs + 1
+    -- Window Functions
+    function window:AddTab(tabName)
+        local tabId = #window.Tabs + 1
+        local tab = {}
+        tab.Id = tabId
+        tab.Name = tabName
+        tab.Elements = {}
         
         -- Tab Button
         local tabButton = Create("TextButton", {
             Size = UDim2.new(0.25, -5, 1, 0),
-            Position = UDim2.new((tabIndex-1) * 0.25, 0, 0, 0),
+            Position = UDim2.new((tabId-1) * 0.25, 0, 0, 0),
             BackgroundTransparency = 1,
             Text = tabName:upper(),
             TextColor3 = Oxireun.Theme.TextDark,
@@ -237,109 +260,121 @@ function Oxireun:CreateWindow(config)
             Parent = tabContainer
         })
         
-        -- Tab Content Frame
-        local tabFrame = Create("ScrollingFrame", {
+        -- Content Frame
+        local contentFrame = Create("ScrollingFrame", {
             Size = UDim2.new(1, 0, 1, 0),
-            Position = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new((tabId-1), 0, 0, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             ScrollBarThickness = 4,
-            ScrollBarImageColor3 = Oxireun.Theme.Stroke,
+            ScrollBarImageColor3 = Oxireun.Theme.Accent,
             ScrollBarImageTransparency = 0.7,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            Visible = tabIndex == 1,
+            Visible = tabId == 1,
             Parent = contentArea
-        }, {
-            Create("UIListLayout", {
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 10)
-            })
         })
         
-        tabs[tabIndex] = {
-            button = tabButton,
-            frame = tabFrame,
-            name = tabName
-        }
+        local contentList = Create("UIListLayout", {
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 10),
+            Parent = contentFrame
+        })
         
-        tabFrames[tabName] = tabFrame
+        local contentPadding = Create("UIPadding", {
+            PaddingTop = UDim.new(0, 10),
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10),
+            PaddingBottom = UDim.new(0, 10),
+            Parent = contentFrame
+        })
         
-        -- Tab Click Event
-        tabButton.MouseButton1Click:Connect(function()
-            for i, tab in ipairs(tabs) do
-                tab.button.TextColor3 = Oxireun.Theme.TextDark
-                tab.frame.Visible = false
+        -- Tab switching
+        local function switchToTab()
+            for _, t in pairs(window.Tabs) do
+                if t.Button then
+                    t.Button.TextColor3 = Oxireun.Theme.TextDark
+                end
+                if t.Content then
+                    t.Content.Visible = false
+                end
             end
             
-            currentTab = tabIndex
-            tabButton.TextColor3 = Oxireun.Theme.Stroke
-            tabFrame.Visible = true
+            tabButton.TextColor3 = Oxireun.Theme.Accent
+            contentFrame.Visible = true
             
-            -- Move active line
+            -- Move indicator
             activeTabLine:TweenPosition(
-                UDim2.new((tabIndex-1) * 0.25, 5, 1, -3),
+                UDim2.new((tabId-1) * 0.25, 5, 1, -3),
                 Enum.EasingDirection.Out,
                 Enum.EasingStyle.Quad,
                 0.2,
                 true
             )
-        end)
-        
-        -- First tab active
-        if tabIndex == 1 then
-            tabButton.TextColor3 = Oxireun.Theme.Stroke
         end
         
-        -- Element Functions
-        local ElementFunctions = {}
+        tabButton.MouseButton1Click:Connect(switchToTab)
         
-        -- Section
-        function ElementFunctions:AddSection(sectionName)
+        -- Store references
+        tab.Button = tabButton
+        tab.Content = contentFrame
+        
+        -- Tab Functions
+        function tab:AddSection(sectionName)
+            local section = {}
+            
             local sectionFrame = Create("Frame", {
                 Size = UDim2.new(1, 0, 0, 40),
                 BackgroundColor3 = Color3.fromRGB(35, 30, 65),
                 BackgroundTransparency = 0.2,
                 BorderSizePixel = 0,
                 LayoutOrder = 999,
-                Parent = tabFrame
-            }, {
-                Create("UICorner", {CornerRadius = UDim.new(0, 8)}),
-                Create("TextLabel", {
-                    Size = UDim2.new(1, -20, 0, 25),
-                    Position = UDim2.new(0, 10, 0, 0),
-                    BackgroundTransparency = 1,
-                    Text = sectionName:upper(),
-                    TextColor3 = Oxireun.Theme.Stroke,
-                    Font = Enum.Font.GothamBold,
-                    TextSize = 13,
-                    TextXAlignment = Enum.TextXAlignment.Left
-                }),
-                Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 1),
-                    Position = UDim2.new(0, 0, 0, 25),
-                    BackgroundColor3 = Oxireun.Theme.Stroke,
-                    BorderSizePixel = 0,
-                    Transparency = 0.3
-                })
+                Parent = contentFrame
             })
             
-            -- Section içinde elementler için container
-            local sectionContainer = Create("Frame", {
+            AddCorner(sectionFrame, 8)
+            
+            local title = Create("TextLabel", {
+                Size = UDim2.new(1, -20, 0, 25),
+                Position = UDim2.new(0, 10, 0, 0),
+                BackgroundTransparency = 1,
+                Text = sectionName:upper(),
+                TextColor3 = Oxireun.Theme.Accent,
+                Font = Enum.Font.GothamBold,
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = sectionFrame
+            })
+            
+            local line = Create("Frame", {
+                Size = UDim2.new(1, 0, 0, 1),
+                Position = UDim2.new(0, 0, 0, 25),
+                BackgroundColor3 = Oxireun.Theme.Accent,
+                BorderSizePixel = 0,
+                Transparency = 0.3,
+                Parent = sectionFrame
+            })
+            
+            -- Section Elements Container
+            local elementsContainer = Create("Frame", {
                 Size = UDim2.new(1, -20, 0, 0),
                 Position = UDim2.new(0, 10, 0, 35),
                 BackgroundTransparency = 1,
                 Parent = sectionFrame
-            }, {
-                Create("UIListLayout", {
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 10)
-                })
             })
             
-            local SectionElementFunctions = {}
+            local elementsList = Create("UIListLayout", {
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 10),
+                Parent = elementsContainer
+            })
             
-            -- Add Label
-            function SectionElementFunctions:AddLabel(text)
+            -- Update section size
+            elementsList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                sectionFrame.Size = UDim2.new(1, 0, 0, elementsContainer.AbsoluteContentSize.Y + 45)
+            end)
+            
+            -- Section Functions
+            function section:AddLabel(text)
                 local label = Create("TextLabel", {
                     Size = UDim2.new(1, 0, 0, 20),
                     BackgroundTransparency = 1,
@@ -349,58 +384,19 @@ function Oxireun:CreateWindow(config)
                     TextSize = 12,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     LayoutOrder = 1,
-                    Parent = sectionContainer
+                    Parent = elementsContainer
                 })
                 
-                local labelFunc = {}
-                function labelFunc:Set(newText)
+                local function setLabel(newText)
                     label.Text = newText
                 end
                 
-                return labelFunc
+                return {
+                    Set = setLabel
+                }
             end
             
-            -- Add Paragraph
-            function SectionElementFunctions:AddParagraph(title, content)
-                local paragraphFrame = Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 50),
-                    BackgroundTransparency = 1,
-                    LayoutOrder = 2,
-                    Parent = sectionContainer
-                }, {
-                    Create("TextLabel", {
-                        Size = UDim2.new(1, 0, 0, 20),
-                        BackgroundTransparency = 1,
-                        Text = title,
-                        TextColor3 = Oxireun.Theme.Stroke,
-                        Font = Enum.Font.GothamBold,
-                        TextSize = 12,
-                        TextXAlignment = Enum.TextXAlignment.Left
-                    }),
-                    Create("TextLabel", {
-                        Size = UDim2.new(1, 0, 0, 30),
-                        Position = UDim2.new(0, 0, 0, 20),
-                        BackgroundTransparency = 1,
-                        Text = content,
-                        TextColor3 = Oxireun.Theme.Text,
-                        Font = Enum.Font.Gotham,
-                        TextSize = 11,
-                        TextXAlignment = Enum.TextXAlignment.Left,
-                        TextWrapped = true
-                    })
-                })
-                
-                local paraFunc = {}
-                function paraFunc:Set(newTitle, newContent)
-                    paragraphFrame:FindFirstChildOfClass("TextLabel").Text = newTitle
-                    paragraphFrame:FindFirstChildWhichIsA("TextLabel", true).Text = newContent
-                end
-                
-                return paraFunc
-            end
-            
-            -- Add Button
-            function SectionElementFunctions:AddButton(config)
+            function section:AddButton(config)
                 config = config or {}
                 config.Name = config.Name or "Button"
                 config.Callback = config.Callback or function() end
@@ -411,14 +407,14 @@ function Oxireun:CreateWindow(config)
                     BackgroundTransparency = 0.5,
                     BorderSizePixel = 0,
                     Text = config.Name,
-                    TextColor3 = Oxireun.Theme.Stroke,
+                    TextColor3 = Oxireun.Theme.Accent,
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
-                    LayoutOrder = 3,
-                    Parent = sectionContainer
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(0, 6)})
+                    LayoutOrder = 2,
+                    Parent = elementsContainer
                 })
+                
+                AddCorner(button, 6)
                 
                 -- Hover effects
                 button.MouseEnter:Connect(function()
@@ -433,69 +429,71 @@ function Oxireun:CreateWindow(config)
                     config.Callback()
                 end)
                 
-                local buttonFunc = {}
-                function buttonFunc:Set(newText)
+                local function setButton(newText)
                     button.Text = newText
                 end
                 
-                return buttonFunc
+                return {
+                    Set = setButton
+                }
             end
             
-            -- Add Toggle
-            function SectionElementFunctions:AddToggle(config)
+            function section:AddToggle(config)
                 config = config or {}
                 config.Name = config.Name or "Toggle"
                 config.Default = config.Default or false
                 config.Callback = config.Callback or function() end
                 config.Flag = config.Flag or nil
-                config.Save = config.Save or false
                 
                 local toggleValue = config.Default
-                local Toggle = {Value = toggleValue, Type = "Toggle", Save = config.Save}
+                local toggle = {
+                    Value = toggleValue,
+                    Type = "Toggle",
+                    Set = function(self, value)
+                        toggleValue = value
+                        updateToggle()
+                    end
+                }
                 
                 local toggleFrame = Create("Frame", {
                     Size = UDim2.new(1, 0, 0, 30),
                     BackgroundTransparency = 1,
-                    LayoutOrder = 4,
-                    Parent = sectionContainer
+                    LayoutOrder = 3,
+                    Parent = elementsContainer
                 })
                 
-                -- Toggle Background
                 local toggleBg = Create("Frame", {
                     Size = UDim2.new(0, 45, 0, 24),
                     Position = UDim2.new(1, -50, 0.5, -12),
                     BackgroundColor3 = Color3.fromRGB(180, 180, 190),
                     BorderSizePixel = 0,
                     Parent = toggleFrame
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(1, 0)})
                 })
                 
-                -- Toggle Circle
+                AddCorner(toggleBg, 12)
+                
                 local toggleCircle = Create("Frame", {
                     Size = UDim2.new(0, 20, 0, 20),
-                    Position = UDim2.new(0, 2, 0.5, -10),
+                    Position = toggleValue and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10),
                     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                     BorderSizePixel = 0,
                     Parent = toggleBg
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(1, 0)})
                 })
                 
-                -- Toggle Label
+                AddCorner(toggleCircle, 10)
+                
                 Create("TextLabel", {
                     Size = UDim2.new(1, -60, 1, 0),
                     Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = config.Name,
-                    TextColor3 = Oxireun.Theme.Stroke,
+                    TextColor3 = Oxireun.Theme.Accent,
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Parent = toggleFrame
                 })
                 
-                -- Toggle Button
                 local toggleBtn = Create("TextButton", {
                     Size = UDim2.new(0, 45, 0, 24),
                     Position = UDim2.new(1, -50, 0.5, -12),
@@ -504,20 +502,19 @@ function Oxireun:CreateWindow(config)
                     Parent = toggleFrame
                 })
                 
-                -- Toggle function
                 local function updateToggle()
                     if toggleValue then
-                        toggleBg.BackgroundColor3 = Oxireun.Theme.Stroke
+                        toggleBg.BackgroundColor3 = Oxireun.Theme.Accent
                         toggleCircle.Position = UDim2.new(1, -22, 0.5, -10)
                     else
                         toggleBg.BackgroundColor3 = Color3.fromRGB(180, 180, 190)
                         toggleCircle.Position = UDim2.new(0, 2, 0.5, -10)
                     end
-                    Toggle.Value = toggleValue
+                    toggle.Value = toggleValue
                     config.Callback(toggleValue)
                     
-                    if Oxireun.SaveConfig then
-                        Oxireun:SaveConfig()
+                    if config.Flag then
+                        Oxireun.Flags[config.Flag] = toggle
                     end
                 end
                 
@@ -526,61 +523,41 @@ function Oxireun:CreateWindow(config)
                     updateToggle()
                 end)
                 
-                -- Hover
-                toggleBtn.MouseEnter:Connect(function()
-                    toggleBg.BackgroundTransparency = 0.1
-                end)
-                
-                toggleBtn.MouseLeave:Connect(function()
-                    toggleBg.BackgroundTransparency = 0
-                end)
-                
-                -- Initial state
                 updateToggle()
-                
-                -- Set function
-                function Toggle:Set(value)
-                    toggleValue = value
-                    updateToggle()
-                end
-                
-                -- Save to flags
-                if config.Flag then
-                    Oxireun.Flags[config.Flag] = Toggle
-                end
-                
-                return Toggle
+                return toggle
             end
             
-            -- Add Slider
-            function SectionElementFunctions:AddSlider(config)
+            function section:AddSlider(config)
                 config = config or {}
                 config.Name = config.Name or "Slider"
                 config.Min = config.Min or 0
                 config.Max = config.Max or 100
                 config.Default = config.Default or 50
-                config.Increment = config.Increment or 1
                 config.Callback = config.Callback or function() end
                 config.Flag = config.Flag or nil
-                config.Save = config.Save or false
                 
                 local sliderValue = config.Default
-                local Slider = {Value = sliderValue, Type = "Slider", Save = config.Save}
+                local slider = {
+                    Value = sliderValue,
+                    Type = "Slider",
+                    Set = function(self, value)
+                        updateSlider(value)
+                    end
+                }
                 
                 local sliderFrame = Create("Frame", {
                     Size = UDim2.new(1, 0, 0, 50),
                     BackgroundTransparency = 1,
-                    LayoutOrder = 5,
-                    Parent = sectionContainer
+                    LayoutOrder = 4,
+                    Parent = elementsContainer
                 })
                 
-                -- Labels
-                Create("TextLabel", {
+                local label = Create("TextLabel", {
                     Size = UDim2.new(0.5, 0, 0, 20),
                     Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = config.Name,
-                    TextColor3 = Oxireun.Theme.Stroke,
+                    TextColor3 = Oxireun.Theme.Accent,
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
                     TextXAlignment = Enum.TextXAlignment.Left,
@@ -599,29 +576,26 @@ function Oxireun:CreateWindow(config)
                     Parent = sliderFrame
                 })
                 
-                -- Slider Background
                 local sliderBg = Create("Frame", {
                     Size = UDim2.new(1, 0, 0, 6),
                     Position = UDim2.new(0, 0, 0, 25),
                     BackgroundColor3 = Color3.fromRGB(50, 50, 75),
                     BorderSizePixel = 0,
                     Parent = sliderFrame
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(1, 0)})
                 })
                 
-                -- Slider Fill
+                AddCorner(sliderBg, 3)
+                
                 local sliderFill = Create("Frame", {
                     Size = UDim2.new(sliderValue/100, 0, 1, 0),
                     Position = UDim2.new(0, 0, 0, 0),
-                    BackgroundColor3 = Oxireun.Theme.Stroke,
+                    BackgroundColor3 = Oxireun.Theme.Accent,
                     BorderSizePixel = 0,
                     Parent = sliderBg
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(1, 0)})
                 })
                 
-                -- Slider Handle
+                AddCorner(sliderFill, 3)
+                
                 local sliderHandle = Create("TextButton", {
                     Size = UDim2.new(0, 16, 0, 16),
                     Position = UDim2.new(sliderValue/100, -8, 0.5, -8),
@@ -630,46 +604,42 @@ function Oxireun:CreateWindow(config)
                     Text = "",
                     AutoButtonColor = false,
                     Parent = sliderBg
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(1, 0)}),
-                    Create("UIStroke", {
-                        Color = Oxireun.Theme.Stroke,
-                        Thickness = 2
-                    })
                 })
                 
-                -- Slider Logic
+                AddCorner(sliderHandle, 8)
+                AddStroke(sliderHandle, Oxireun.Theme.Accent, 2)
+                
                 local sliding = false
                 
                 local function updateSlider(value)
-                    local percent = math.clamp(value, config.Min, config.Max) / config.Max
-                    sliderValue = math.floor(percent * config.Max)
+                    sliderValue = math.clamp(value, config.Min, config.Max)
+                    local percent = (sliderValue - config.Min) / (config.Max - config.Min)
                     
                     sliderFill.Size = UDim2.new(percent, 0, 1, 0)
                     sliderHandle.Position = UDim2.new(percent, -8, 0.5, -8)
-                    valueLabel.Text = sliderValue .. "%"
+                    valueLabel.Text = sliderValue
                     
-                    Slider.Value = sliderValue
+                    slider.Value = sliderValue
                     config.Callback(sliderValue)
                     
-                    if Oxireun.SaveConfig then
-                        Oxireun:SaveConfig()
+                    if config.Flag then
+                        Oxireun.Flags[config.Flag] = slider
                     end
                 end
                 
                 local function startSliding()
                     sliding = true
-                    tabFrame.ScrollingEnabled = false
+                    contentFrame.ScrollingEnabled = false
                     
                     local connection
                     connection = RunService.RenderStepped:Connect(function()
                         if sliding then
                             local mouse = Player:GetMouse()
-                            local sliderAbsPos = sliderBg.AbsolutePosition
-                            local sliderAbsSize = sliderBg.AbsoluteSize
+                            local absPos = sliderBg.AbsolutePosition
+                            local absSize = sliderBg.AbsoluteSize
                             
-                            local relativeX = (mouse.X - sliderAbsPos.X) / sliderAbsSize.X
-                            updateSlider(relativeX * config.Max)
+                            local relativeX = (mouse.X - absPos.X) / absSize.X
+                            updateSlider(relativeX * (config.Max - config.Min) + config.Min)
                         else
                             connection:Disconnect()
                         end
@@ -678,7 +648,7 @@ function Oxireun:CreateWindow(config)
                 
                 local function stopSliding()
                     sliding = false
-                    tabFrame.ScrollingEnabled = true
+                    contentFrame.ScrollingEnabled = true
                 end
                 
                 sliderHandle.InputBegan:Connect(function(input)
@@ -690,11 +660,11 @@ function Oxireun:CreateWindow(config)
                 sliderBg.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
                         local mouse = Player:GetMouse()
-                        local sliderAbsPos = sliderBg.AbsolutePosition
-                        local sliderAbsSize = sliderBg.AbsoluteSize
+                        local absPos = sliderBg.AbsolutePosition
+                        local absSize = sliderBg.AbsoluteSize
                         
-                        local relativeX = (mouse.X - sliderAbsPos.X) / sliderAbsSize.X
-                        updateSlider(relativeX * config.Max)
+                        local relativeX = (mouse.X - absPos.X) / absSize.X
+                        updateSlider(relativeX * (config.Max - config.Min) + config.Min)
                         startSliding()
                     end
                 end)
@@ -705,246 +675,125 @@ function Oxireun:CreateWindow(config)
                     end
                 end)
                 
-                -- Set function
-                function Slider:Set(value)
-                    updateSlider(value)
-                end
-                
-                -- Save to flags
-                if config.Flag then
-                    Oxireun.Flags[config.Flag] = Slider
-                end
-                
-                return Slider
+                updateSlider(sliderValue)
+                return slider
             end
             
-            -- Add Dropdown
-            function SectionElementFunctions:AddDropdown(config)
+            function section:AddDropdown(config)
                 config = config or {}
                 config.Name = config.Name or "Dropdown"
                 config.Options = config.Options or {"Option 1", "Option 2", "Option 3"}
                 config.Default = config.Default or config.Options[1]
                 config.Callback = config.Callback or function() end
                 config.Flag = config.Flag or nil
-                config.Save = config.Save or false
                 
-                local selectedValue = config.Default
-                local Dropdown = {Value = selectedValue, Options = config.Options, Type = "Dropdown", Save = config.Save}
+                local selected = config.Default
+                local dropdown = {
+                    Value = selected,
+                    Type = "Dropdown",
+                    Set = function(self, value)
+                        selected = value
+                        dropdownBtn.Text = value
+                        config.Callback(value)
+                        if config.Flag then
+                            Oxireun.Flags[config.Flag] = dropdown
+                        end
+                    end,
+                    Refresh = function(self, newOptions)
+                        config.Options = newOptions
+                        -- Recreate dropdown options
+                    end
+                }
                 
                 local dropdownFrame = Create("Frame", {
                     Size = UDim2.new(1, 0, 0, 30),
                     BackgroundTransparency = 1,
-                    LayoutOrder = 6,
-                    Parent = sectionContainer
+                    LayoutOrder = 5,
+                    Parent = elementsContainer
                 })
                 
-                -- Label
                 Create("TextLabel", {
                     Size = UDim2.new(0, 100, 1, 0),
                     Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = config.Name,
-                    TextColor3 = Oxireun.Theme.Stroke,
+                    TextColor3 = Oxireun.Theme.Accent,
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Parent = dropdownFrame
                 })
                 
-                -- Dropdown Button
                 local dropdownBtn = Create("TextButton", {
                     Size = UDim2.new(1, -110, 1, 0),
                     Position = UDim2.new(0, 110, 0, 0),
                     BackgroundColor3 = Color3.fromRGB(60, 50, 90),
                     BackgroundTransparency = 0.5,
                     BorderSizePixel = 0,
-                    Text = selectedValue,
+                    Text = selected,
                     TextColor3 = Oxireun.Theme.Text,
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
                     Parent = dropdownFrame
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(0, 6)})
                 })
                 
-                -- Dropdown Panel
-                local dropdownPanel = Create("Frame", {
-                    Size = UDim2.new(0, 150, 0, 100),
-                    Position = UDim2.new(0, 0, 0, 0),
-                    BackgroundColor3 = Color3.fromRGB(40, 35, 70),
-                    BorderSizePixel = 0,
-                    Visible = false,
-                    ZIndex = 100,
-                    Parent = mainWindow
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(0, 8)}),
-                    Create("UIListLayout", {
-                        SortOrder = Enum.SortOrder.LayoutOrder,
-                        Padding = UDim.new(0, 5)
-                    }),
-                    Create("UIPadding", {
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5)
-                    })
-                })
+                AddCorner(dropdownBtn, 6)
                 
-                -- Options
-                for _, option in ipairs(config.Options) do
-                    local optionBtn = Create("TextButton", {
-                        Size = UDim2.new(1, -10, 0, 25),
-                        BackgroundColor3 = Color3.fromRGB(55, 45, 85),
-                        BackgroundTransparency = 0.5,
-                        BorderSizePixel = 0,
-                        Text = option,
-                        TextColor3 = Oxireun.Theme.Text,
-                        Font = Enum.Font.Gotham,
-                        TextSize = 12,
-                        ZIndex = 101,
-                        Parent = dropdownPanel
-                    }, {
-                        Create("UICorner", {CornerRadius = UDim.new(0, 5)})
-                    })
-                    
-                    optionBtn.MouseButton1Click:Connect(function()
-                        selectedValue = option
-                        dropdownBtn.Text = option
-                        dropdownPanel.Visible = false
-                        Dropdown.Value = selectedValue
-                        config.Callback(selectedValue)
-                        
-                        if Oxireun.SaveConfig then
-                            Oxireun:SaveConfig()
-                        end
-                    end)
-                end
-                
-                -- Toggle Panel
                 dropdownBtn.MouseButton1Click:Connect(function()
-                    dropdownPanel.Visible = not dropdownPanel.Visible
-                    
-                    if dropdownPanel.Visible then
-                        local btnPos = dropdownBtn.AbsolutePosition
-                        local mainPos = mainWindow.AbsolutePosition
-                        local mainSize = mainWindow.AbsoluteSize
-                        
-                        local relativeX = (btnPos.X - mainPos.X) / mainSize.X
-                        local relativeY = (btnPos.Y - mainPos.Y + dropdownBtn.AbsoluteSize.Y) / mainSize.Y
-                        
-                        dropdownPanel.Position = UDim2.new(relativeX, 0, relativeY, 0)
-                        dropdownPanel.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, #config.Options * 30 + 10)
-                    end
+                    -- Simple dropdown implementation
+                    -- You can extend this with a proper dropdown menu
+                    local optionsStr = table.concat(config.Options, ", ")
+                    Oxireun:Notify("Options", "Available: " .. optionsStr, 2)
                 end)
                 
-                -- Close panel when clicking outside
-                UserInputService.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        local mousePos = input.Position
-                        local panelPos = dropdownPanel.AbsolutePosition
-                        local panelSize = dropdownPanel.AbsoluteSize
-                        
-                        if dropdownPanel.Visible then
-                            if not (mousePos.X >= panelPos.X and mousePos.X <= panelPos.X + panelSize.X and
-                                   mousePos.Y >= panelPos.Y and mousePos.Y <= panelPos.Y + panelSize.Y) then
-                                dropdownPanel.Visible = false
-                            end
-                        end
-                    end
-                end)
-                
-                -- Set function
-                function Dropdown:Set(value)
-                    if table.find(config.Options, value) then
-                        selectedValue = value
-                        dropdownBtn.Text = value
-                        Dropdown.Value = value
-                        config.Callback(value)
-                    end
-                end
-                
-                -- Refresh function
-                function Dropdown:Refresh(newOptions, clear)
-                    if clear then
-                        for _, child in ipairs(dropdownPanel:GetChildren()) do
-                            if child:IsA("TextButton") then
-                                child:Destroy()
-                            end
-                        end
-                        config.Options = {}
-                    end
-                    
-                    for _, option in ipairs(newOptions) do
-                        table.insert(config.Options, option)
-                        
-                        local optionBtn = Create("TextButton", {
-                            Size = UDim2.new(1, -10, 0, 25),
-                            BackgroundColor3 = Color3.fromRGB(55, 45, 85),
-                            BackgroundTransparency = 0.5,
-                            BorderSizePixel = 0,
-                            Text = option,
-                            TextColor3 = Oxireun.Theme.Text,
-                            Font = Enum.Font.Gotham,
-                            TextSize = 12,
-                            ZIndex = 101,
-                            Parent = dropdownPanel
-                        }, {
-                            Create("UICorner", {CornerRadius = UDim.new(0, 5)})
-                        })
-                        
-                        optionBtn.MouseButton1Click:Connect(function()
-                            selectedValue = option
-                            dropdownBtn.Text = option
-                            dropdownPanel.Visible = false
-                            Dropdown.Value = selectedValue
-                            config.Callback(selectedValue)
-                        end)
-                    end
-                end
-                
-                -- Save to flags
                 if config.Flag then
-                    Oxireun.Flags[config.Flag] = Dropdown
+                    Oxireun.Flags[config.Flag] = dropdown
                 end
                 
-                return Dropdown
+                return dropdown
             end
             
-            -- Add Textbox
-            function SectionElementFunctions:AddTextbox(config)
+            function section:AddTextbox(config)
                 config = config or {}
                 config.Name = config.Name or "Textbox"
                 config.Default = config.Default or ""
-                config.TextDisappear = config.TextDisappear or false
                 config.Callback = config.Callback or function() end
                 config.Flag = config.Flag or nil
-                config.Save = config.Save or false
                 
                 local textValue = config.Default
-                local Textbox = {Value = textValue, Type = "Textbox", Save = config.Save}
+                local textbox = {
+                    Value = textValue,
+                    Type = "Textbox",
+                    Set = function(self, value)
+                        textboxInput.Text = value
+                        textValue = value
+                        config.Callback(value)
+                        if config.Flag then
+                            Oxireun.Flags[config.Flag] = textbox
+                        end
+                    end
+                }
                 
                 local textboxFrame = Create("Frame", {
                     Size = UDim2.new(1, 0, 0, 30),
                     BackgroundTransparency = 1,
-                    LayoutOrder = 7,
-                    Parent = sectionContainer
+                    LayoutOrder = 6,
+                    Parent = elementsContainer
                 })
                 
-                -- Label
                 Create("TextLabel", {
                     Size = UDim2.new(0, 100, 1, 0),
                     Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = config.Name,
-                    TextColor3 = Oxireun.Theme.Stroke,
+                    TextColor3 = Oxireun.Theme.Accent,
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Parent = textboxFrame
                 })
                 
-                -- Textbox
-                local textbox = Create("TextBox", {
+                local textboxInput = Create("TextBox", {
                     Size = UDim2.new(1, -110, 1, 0),
                     Position = UDim2.new(0, 110, 0, 0),
                     BackgroundColor3 = Color3.fromRGB(45, 40, 75),
@@ -957,82 +806,66 @@ function Oxireun:CreateWindow(config)
                     PlaceholderColor3 = Color3.fromRGB(150, 150, 170),
                     PlaceholderText = "Enter",
                     Parent = textboxFrame
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(0, 6)})
                 })
                 
-                -- Focus effects
-                textbox.Focused:Connect(function()
-                    textbox.BackgroundTransparency = 0.5
-                end)
+                AddCorner(textboxInput, 6)
                 
-                textbox.FocusLost:Connect(function(enterPressed)
-                    textValue = textbox.Text
-                    Textbox.Value = textValue
-                    textbox.BackgroundTransparency = 0.6
-                    
+                textboxInput.FocusLost:Connect(function()
+                    textValue = textboxInput.Text
+                    textbox.Value = textValue
                     config.Callback(textValue)
-                    
-                    if config.TextDisappear then
-                        textbox.Text = ""
-                    end
-                    
-                    if Oxireun.SaveConfig then
-                        Oxireun:SaveConfig()
+                    if config.Flag then
+                        Oxireun.Flags[config.Flag] = textbox
                     end
                 end)
                 
-                -- Set function
-                function Textbox:Set(value)
-                    textbox.Text = value
-                    textValue = value
-                    Textbox.Value = value
-                end
-                
-                -- Save to flags
                 if config.Flag then
-                    Oxireun.Flags[config.Flag] = Textbox
+                    Oxireun.Flags[config.Flag] = textbox
                 end
                 
-                return Textbox
+                return textbox
             end
             
-            -- Add Bind
-            function SectionElementFunctions:AddBind(config)
+            function section:AddBind(config)
                 config = config or {}
                 config.Name = config.Name or "Bind"
                 config.Default = config.Default or Enum.KeyCode.E
-                config.Hold = config.Hold or false
                 config.Callback = config.Callback or function() end
                 config.Flag = config.Flag or nil
-                config.Save = config.Save or false
                 
                 local bindValue = config.Default
                 local binding = false
-                local holding = false
-                local Bind = {Value = bindValue, Type = "Bind", Save = config.Save}
+                local bind = {
+                    Value = bindValue,
+                    Type = "Bind",
+                    Set = function(self, value)
+                        bindValue = value
+                        bindBtn.Text = tostring(value):gsub("Enum.KeyCode.", "")
+                        if config.Flag then
+                            Oxireun.Flags[config.Flag] = bind
+                        end
+                    end
+                }
                 
                 local bindFrame = Create("Frame", {
                     Size = UDim2.new(1, 0, 0, 30),
                     BackgroundTransparency = 1,
-                    LayoutOrder = 8,
-                    Parent = sectionContainer
+                    LayoutOrder = 7,
+                    Parent = elementsContainer
                 })
                 
-                -- Label
                 Create("TextLabel", {
                     Size = UDim2.new(0, 100, 1, 0),
                     Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = config.Name,
-                    TextColor3 = Oxireun.Theme.Stroke,
+                    TextColor3 = Oxireun.Theme.Accent,
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Parent = bindFrame
                 })
                 
-                -- Bind Button
                 local bindBtn = Create("TextButton", {
                     Size = UDim2.new(1, -110, 1, 0),
                     Position = UDim2.new(0, 110, 0, 0),
@@ -1044,196 +877,112 @@ function Oxireun:CreateWindow(config)
                     Font = Enum.Font.Gotham,
                     TextSize = 12,
                     Parent = bindFrame
-                }, {
-                    Create("UICorner", {CornerRadius = UDim.new(0, 6)})
                 })
                 
-                -- Bind logic
+                AddCorner(bindBtn, 6)
+                
                 bindBtn.MouseButton1Click:Connect(function()
                     binding = true
                     bindBtn.Text = "..."
                 end)
                 
-                local function setBind(key)
-                    bindValue = key
-                    Bind.Value = key
-                    bindBtn.Text = tostring(key):gsub("Enum.KeyCode.", "")
-                    binding = false
-                    
-                    if Oxireun.SaveConfig then
-                        Oxireun:SaveConfig()
-                    end
-                end
-                
                 UserInputService.InputBegan:Connect(function(input)
                     if binding then
                         local key = input.KeyCode
                         if key ~= Enum.KeyCode.Unknown then
-                            setBind(key)
-                        end
-                    else
-                        if input.KeyCode == bindValue then
-                            if config.Hold then
-                                holding = true
-                                config.Callback(true)
-                            else
-                                config.Callback()
+                            bindValue = key
+                            bindBtn.Text = tostring(key):gsub("Enum.KeyCode.", "")
+                            binding = false
+                            bind.Value = bindValue
+                            if config.Flag then
+                                Oxireun.Flags[config.Flag] = bind
                             end
                         end
+                    elseif input.KeyCode == bindValue then
+                        config.Callback()
                     end
                 end)
                 
-                UserInputService.InputEnded:Connect(function(input)
-                    if input.KeyCode == bindValue then
-                        if config.Hold and holding then
-                            holding = false
-                            config.Callback(false)
-                        end
-                    end
-                end)
-                
-                -- Set function
-                function Bind:Set(key)
-                    setBind(key)
-                end
-                
-                -- Save to flags
                 if config.Flag then
-                    Oxireun.Flags[config.Flag] = Bind
+                    Oxireun.Flags[config.Flag] = bind
                 end
                 
-                return Bind
+                return bind
             end
             
-            -- Update section size
-            AddConnection(sectionContainer:GetPropertyChangedSignal("AbsoluteContentSize"), function()
-                sectionFrame.Size = UDim2.new(1, 0, 0, sectionContainer.AbsoluteContentSize.Y + 40)
-            end)
-            
-            return SectionElementFunctions
+            return section
         end
         
-        -- Return ElementFunctions for direct use (without section)
-        local DirectElements = {}
-        
-        function DirectElements:AddLabel(text)
-            local label = Create("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 20),
-                BackgroundTransparency = 1,
-                Text = text,
-                TextColor3 = Oxireun.Theme.Text,
-                Font = Enum.Font.Gotham,
-                TextSize = 12,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                LayoutOrder = 1,
-                Parent = tabFrame
-            })
-            
-            local labelFunc = {}
-            function labelFunc:Set(newText)
-                label.Text = newText
-            end
-            
-            return labelFunc
+        -- Direct element functions (without section)
+        function tab:AddLabel(text)
+            local section = self:AddSection("")
+            return section:AddLabel(text)
         end
         
-        function DirectElements:AddButton(config)
-            return ElementFunctions:AddSection(""):AddButton(config)
+        function tab:AddButton(config)
+            local section = self:AddSection("")
+            return section:AddButton(config)
         end
         
-        function DirectElements:AddToggle(config)
-            return ElementFunctions:AddSection(""):AddToggle(config)
+        function tab:AddToggle(config)
+            local section = self:AddSection("")
+            return section:AddToggle(config)
         end
         
-        function DirectElements:AddSlider(config)
-            return ElementFunctions:AddSection(""):AddSlider(config)
+        function tab:AddSlider(config)
+            local section = self:AddSection("")
+            return section:AddSlider(config)
         end
         
-        function DirectElements:AddDropdown(config)
-            return ElementFunctions:AddSection(""):AddDropdown(config)
+        function tab:AddDropdown(config)
+            local section = self:AddSection("")
+            return section:AddDropdown(config)
         end
         
-        function DirectElements:AddTextbox(config)
-            return ElementFunctions:AddSection(""):AddTextbox(config)
+        function tab:AddTextbox(config)
+            local section = self:AddSection("")
+            return section:AddTextbox(config)
         end
         
-        function DirectElements:AddBind(config)
-            return ElementFunctions:AddSection(""):AddBind(config)
+        function tab:AddBind(config)
+            local section = self:AddSection("")
+            return section:AddBind(config)
         end
         
-        function DirectElements:AddParagraph(title, content)
-            return ElementFunctions:AddSection(""):AddParagraph(title, content)
-        end
-        
-        return setmetatable(DirectElements, {
-            __index = function(_, key)
-                if key == "AddSection" then
-                    return function(_, sectionName)
-                        return ElementFunctions:AddSection(sectionName)
-                    end
-                end
-            end
-        })
+        window.Tabs[tabId] = tab
+        return tab
     end
     
-    return TabFunctions
+    function window:Destroy()
+        gui:Destroy()
+        Oxireun.Windows[windowId] = nil
+    end
+    
+    -- Set first tab as active
+    if #window.Tabs > 0 then
+        window.Tabs[1].Button.TextColor3 = Oxireun.Theme.Accent
+    end
+    
+    Oxireun.Windows[windowId] = window
+    return window
 end
 
--- Config functions
-function Oxireun:SaveConfig()
-    if not self.SaveConfig then return end
-    
-    local data = {}
-    for flagName, flag in pairs(self.Flags) do
-        if flag.Save then
-            if flag.Type == "Toggle" or flag.Type == "Slider" or flag.Type == "Textbox" then
-                data[flagName] = flag.Value
-            elseif flag.Type == "Dropdown" then
-                data[flagName] = flag.Value
-            elseif flag.Type == "Bind" then
-                data[flagName] = flag.Value
-            end
-        end
-    end
-    
-    if not isfolder(self.ConfigFolder) then
-        makefolder(self.ConfigFolder)
-    end
-    
-    writefile(self.ConfigFolder .. "/config.json", HttpService:JSONEncode(data))
-end
-
-function Oxireun:LoadConfig()
-    if not self.SaveConfig then return end
-    
-    if isfile(self.ConfigFolder .. "/config.json") then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(self.ConfigFolder .. "/config.json"))
-        end)
-        
-        if success then
-            for flagName, value in pairs(data) do
-                if self.Flags[flagName] then
-                    if self.Flags[flagName].Type == "Toggle" then
-                        self.Flags[flagName]:Set(value)
-                    elseif self.Flags[flagName].Type == "Slider" then
-                        self.Flags[flagName]:Set(value)
-                    elseif self.Flags[flagName].Type == "Dropdown" then
-                        self.Flags[flagName]:Set(value)
-                    elseif self.Flags[flagName].Type == "Textbox" then
-                        self.Flags[flagName]:Set(value)
-                    elseif self.Flags[flagName].Type == "Bind" then
-                        self.Flags[flagName]:Set(value)
-                    end
-                end
-            end
-        end
-    end
-end
-
+-- Initialize function
 function Oxireun:Init()
-    self:LoadConfig()
-    self:Notify("Oxireun UI", "Library Loaded Successfully", 3)
+    -- Auto-load configs
+    if self.Config.AutoSave then
+        if not isfolder(self.Config.Folder) then
+            makefolder(self.Config.Folder)
+        end
+    end
+    
+    -- Welcome notification
+    task.spawn(function()
+        wait(1)
+        self:Notify("Oxireun UI", "Library initialized successfully!", 3)
+    end)
+    
+    print("Oxireun UI Library loaded!")
 end
 
 return Oxireun
