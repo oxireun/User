@@ -1,24 +1,32 @@
--- Blue UI Library v3
--- Fixed dragging and tab scroll
+-- Blue UI Library v5
+-- Improved blue colors, opens from left, all text white
 
 local BlueUI = {}
 BlueUI.__index = BlueUI
 
--- Açık mavi renk paleti
+-- İyileştirilmiş mavi renk paleti
 local Colors = {
-    Background = Color3.fromRGB(15, 20, 35),
-    SecondaryBg = Color3.fromRGB(25, 35, 55),
-    Border = Color3.fromRGB(0, 150, 255),
-    Accent = Color3.fromRGB(0, 180, 255),
-    Text = Color3.fromRGB(240, 245, 255),
-    Disabled = Color3.fromRGB(100, 120, 150),
-    Hover = Color3.fromRGB(0, 150, 255, 0.2),
-    Button = Color3.fromRGB(40, 60, 90),
-    Slider = Color3.fromRGB(0, 150, 255),
-    ToggleOn = Color3.fromRGB(0, 150, 255),
-    ToggleOff = Color3.fromRGB(60, 80, 110),
-    TabActive = Color3.fromRGB(0, 150, 255),
-    TabInactive = Color3.fromRGB(40, 60, 90)
+    Background = Color3.fromRGB(15, 20, 40),
+    SecondaryBg = Color3.fromRGB(25, 35, 60),
+    Border = Color3.fromRGB(0, 170, 255), -- Daha canlı mavi
+    Accent = Color3.fromRGB(0, 200, 255), -- Daha parlak mavi
+    Text = Color3.fromRGB(255, 255, 255), -- BEYAZ
+    Disabled = Color3.fromRGB(150, 150, 180),
+    Hover = Color3.fromRGB(0, 170, 255, 0.3),
+    Button = Color3.fromRGB(45, 65, 100),
+    Slider = Color3.fromRGB(0, 170, 255),
+    ToggleOn = Color3.fromRGB(0, 170, 255),
+    ToggleOff = Color3.fromRGB(70, 90, 130),
+    TabActive = Color3.fromRGB(0, 170, 255),
+    TabInactive = Color3.fromRGB(45, 65, 100)
+}
+
+-- Font ayarları
+local Fonts = {
+    Title = Enum.Font.GothamBold,
+    Normal = Enum.Font.Gotham,
+    Tab = Enum.Font.Gotham,
+    Button = Enum.Font.Gotham
 }
 
 -- UI Boyutları
@@ -47,11 +55,11 @@ function BlueUI:NewWindow(title)
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    -- Ana pencere
+    -- Ana pencere - SOLDAN AÇILIYOR
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
     MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
-    MainFrame.Position = UDim2.new(0.5, -UI_SIZE.Width/2, 0.5, -UI_SIZE.Height/2)
+    MainFrame.Position = UDim2.new(0, 20, 0.5, -UI_SIZE.Height/2) -- Soldan açılıyor
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -63,11 +71,19 @@ function BlueUI:NewWindow(title)
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
     
-    -- Mavi border
+    -- Güzelleştirilmiş mavi border
     local border = Instance.new("UIStroke")
     border.Color = Colors.Border
     border.Thickness = 2
+    border.Transparency = 0
     border.Parent = MainFrame
+    
+    -- Neon efekti için ek border
+    local glow = Instance.new("UIStroke")
+    glow.Color = Colors.Accent
+    glow.Thickness = 1
+    glow.Transparency = 0.5
+    glow.Parent = MainFrame
     
     -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
@@ -90,7 +106,7 @@ function BlueUI:NewWindow(title)
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text
     TitleLabel.TextSize = 16
-    TitleLabel.Font = Enum.Font.GothamSemibold
+    TitleLabel.Font = Fonts.Title
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
@@ -107,11 +123,11 @@ function BlueUI:NewWindow(title)
     CloseButton.Name = "Close"
     CloseButton.Size = UDim2.new(0, 22, 0, 22)
     CloseButton.Position = UDim2.new(0, 23, 0.5, -11)
-    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
     CloseButton.Text = "×"
     CloseButton.TextColor3 = Colors.Text
     CloseButton.TextSize = 18
-    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.Font = Fonts.Normal
     CloseButton.Parent = Controls
     
     local closeCorner = Instance.new("UICorner")
@@ -127,7 +143,7 @@ function BlueUI:NewWindow(title)
     MinimizeButton.Text = "–"
     MinimizeButton.TextColor3 = Colors.Text
     MinimizeButton.TextSize = 18
-    MinimizeButton.Font = Enum.Font.GothamBold
+    MinimizeButton.Font = Fonts.Normal
     MinimizeButton.Parent = Controls
     
     local minimizeCorner = Instance.new("UICorner")
@@ -167,44 +183,41 @@ function BlueUI:NewWindow(title)
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- TAM DRAGGABLE FONKSİYONLUK
+    -- TAM DRAGGABLE FONKSİYONLUK - KESİN ÇÖZÜM
     local UserInputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
     local dragging = false
-    local dragInput, dragStart, startPos
-    
-    local function update(input)
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
+    local dragStart, startPos
     
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = input.Position
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
             startPos = MainFrame.Position
+            
+            local connection
+            connection = RunService.RenderStepped:Connect(function()
+                if dragging then
+                    local mouse = UserInputService:GetMouseLocation()
+                    local delta = Vector2.new(mouse.X, mouse.Y) - dragStart
+                    MainFrame.Position = UDim2.new(
+                        startPos.X.Scale,
+                        startPos.X.Offset + delta.X,
+                        startPos.Y.Scale,
+                        startPos.Y.Offset + delta.Y
+                    )
+                else
+                    if connection then
+                        connection:Disconnect()
+                    end
+                end
+            end)
             
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
                 end
             end)
-        end
-    end)
-    
-    TitleBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
         end
     end)
     
@@ -281,7 +294,7 @@ function BlueUI:NewWindow(title)
         TabButton.Text = name
         TabButton.TextColor3 = Colors.Text
         TabButton.TextSize = 12
-        TabButton.Font = Enum.Font.Gotham
+        TabButton.Font = Fonts.Tab
         TabButton.AutoButtonColor = false
         TabButton.Parent = TabsContainer
         
@@ -356,7 +369,7 @@ function BlueUI:NewWindow(title)
             Button.Text = name
             Button.TextColor3 = Colors.Text
             Button.TextSize = 13
-            Button.Font = Enum.Font.Gotham
+            Button.Font = Fonts.Button
             Button.AutoButtonColor = false
             Button.Parent = SectionFrame
             
@@ -394,7 +407,7 @@ function BlueUI:NewWindow(title)
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
             ToggleLabel.TextSize = 13
-            ToggleLabel.Font = Enum.Font.Gotham
+            ToggleLabel.Font = Fonts.Normal
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
             
@@ -469,7 +482,7 @@ function BlueUI:NewWindow(title)
             SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
             SliderLabel.TextSize = 13
-            SliderLabel.Font = Enum.Font.Gotham
+            SliderLabel.Font = Fonts.Normal
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
             
@@ -558,16 +571,21 @@ function BlueUI:NewWindow(title)
             DropdownButton.Name = "DropdownButton"
             DropdownButton.Size = UDim2.new(1, 0, 0, 35)
             DropdownButton.BackgroundColor3 = Colors.Button
-            DropdownButton.Text = name .. ": " .. (options[default] or options[1] or "Select")
+            DropdownButton.Text = name .. ": Select"
             DropdownButton.TextColor3 = Colors.Text
             DropdownButton.TextSize = 13
-            DropdownButton.Font = Enum.Font.Gotham
+            DropdownButton.Font = Fonts.Normal
             DropdownButton.AutoButtonColor = false
             DropdownButton.Parent = Dropdown
             
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
+            
+            local btnStroke = Instance.new("UIStroke")
+            btnStroke.Color = Colors.Border
+            btnStroke.Thickness = 1
+            btnStroke.Parent = DropdownButton
             
             SetupButtonHover(DropdownButton, false)
             
@@ -628,7 +646,7 @@ function BlueUI:NewWindow(title)
                     OptionButton.Text = option
                     OptionButton.TextColor3 = Colors.Text
                     OptionButton.TextSize = 11
-                    OptionButton.Font = Enum.Font.Gotham
+                    OptionButton.Font = Fonts.Normal
                     OptionButton.AutoButtonColor = false
                     OptionButton.ZIndex = 101
                     OptionButton.Parent = OptionsContainer
@@ -636,6 +654,11 @@ function BlueUI:NewWindow(title)
                     local optionCorner = Instance.new("UICorner")
                     optionCorner.CornerRadius = UDim.new(0, 4)
                     optionCorner.Parent = OptionButton
+                    
+                    local optionStroke = Instance.new("UIStroke")
+                    optionStroke.Color = Colors.Border
+                    optionStroke.Thickness = 1
+                    optionStroke.Parent = OptionButton
                     
                     OptionButton.MouseEnter:Connect(function()
                         OptionButton.BackgroundColor3 = Colors.Border
@@ -689,11 +712,11 @@ function BlueUI:NewWindow(title)
             InputBox.Size = UDim2.new(1, 0, 1, 0)
             InputBox.BackgroundColor3 = Colors.Button
             InputBox.Text = ""
-            InputBox.PlaceholderText = name
-            InputBox.TextColor3 = Colors.Text
+            InputBox.PlaceholderText = "Enter" -- Sadece "Enter"
+            InputBox.TextColor3 = Colors.Text -- BEYAZ
             InputBox.PlaceholderColor3 = Colors.Disabled
             InputBox.TextSize = 13
-            InputBox.Font = Enum.Font.Gotham
+            InputBox.Font = Fonts.Normal
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
             InputBox.Parent = Textbox
             
