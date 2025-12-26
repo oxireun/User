@@ -1,5 +1,5 @@
 -- Blue UI Library - Final Version
--- Fixed dragging, bold fonts, no button effects
+-- Fixed slider, shorter height, white placeholder text
 
 local BlueUI = {}
 BlueUI.__index = BlueUI
@@ -27,13 +27,13 @@ local Fonts = {
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
-    Bold = Enum.Font.GothamBold  -- BOLD FONT
+    Bold = Enum.Font.GothamBold
 }
 
--- UI Boyutları
+-- UI Boyutları - DAHA KISA
 local UI_SIZE = {
     Width = 320,
-    Height = 400
+    Height = 350  -- DAHA KISA YAPILDI
 }
 
 -- Ana Library fonksiyonu
@@ -144,7 +144,7 @@ function BlueUI:NewWindow(title)
     minimizeCorner.CornerRadius = UDim.new(0, 5)
     minimizeCorner.Parent = MinimizeButton
     
-    -- Tab'ler için yatay scrolling frame
+    -- Tab'ler için yatay scrolling frame - ALTINA BOŞLUK EKLENDİ
     local TabsScrollFrame = Instance.new("ScrollingFrame")
     TabsScrollFrame.Name = "TabsScroll"
     TabsScrollFrame.Size = UDim2.new(1, -20, 0, 35)
@@ -168,17 +168,18 @@ function BlueUI:NewWindow(title)
     TabsList.Padding = UDim.new(0, 5)
     TabsList.Parent = TabsContainer
     
-    -- İçerik alanı
+    -- İçerik alanı - BOYUT AYARLANDI
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1, -20, 1, -90)
-    ContentArea.Position = UDim2.new(0, 10, 0, 80)
+    ContentArea.Size = UDim2.new(1, -20, 1, -85) -- Ayarlanmış
+    ContentArea.Position = UDim2.new(0, 10, 0, 80) -- Tab'lerden sonra boşluk
     ContentArea.BackgroundTransparency = 1
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- DRAGGABLE FONKSİYONLUK - YENİ YÖNTEM
+    -- DRAGGABLE FONKSİYONLUK
     local UserInputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
     local dragging = false
     local dragStart, startPos
     
@@ -204,7 +205,7 @@ function BlueUI:NewWindow(title)
             
             -- Mouse hareketini dinle
             local connection
-            connection = game:GetService("RunService").Heartbeat:Connect(function()
+            connection = RunService.Heartbeat:Connect(function()
                 updateDrag()
             end)
             
@@ -237,7 +238,7 @@ function BlueUI:NewWindow(title)
         end
     end)
     
-    -- Buton hover efektleri - SADECE ARKA PLAN RENGİ DEĞİŞİMİ
+    -- Buton hover efektleri
     local function SetupButtonHover(button, isControlButton)
         if isControlButton then return end
         
@@ -256,11 +257,6 @@ function BlueUI:NewWindow(title)
     
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
-    
-    -- Tıklama efekti - KALDIRILDI
-    local function CreateClickEffect(button)
-        -- İptal edildi - hiçbir şey yapma
-    end
     
     -- Yeni section ekleme fonksiyonu
     function Window:NewSection(name)
@@ -298,6 +294,7 @@ function BlueUI:NewWindow(title)
         SectionFrame.ScrollBarImageColor3 = Colors.Border
         SectionFrame.Visible = false
         SectionFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        SectionFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Manuel kontrol
         SectionFrame.Parent = ContentArea
         
         local sectionList = Instance.new("UIListLayout")
@@ -305,10 +302,16 @@ function BlueUI:NewWindow(title)
         sectionList.Parent = SectionFrame
         
         local sectionPadding = Instance.new("UIPadding")
-        sectionPadding.PaddingTop = UDim.new(0, 5)
+        sectionPadding.PaddingTop = UDim.new(0, 8)  -- Üstten boşluk
+        sectionPadding.PaddingBottom = UDim.new(0, 8)  -- Alttan boşluk
         sectionPadding.PaddingLeft = UDim.new(0, 5)
         sectionPadding.PaddingRight = UDim.new(0, 5)
         sectionPadding.Parent = SectionFrame
+        
+        -- Canvas size güncelleme
+        sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            SectionFrame.CanvasSize = UDim2.new(0, 0, 0, sectionList.AbsoluteContentSize.Y + 10)
+        end)
         
         -- İlk section'u aktif yap
         if #Window.Sections == 0 then
@@ -358,8 +361,6 @@ function BlueUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = Button
             
-            -- UIStroke KALDIRILDI (ışık efekti)
-            
             SetupButtonHover(Button, false)
             
             Button.MouseButton1Click:Connect(function()
@@ -384,7 +385,7 @@ function BlueUI:NewWindow(title)
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
             ToggleLabel.TextSize = 14
-            ToggleLabel.Font = Fonts.Bold  -- BOLD FONT
+            ToggleLabel.Font = Fonts.Bold
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
             
@@ -459,7 +460,7 @@ function BlueUI:NewWindow(title)
             SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
             SliderLabel.TextSize = 14
-            SliderLabel.Font = Fonts.Bold  -- BOLD FONT
+            SliderLabel.Font = Fonts.Bold
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
             
@@ -521,6 +522,13 @@ function BlueUI:NewWindow(title)
                 dragging = true
             end)
             
+            SliderTrack.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    updateSlider(input)
+                end
+            end)
+            
             game:GetService("UserInputService").InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
@@ -558,8 +566,6 @@ function BlueUI:NewWindow(title)
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
-            
-            -- UIStroke KALDIRILDI (ışık efekti)
             
             SetupButtonHover(DropdownButton, false)
             
@@ -680,7 +686,7 @@ function BlueUI:NewWindow(title)
             InputBox.Text = ""
             InputBox.PlaceholderText = "Enter"
             InputBox.TextColor3 = Colors.Text
-            InputBox.PlaceholderColor3 = Colors.Disabled
+            InputBox.PlaceholderColor3 = Colors.Text  -- BEYAZ YAPILDI
             InputBox.TextSize = 14
             InputBox.Font = Fonts.Normal
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
