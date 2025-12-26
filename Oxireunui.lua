@@ -1,5 +1,5 @@
--- Blue UI Library v5
--- Improved blue colors, opens from left, all text white
+-- Blue UI Library v6
+-- Fixed dragging, larger text, dropdown improved
 
 local BlueUI = {}
 BlueUI.__index = BlueUI
@@ -8,8 +8,8 @@ BlueUI.__index = BlueUI
 local Colors = {
     Background = Color3.fromRGB(15, 20, 40),
     SecondaryBg = Color3.fromRGB(25, 35, 60),
-    Border = Color3.fromRGB(0, 170, 255), -- Daha canlı mavi
-    Accent = Color3.fromRGB(0, 200, 255), -- Daha parlak mavi
+    Border = Color3.fromRGB(0, 170, 255),
+    Accent = Color3.fromRGB(0, 200, 255),
     Text = Color3.fromRGB(255, 255, 255), -- BEYAZ
     Disabled = Color3.fromRGB(150, 150, 180),
     Hover = Color3.fromRGB(0, 170, 255, 0.3),
@@ -71,19 +71,12 @@ function BlueUI:NewWindow(title)
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
     
-    -- Güzelleştirilmiş mavi border
+    -- Mavi border
     local border = Instance.new("UIStroke")
     border.Color = Colors.Border
     border.Thickness = 2
     border.Transparency = 0
     border.Parent = MainFrame
-    
-    -- Neon efekti için ek border
-    local glow = Instance.new("UIStroke")
-    glow.Color = Colors.Accent
-    glow.Thickness = 1
-    glow.Transparency = 0.5
-    glow.Parent = MainFrame
     
     -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
@@ -183,41 +176,44 @@ function BlueUI:NewWindow(title)
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- TAM DRAGGABLE FONKSİYONLUK - KESİN ÇÖZÜM
+    -- TAM DRAGGABLE FONKSİYONLUK - BASİT VE ETKİLİ
     local UserInputService = game:GetService("UserInputService")
-    local RunService = game:GetService("RunService")
     local dragging = false
-    local dragStart, startPos
+    local dragInput, dragStart, startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
     
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = Vector2.new(input.Position.X, input.Position.Y)
+            dragStart = input.Position
             startPos = MainFrame.Position
-            
-            local connection
-            connection = RunService.RenderStepped:Connect(function()
-                if dragging then
-                    local mouse = UserInputService:GetMouseLocation()
-                    local delta = Vector2.new(mouse.X, mouse.Y) - dragStart
-                    MainFrame.Position = UDim2.new(
-                        startPos.X.Scale,
-                        startPos.X.Offset + delta.X,
-                        startPos.Y.Scale,
-                        startPos.Y.Offset + delta.Y
-                    )
-                else
-                    if connection then
-                        connection:Disconnect()
-                    end
-                end
-            end)
             
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
                 end
             end)
+        end
+    end)
+    
+    TitleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
         end
     end)
     
@@ -368,7 +364,7 @@ function BlueUI:NewWindow(title)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
             Button.TextColor3 = Colors.Text
-            Button.TextSize = 13
+            Button.TextSize = 14 -- BÜYÜK YAZI
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
             Button.Parent = SectionFrame
@@ -571,9 +567,9 @@ function BlueUI:NewWindow(title)
             DropdownButton.Name = "DropdownButton"
             DropdownButton.Size = UDim2.new(1, 0, 0, 35)
             DropdownButton.BackgroundColor3 = Colors.Button
-            DropdownButton.Text = name .. ": Select"
+            DropdownButton.Text = options[default] or options[1] or "Select" -- SADECE SEÇENEK ADI
             DropdownButton.TextColor3 = Colors.Text
-            DropdownButton.TextSize = 13
+            DropdownButton.TextSize = 14 -- BÜYÜK YAZI
             DropdownButton.Font = Fonts.Normal
             DropdownButton.AutoButtonColor = false
             DropdownButton.Parent = Dropdown
@@ -645,7 +641,7 @@ function BlueUI:NewWindow(title)
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
                     OptionButton.TextColor3 = Colors.Text
-                    OptionButton.TextSize = 11
+                    OptionButton.TextSize = 12
                     OptionButton.Font = Fonts.Normal
                     OptionButton.AutoButtonColor = false
                     OptionButton.ZIndex = 101
@@ -670,7 +666,7 @@ function BlueUI:NewWindow(title)
                     
                     OptionButton.MouseButton1Click:Connect(function()
                         CreateClickEffect(OptionButton)
-                        DropdownButton.Text = name .. ": " .. option
+                        DropdownButton.Text = option -- SADECE SEÇENEK ADI
                         if callback then
                             callback(option)
                         end
@@ -712,10 +708,10 @@ function BlueUI:NewWindow(title)
             InputBox.Size = UDim2.new(1, 0, 1, 0)
             InputBox.BackgroundColor3 = Colors.Button
             InputBox.Text = ""
-            InputBox.PlaceholderText = "Enter" -- Sadece "Enter"
-            InputBox.TextColor3 = Colors.Text -- BEYAZ
+            InputBox.PlaceholderText = "Enter"
+            InputBox.TextColor3 = Colors.Text
             InputBox.PlaceholderColor3 = Colors.Disabled
-            InputBox.TextSize = 13
+            InputBox.TextSize = 14 -- BÜYÜK YAZI
             InputBox.Font = Fonts.Normal
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
             InputBox.Parent = Textbox
