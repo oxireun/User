@@ -1,8 +1,8 @@
--- Draggable Blue UI Library
--- Fixed dropdown, tab system, draggable
+-- Final Blue UI Library
+-- Draggable, tab scroll, centered textbox
 
-local DraggableBlueUI = {}
-DraggableBlueUI.__index = DraggableBlueUI
+local FinalBlueUI = {}
+FinalBlueUI.__index = FinalBlueUI
 
 -- Açık mavi renk paleti
 local Colors = {
@@ -28,14 +28,14 @@ local UI_SIZE = {
 }
 
 -- Ana Library fonksiyonu
-function DraggableBlueUI.new()
-    local self = setmetatable({}, DraggableBlueUI)
+function FinalBlueUI.new()
+    local self = setmetatable({}, FinalBlueUI)
     self.Windows = {}
     return self
 end
 
 -- Yeni pencere oluşturma
-function DraggableBlueUI:NewWindow(title)
+function FinalBlueUI:NewWindow(title)
     local Window = {}
     Window.Title = title or "Blue UI"
     Window.Sections = {}
@@ -43,9 +43,10 @@ function DraggableBlueUI:NewWindow(title)
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "DraggableBlueUI"
+    ScreenGui.Name = "FinalBlueUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = game:GetService("CoreGui")
     
     -- Ana pencere
     local MainFrame = Instance.new("Frame")
@@ -133,18 +134,26 @@ function DraggableBlueUI:NewWindow(title)
     minimizeCorner.CornerRadius = UDim.new(0, 5)
     minimizeCorner.Parent = MinimizeButton
     
-    -- Tab'ler için container (yatay)
+    -- Tab'ler için container (yatay scroll)
+    local TabsScroll = Instance.new("ScrollingFrame")
+    TabsScroll.Name = "TabsScroll"
+    TabsScroll.Size = UDim2.new(1, -20, 0, 35)
+    TabsScroll.Position = UDim2.new(0, 10, 0, 40)
+    TabsScroll.BackgroundTransparency = 1
+    TabsScroll.BorderSizePixel = 0
+    TabsScroll.ScrollBarThickness = 4
+    TabsScroll.ScrollBarImageColor3 = Colors.Border
+    TabsScroll.Parent = MainFrame
+    
     local TabsContainer = Instance.new("Frame")
-    TabsContainer.Name = "Tabs"
-    TabsContainer.Size = UDim2.new(1, -20, 0, 35)
-    TabsContainer.Position = UDim2.new(0, 10, 0, 40)
+    TabsContainer.Name = "TabsContainer"
+    TabsContainer.Size = UDim2.new(0, 0, 1, 0)
     TabsContainer.BackgroundTransparency = 1
-    TabsContainer.Parent = MainFrame
+    TabsContainer.Parent = TabsScroll
     
     local TabsList = Instance.new("UIListLayout")
     TabsList.FillDirection = Enum.FillDirection.Horizontal
     TabsList.Padding = UDim.new(0, 5)
-    TabsList.HorizontalAlignment = Enum.HorizontalAlignment.Left
     TabsList.Parent = TabsContainer
     
     -- İçerik alanı (tüm section'lar için)
@@ -156,12 +165,16 @@ function DraggableBlueUI:NewWindow(title)
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- DRAGGABLE FONKSİYONLUK
+    -- DRAGGABLE FONKSİYONLUK - DÜZGÜN ÇALIŞACAK
     local dragging = false
-    local dragInput, dragStart, startPos
+    local dragStart, startPos
     
-    local function updateDrag(input)
-        local delta = input.Position - dragStart
+    -- Mouse'u takip eden fonksiyon
+    local function updateDrag()
+        if not dragging then return end
+        
+        local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+        local delta = Vector2.new(mouse.X, mouse.Y) - dragStart
         MainFrame.Position = UDim2.new(
             startPos.X.Scale,
             startPos.X.Offset + delta.X,
@@ -173,26 +186,24 @@ function DraggableBlueUI:NewWindow(title)
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = input.Position
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
             startPos = MainFrame.Position
             
+            -- Mouse hareketini dinle
+            local connection
+            connection = game:GetService("RunService").Heartbeat:Connect(function()
+                updateDrag()
+            end)
+            
+            -- Mouse bırakıldığında
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    if connection then
+                        connection:Disconnect()
+                    end
                 end
             end)
-        end
-    end)
-    
-    TitleBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and input == dragInput then
-            updateDrag(input)
         end
     end)
     
@@ -204,14 +215,45 @@ function DraggableBlueUI:NewWindow(title)
     MinimizeButton.MouseButton1Click:Connect(function()
         if MainFrame.Size.Y.Offset == UI_SIZE.Height then
             MainFrame:TweenSize(UDim2.new(0, UI_SIZE.Width, 0, 35), "Out", "Quad", 0.2, true)
-            TabsContainer.Visible = false
+            TabsScroll.Visible = false
             ContentArea.Visible = false
         else
             MainFrame:TweenSize(UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height), "Out", "Quad", 0.2, true)
-            TabsContainer.Visible = true
+            TabsScroll.Visible = true
             ContentArea.Visible = true
         end
     end)
+    
+    -- Tab boyutunu güncelleme fonksiyonu
+    local function UpdateTabsSize()
+        local totalWidth = 0
+        for _, tab in pairs(TabsContainer:GetChildren()) do
+            if tab:IsA("TextButton") then
+                totalWidth = totalWidth + tab.Size.X.Offset + 5
+            end
+        end
+        TabsContainer.Size = UDim2.new(0, totalWidth, 1, 0)
+    end
+    
+    -- Buton hover efektleri
+    local function SetupButtonHover(button, isControlButton)
+        if isControlButton then return end
+        
+        button.MouseEnter:Connect(function()
+            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+                BackgroundColor3 = Colors.Border
+            }):Play()
+        end)
+        
+        button.MouseLeave:Connect(function()
+            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+                BackgroundColor3 = Colors.Button
+            }):Play()
+        end)
+    end
+    
+    SetupButtonHover(CloseButton, true)
+    SetupButtonHover(MinimizeButton, true)
     
     -- Tıklama efekti (sadece buton ve dropdown için)
     local function CreateClickEffect(button)
@@ -233,23 +275,6 @@ function DraggableBlueUI:NewWindow(title)
         
         delay(0.3, function()
             effect:Destroy()
-        end)
-    end
-    
-    -- Buton hover efektleri
-    local function SetupButtonHover(button, isControlButton)
-        if isControlButton then return end
-        
-        button.MouseEnter:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-                BackgroundColor3 = Colors.Border
-            }):Play()
-        end)
-        
-        button.MouseLeave:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-                BackgroundColor3 = Colors.Button
-            }):Play()
         end)
     end
     
@@ -289,7 +314,7 @@ function DraggableBlueUI:NewWindow(title)
         SectionFrame.ScrollBarThickness = 4
         SectionFrame.ScrollBarImageColor3 = Colors.Border
         SectionFrame.Visible = false
-        SectionFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        SectionFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
         SectionFrame.Parent = ContentArea
         
         local sectionList = Instance.new("UIListLayout")
@@ -301,6 +326,11 @@ function DraggableBlueUI:NewWindow(title)
         sectionPadding.PaddingLeft = UDim.new(0, 5)
         sectionPadding.PaddingRight = UDim.new(0, 5)
         sectionPadding.Parent = SectionFrame
+        
+        -- Canvas size güncelleme
+        sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            SectionFrame.CanvasSize = UDim2.new(0, 0, 0, sectionList.AbsoluteContentSize.Y)
+        end)
         
         -- İlk section'u aktif yap
         if #Window.Sections == 0 then
@@ -578,7 +608,7 @@ function DraggableBlueUI:NewWindow(title)
                 
                 open = true
                 
-                -- Options için bir ScreenGui oluştur (UI dışında gözüksün)
+                -- Options için ScreenGui
                 local OptionsScreenGui = Instance.new("ScreenGui")
                 OptionsScreenGui.Name = "DropdownOptions"
                 OptionsScreenGui.ResetOnSpawn = false
@@ -649,7 +679,6 @@ function DraggableBlueUI:NewWindow(title)
                         local buttonPos = DropdownButton.AbsolutePosition
                         local buttonSize = DropdownButton.AbsoluteSize
                         
-                        -- Eğer butonun dışına tıklandıysa
                         if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
                                mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
                             CloseOptions()
@@ -681,16 +710,12 @@ function DraggableBlueUI:NewWindow(title)
             InputBox.PlaceholderColor3 = Colors.Disabled
             InputBox.TextSize = 13
             InputBox.Font = Enum.Font.Gotham
-            InputBox.TextXAlignment = Enum.TextXAlignment.Left
+            InputBox.TextXAlignment = Enum.TextXAlignment.Center -- ORTADA!
             InputBox.Parent = Textbox
             
             local inputCorner = Instance.new("UICorner")
             inputCorner.CornerRadius = UDim.new(0, 6)
             inputCorner.Parent = InputBox
-            
-            local inputPadding = Instance.new("UIPadding")
-            inputPadding.PaddingLeft = UDim.new(0, 10)
-            inputPadding.Parent = InputBox
             
             local inputStroke = Instance.new("UIStroke")
             inputStroke.Color = Colors.Border
@@ -707,15 +732,14 @@ function DraggableBlueUI:NewWindow(title)
         end
         
         table.insert(Window.Sections, Section)
+        UpdateTabsSize() -- Tab boyutunu güncelle
+        
         return Section
     end
-    
-    -- Pencereyi parent'e ekle
-    ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
     
     table.insert(self.Windows, Window)
     return Window
 end
 
 -- Library'yi döndür
-return DraggableBlueUI.new()
+return FinalBlueUI.new()
