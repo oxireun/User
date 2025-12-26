@@ -1,5 +1,5 @@
--- Blue UI Library v6
--- Fixed dragging, larger text, dropdown improved
+-- Blue UI Library v7
+-- Larger slider/toggle labels, white text buttons, fixed draggable
 
 local BlueUI = {}
 BlueUI.__index = BlueUI
@@ -59,7 +59,7 @@ function BlueUI:NewWindow(title)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
     MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
-    MainFrame.Position = UDim2.new(0, 20, 0.5, -UI_SIZE.Height/2) -- Soldan açılıyor
+    MainFrame.Position = UDim2.new(0, 20, 0.5, -UI_SIZE.Height/2)
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -176,27 +176,16 @@ function BlueUI:NewWindow(title)
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- TAM DRAGGABLE FONKSİYONLUK - BASİT VE ETKİLİ
+    -- DRAGGABLE FONKSİYONLUK - KESİN ÇÖZÜM
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
     local dragInput, dragStart, startPos
-    
-    local function update(input)
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
     
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = MainFrame.Position
-            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -213,7 +202,13 @@ function BlueUI:NewWindow(title)
     
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            update(input)
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
     
@@ -363,8 +358,8 @@ function BlueUI:NewWindow(title)
             Button.Size = UDim2.new(1, -10, 0, 35)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
-            Button.TextColor3 = Colors.Text
-            Button.TextSize = 14 -- BÜYÜK YAZI
+            Button.TextColor3 = Colors.Text -- SADECE BEYAZ YAZI
+            Button.TextSize = 14
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
             Button.Parent = SectionFrame
@@ -402,7 +397,7 @@ function BlueUI:NewWindow(title)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
-            ToggleLabel.TextSize = 13
+            ToggleLabel.TextSize = 14 -- DAHA BÜYÜK
             ToggleLabel.Font = Fonts.Normal
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
@@ -477,7 +472,7 @@ function BlueUI:NewWindow(title)
             SliderLabel.BackgroundTransparency = 1
             SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
-            SliderLabel.TextSize = 13
+            SliderLabel.TextSize = 14 -- DAHA BÜYÜK
             SliderLabel.Font = Fonts.Normal
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
@@ -567,9 +562,9 @@ function BlueUI:NewWindow(title)
             DropdownButton.Name = "DropdownButton"
             DropdownButton.Size = UDim2.new(1, 0, 0, 35)
             DropdownButton.BackgroundColor3 = Colors.Button
-            DropdownButton.Text = options[default] or options[1] or "Select" -- SADECE SEÇENEK ADI
+            DropdownButton.Text = options[default] or options[1] or "Select"
             DropdownButton.TextColor3 = Colors.Text
-            DropdownButton.TextSize = 14 -- BÜYÜK YAZI
+            DropdownButton.TextSize = 14
             DropdownButton.Font = Fonts.Normal
             DropdownButton.AutoButtonColor = false
             DropdownButton.Parent = Dropdown
@@ -666,7 +661,7 @@ function BlueUI:NewWindow(title)
                     
                     OptionButton.MouseButton1Click:Connect(function()
                         CreateClickEffect(OptionButton)
-                        DropdownButton.Text = option -- SADECE SEÇENEK ADI
+                        DropdownButton.Text = option
                         if callback then
                             callback(option)
                         end
@@ -711,7 +706,7 @@ function BlueUI:NewWindow(title)
             InputBox.PlaceholderText = "Enter"
             InputBox.TextColor3 = Colors.Text
             InputBox.PlaceholderColor3 = Colors.Disabled
-            InputBox.TextSize = 14 -- BÜYÜK YAZI
+            InputBox.TextSize = 14
             InputBox.Font = Fonts.Normal
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
             InputBox.Parent = Textbox
