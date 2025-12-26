@@ -1,26 +1,25 @@
 -- Oxireun UI Library - Final Version
--- All fixes applied: draggable, slider fixed, better colors, instant minimize
+-- Fixed slider, XP style buttons, draggable
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
 
--- İyileştirilmiş mavi renk paleti - daha güzel mavi tonlar
+-- İyileştirilmiş mavi renk paleti
 local Colors = {
     Background = Color3.fromRGB(20, 25, 45),
-    SecondaryBg = Color3.fromRGB(35, 45, 80), -- DAHA MAVİMSİ
-    SectionBg = Color3.fromRGB(25, 35, 65), -- DAHA MAVİ
-    Border = Color3.fromRGB(0, 180, 255), -- DAHA CANLI MAVİ
+    SecondaryBg = Color3.fromRGB(35, 45, 80),
+    SectionBg = Color3.fromRGB(25, 35, 65),
+    Border = Color3.fromRGB(0, 180, 255),
     Accent = Color3.fromRGB(0, 200, 255),
-    Text = Color3.fromRGB(255, 255, 255), -- BEYAZ
+    Text = Color3.fromRGB(255, 255, 255),
     Disabled = Color3.fromRGB(150, 150, 180),
     Hover = Color3.fromRGB(0, 180, 255, 0.3),
-    Button = Color3.fromRGB(50, 80, 140), -- DAHA MAVİ BUTON
+    Button = Color3.fromRGB(50, 80, 140),
     Slider = Color3.fromRGB(0, 180, 255),
     ToggleOn = Color3.fromRGB(0, 180, 255),
-    ToggleOff = Color3.fromRGB(80, 110, 160), -- DAHA MAVİ
+    ToggleOff = Color3.fromRGB(80, 110, 160),
     TabActive = Color3.fromRGB(0, 180, 255),
-    TabInactive = Color3.fromRGB(50, 80, 140),
-    ControlButton = Color3.fromRGB(60, 90, 150) -- KONTROL BUTONLARI İÇİN MAVİ
+    TabInactive = Color3.fromRGB(50, 80, 140)
 }
 
 -- Font ayarları
@@ -32,10 +31,10 @@ local Fonts = {
     Bold = Enum.Font.GothamBold
 }
 
--- UI Boyutları - BİRAZ DAHA KÜÇÜK
+-- UI Boyutları
 local UI_SIZE = {
     Width = 310,
-    Height = 320  -- DAHA KÜÇÜK
+    Height = 320
 }
 
 -- Ana Library fonksiyonu
@@ -43,6 +42,31 @@ function OxireunUI.new()
     local self = setmetatable({}, OxireunUI)
     self.Windows = {}
     return self
+end
+
+-- Windows XP tarzı buton efekti
+local function CreateXPButtonEffect(button)
+    local border1 = Instance.new("UIStroke")
+    border1.Color = Color3.new(1, 1, 1)
+    border1.Thickness = 1
+    border1.Transparency = 0.5
+    border1.Parent = button
+    
+    local border2 = Instance.new("UIStroke")
+    border2.Color = Color3.new(0, 0, 0)
+    border2.Thickness = 1
+    border2.Transparency = 0.3
+    border2.Parent = button
+    
+    button.MouseButton1Down:Connect(function()
+        border1.Color = Color3.new(0.5, 0.5, 0.5)
+        border2.Color = Color3.new(0.7, 0.7, 0.7)
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        border1.Color = Color3.new(1, 1, 1)
+        border2.Color = Color3.new(0, 0, 0)
+    end)
 end
 
 -- Yeni pencere oluşturma
@@ -106,7 +130,7 @@ function OxireunUI:NewWindow(title)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
-    -- Kontrol butonları - YENİ TASARIM
+    -- Kontrol butonları - WINDOWS XP STYLE
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
     Controls.Size = UDim2.new(0, 60, 1, 0)
@@ -114,12 +138,12 @@ function OxireunUI:NewWindow(title)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
-    -- Küçültme butonu - YUVARLAK ve "-" simgesi
+    -- Küçültme butonu - SİYAH (Windows XP style)
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
     MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
     MinimizeButton.Position = UDim2.new(0, 0, 0.5, -12.5)
-    MinimizeButton.BackgroundColor3 = Colors.ControlButton
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- SİYAH
     MinimizeButton.Text = "-"
     MinimizeButton.TextColor3 = Colors.Text
     MinimizeButton.TextSize = 22
@@ -127,11 +151,9 @@ function OxireunUI:NewWindow(title)
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
     
-    local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(1, 0) -- TAM YUVARLAK
-    minimizeCorner.Parent = MinimizeButton
+    CreateXPButtonEffect(MinimizeButton)
     
-    -- Kapatma butonu - YUVARLAK ve ">" simgesi
+    -- Kapatma butonu - KIRMIZI (Windows XP style)
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
     CloseButton.Size = UDim2.new(0, 25, 0, 25)
@@ -144,9 +166,7 @@ function OxireunUI:NewWindow(title)
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
     
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(1, 0) -- TAM YUVARLAK
-    closeCorner.Parent = CloseButton
+    CreateXPButtonEffect(CloseButton)
     
     -- Tab'ler için yatay scrolling frame
     local TabsScrollFrame = Instance.new("ScrollingFrame")
@@ -181,7 +201,7 @@ function OxireunUI:NewWindow(title)
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- TIKLAMA EFEKTİ - SADECE BUTONLAR İÇİN
+    -- TIKLAMA EFEKTİ
     local function CreateClickEffect(button)
         local effect = Instance.new("Frame")
         effect.Name = "ClickEffect"
@@ -190,10 +210,6 @@ function OxireunUI:NewWindow(title)
         effect.BackgroundTransparency = 0.7
         effect.ZIndex = -1
         effect.Parent = button
-        
-        local effectCorner = Instance.new("UICorner")
-        effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 6)
-        effectCorner.Parent = effect
         
         game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
             BackgroundTransparency = 1
@@ -208,16 +224,26 @@ function OxireunUI:NewWindow(title)
     local function SetupButtonHover(button, isControlButton)
         if isControlButton then 
             button.MouseEnter:Connect(function()
-                game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-                    BackgroundColor3 = Color3.fromRGB(100, 130, 190)
-                }):Play()
+                if button.Name == "Close" then
+                    game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+                        BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                    }):Play()
+                else
+                    game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+                        BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                    }):Play()
+                end
             end)
             
             button.MouseLeave:Connect(function()
                 if button.Name == "Close" then
-                    button.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+                    game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+                        BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+                    }):Play()
                 else
-                    button.BackgroundColor3 = Colors.ControlButton
+                    game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+                        BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    }):Play()
                 end
             end)
             return
@@ -239,23 +265,12 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK - TÜM PENCERE İÇİN
+    -- DRAGGABLE FONKSİYONLUK - ÇALIŞAN VERSİYON
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
-    local dragInput, dragStart, startPos
+    local dragStart, startPos
     
-    local function update(input)
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-    
-    -- Sadece başlık çubuğundan değil, tüm pencereden sürükleme
-    MainFrame.InputBegan:Connect(function(input)
+    TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
@@ -269,15 +284,15 @@ function OxireunUI:NewWindow(title)
         end
     end)
     
-    MainFrame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
     
@@ -291,12 +306,12 @@ function OxireunUI:NewWindow(title)
     MinimizeButton.MouseButton1Click:Connect(function()
         CreateClickEffect(MinimizeButton)
         if not minimized then
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35) -- ANINDA KÜÇÜLT
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35)
             TabsScrollFrame.Visible = false
             ContentArea.Visible = false
             minimized = true
         else
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height) -- ANINDA BÜYÜT
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
             TabsScrollFrame.Visible = true
             ContentArea.Visible = true
             minimized = false
@@ -371,21 +386,18 @@ function OxireunUI:NewWindow(title)
         TabButton.MouseButton1Click:Connect(function()
             CreateClickEffect(TabButton)
             
-            -- Tüm tab'leri pasif yap
             for _, tab in pairs(TabsContainer:GetChildren()) do
                 if tab:IsA("TextButton") then
                     tab.BackgroundColor3 = Colors.TabInactive
                 end
             end
             
-            -- Tüm section'ları gizle
             for _, frame in pairs(ContentArea:GetChildren()) do
                 if frame:IsA("ScrollingFrame") then
                     frame.Visible = false
                 end
             end
             
-            -- Aktif tab'i ve section'u göster
             TabButton.BackgroundColor3 = Colors.TabActive
             SectionFrame.Visible = true
             Window.CurrentSection = Section
@@ -547,19 +559,17 @@ function OxireunUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(1, 0)
             btnCorner.Parent = SliderButton
             
-            local dragging = false
+            local draggingSlider = false
             
+            -- Slider için mouse event'leri
             local function updateSlider(input)
-                local pos = UDim2.new(
-                    math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
-                    -9,
-                    0.5,
-                    -9
-                )
-                SliderButton.Position = pos
-                SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
+                local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                local clampedX = math.clamp(relativeX, 0, 1)
                 
-                local value = math.floor(min + (pos.X.Scale * (max - min)))
+                SliderButton.Position = UDim2.new(clampedX, -9, 0.5, -9)
+                SliderFill.Size = UDim2.new(clampedX, 0, 1, 0)
+                
+                local value = math.floor(min + (clampedX * (max - min)))
                 SliderLabel.Text = name .. ": " .. value
                 
                 if callback then
@@ -568,24 +578,24 @@ function OxireunUI:NewWindow(title)
             end
             
             SliderButton.MouseButton1Down:Connect(function()
-                dragging = true
+                draggingSlider = true
             end)
             
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = true
+                    draggingSlider = true
                     updateSlider(input)
                 end
             end)
             
             game:GetService("UserInputService").InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
+                    draggingSlider = false
                 end
             end)
             
             game:GetService("UserInputService").InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
                     updateSlider(input)
                 end
             end)
