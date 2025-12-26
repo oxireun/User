@@ -1,5 +1,5 @@
--- Blue UI Library v7
--- Larger slider/toggle labels, white text buttons, fixed draggable
+-- Blue UI Library - Final Version
+-- Fixed dragging, bold fonts, no button effects
 
 local BlueUI = {}
 BlueUI.__index = BlueUI
@@ -26,7 +26,8 @@ local Fonts = {
     Title = Enum.Font.GothamBold,
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
-    Button = Enum.Font.Gotham
+    Button = Enum.Font.Gotham,
+    Bold = Enum.Font.GothamBold  -- BOLD FONT
 }
 
 -- UI Boyutları
@@ -176,39 +177,46 @@ function BlueUI:NewWindow(title)
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- DRAGGABLE FONKSİYONLUK - KESİN ÇÖZÜM
+    -- DRAGGABLE FONKSİYONLUK - YENİ YÖNTEM
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
-    local dragInput, dragStart, startPos
+    local dragStart, startPos
+    
+    -- Mouse'u takip eden fonksiyon
+    local function updateDrag()
+        if not dragging then return end
+        
+        local mouse = UserInputService:GetMouseLocation()
+        local delta = Vector2.new(mouse.X, mouse.Y) - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
     
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = input.Position
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
             startPos = MainFrame.Position
+            
+            -- Mouse hareketini dinle
+            local connection
+            connection = game:GetService("RunService").Heartbeat:Connect(function()
+                updateDrag()
+            end)
+            
+            -- Mouse bırakıldığında
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    if connection then
+                        connection:Disconnect()
+                    end
                 end
             end)
-        end
-    end)
-    
-    TitleBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            MainFrame.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
         end
     end)
     
@@ -229,7 +237,7 @@ function BlueUI:NewWindow(title)
         end
     end)
     
-    -- Buton hover efektleri
+    -- Buton hover efektleri - SADECE ARKA PLAN RENGİ DEĞİŞİMİ
     local function SetupButtonHover(button, isControlButton)
         if isControlButton then return end
         
@@ -249,27 +257,9 @@ function BlueUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- Tıklama efekti
+    -- Tıklama efekti - KALDIRILDI
     local function CreateClickEffect(button)
-        local effect = Instance.new("Frame")
-        effect.Name = "ClickEffect"
-        effect.Size = UDim2.new(1, 0, 1, 0)
-        effect.BackgroundColor3 = Colors.Accent
-        effect.BackgroundTransparency = 0.7
-        effect.ZIndex = -1
-        effect.Parent = button
-        
-        local effectCorner = Instance.new("UICorner")
-        effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 6)
-        effectCorner.Parent = effect
-        
-        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
-            BackgroundTransparency = 1
-        }):Play()
-        
-        delay(0.3, function()
-            effect:Destroy()
-        end)
+        -- İptal edildi - hiçbir şey yapma
     end
     
     -- Yeni section ekleme fonksiyonu
@@ -358,7 +348,7 @@ function BlueUI:NewWindow(title)
             Button.Size = UDim2.new(1, -10, 0, 35)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
-            Button.TextColor3 = Colors.Text -- SADECE BEYAZ YAZI
+            Button.TextColor3 = Colors.Text
             Button.TextSize = 14
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
@@ -368,15 +358,11 @@ function BlueUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = Button
             
-            local btnStroke = Instance.new("UIStroke")
-            btnStroke.Color = Colors.Border
-            btnStroke.Thickness = 1
-            btnStroke.Parent = Button
+            -- UIStroke KALDIRILDI (ışık efekti)
             
             SetupButtonHover(Button, false)
             
             Button.MouseButton1Click:Connect(function()
-                CreateClickEffect(Button)
                 if callback then
                     callback()
                 end
@@ -397,8 +383,8 @@ function BlueUI:NewWindow(title)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
-            ToggleLabel.TextSize = 14 -- DAHA BÜYÜK
-            ToggleLabel.Font = Fonts.Normal
+            ToggleLabel.TextSize = 14
+            ToggleLabel.Font = Fonts.Bold  -- BOLD FONT
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
             
@@ -472,8 +458,8 @@ function BlueUI:NewWindow(title)
             SliderLabel.BackgroundTransparency = 1
             SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
-            SliderLabel.TextSize = 14 -- DAHA BÜYÜK
-            SliderLabel.Font = Fonts.Normal
+            SliderLabel.TextSize = 14
+            SliderLabel.Font = Fonts.Bold  -- BOLD FONT
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
             
@@ -573,10 +559,7 @@ function BlueUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
             
-            local btnStroke = Instance.new("UIStroke")
-            btnStroke.Color = Colors.Border
-            btnStroke.Thickness = 1
-            btnStroke.Parent = DropdownButton
+            -- UIStroke KALDIRILDI (ışık efekti)
             
             SetupButtonHover(DropdownButton, false)
             
@@ -592,8 +575,6 @@ function BlueUI:NewWindow(title)
             end
             
             DropdownButton.MouseButton1Click:Connect(function()
-                CreateClickEffect(DropdownButton)
-                
                 if open then
                     CloseOptions()
                     return
@@ -646,11 +627,6 @@ function BlueUI:NewWindow(title)
                     optionCorner.CornerRadius = UDim.new(0, 4)
                     optionCorner.Parent = OptionButton
                     
-                    local optionStroke = Instance.new("UIStroke")
-                    optionStroke.Color = Colors.Border
-                    optionStroke.Thickness = 1
-                    optionStroke.Parent = OptionButton
-                    
                     OptionButton.MouseEnter:Connect(function()
                         OptionButton.BackgroundColor3 = Colors.Border
                     end)
@@ -660,7 +636,6 @@ function BlueUI:NewWindow(title)
                     end)
                     
                     OptionButton.MouseButton1Click:Connect(function()
-                        CreateClickEffect(OptionButton)
                         DropdownButton.Text = option
                         if callback then
                             callback(option)
