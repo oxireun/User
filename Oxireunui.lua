@@ -1,27 +1,25 @@
--- Oxireun UI Library v2
--- Final optimized version
+-- Blue UI Library - Final Version
+-- Fixed controls, draggable, smaller UI, blue colors
 
-local OxireunUI = {}
-OxireunUI.__index = OxireunUI
+local BlueUI = {}
+BlueUI.__index = BlueUI
 
--- İyileştirilmiş mavi tonları (daha az gri, daha çok mavi)
+-- İyileştirilmiş MAVİ renk paleti
 local Colors = {
-    Background = Color3.fromRGB(10, 15, 30),
-    SecondaryBg = Color3.fromRGB(20, 30, 60),
-    SectionBg = Color3.fromRGB(25, 40, 80), -- DAHA MAVİ
-    Border = Color3.fromRGB(0, 180, 255),
+    Background = Color3.fromRGB(15, 20, 45),
+    SecondaryBg = Color3.fromRGB(25, 40, 80), -- DAHA MAVİ
+    SectionBg = Color3.fromRGB(20, 35, 70), -- MAVİ TON
+    Border = Color3.fromRGB(0, 170, 255),
     Accent = Color3.fromRGB(0, 200, 255),
     Text = Color3.fromRGB(255, 255, 255),
-    Disabled = Color3.fromRGB(120, 140, 180),
-    Hover = Color3.fromRGB(0, 180, 255, 0.3),
-    Button = Color3.fromRGB(35, 55, 110), -- DAHA MAVİ
-    Slider = Color3.fromRGB(0, 180, 255),
-    ToggleOn = Color3.fromRGB(0, 180, 255),
-    ToggleOff = Color3.fromRGB(60, 85, 140), -- DAHA MAVİ
-    TabActive = Color3.fromRGB(0, 180, 255),
-    TabInactive = Color3.fromRGB(35, 55, 110), -- DAHA MAVİ
-    ControlClose = Color3.fromRGB(255, 200, 0), -- SARI
-    ControlMinimize = Color3.fromRGB(20, 20, 20) -- SİYAH
+    Disabled = Color3.fromRGB(150, 170, 200),
+    Hover = Color3.fromRGB(0, 170, 255, 0.4),
+    Button = Color3.fromRGB(35, 60, 110), -- DAHA MAVİ
+    Slider = Color3.fromRGB(0, 170, 255),
+    ToggleOn = Color3.fromRGB(0, 170, 255),
+    ToggleOff = Color3.fromRGB(60, 90, 140), -- MAVİMSİ
+    TabActive = Color3.fromRGB(0, 170, 255),
+    TabInactive = Color3.fromRGB(40, 65, 110) -- MAVİ
 }
 
 -- Font ayarları
@@ -30,37 +28,36 @@ local Fonts = {
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
-    Bold = Enum.Font.GothamBold,
-    Control = Enum.Font.GothamBold -- Kontrol butonları için
+    Bold = Enum.Font.GothamBold
 }
 
 -- UI Boyutları - BİRAZ DAHA KÜÇÜK
 local UI_SIZE = {
     Width = 310,
-    Height = 320
+    Height = 310  -- DAHA KÜÇÜK
 }
 
 -- Ana Library fonksiyonu
-function OxireunUI.new()
-    local self = setmetatable({}, OxireunUI)
+function BlueUI.new()
+    local self = setmetatable({}, BlueUI)
     self.Windows = {}
     return self
 end
 
 -- Yeni pencere oluşturma
-function OxireunUI:NewWindow(title)
+function BlueUI:NewWindow(title)
     local Window = {}
-    Window.Title = title or "Oxireun UI"
+    Window.Title = title or "Blue UI"
     Window.Sections = {}
     Window.CurrentSection = nil
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "OxireunUI"
+    ScreenGui.Name = "BlueUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    -- Ana pencere
+    -- Ana pencere - SOLDAN AÇILIYOR
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
     MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
@@ -83,10 +80,10 @@ function OxireunUI:NewWindow(title)
     border.Transparency = 0
     border.Parent = MainFrame
     
-    -- Başlık çubuğu (DRAGGABLE)
+    -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
-    TitleBar.Size = UDim2.new(1, 0, 0, 32)
+    TitleBar.Size = UDim2.new(1, 0, 0, 30)
     TitleBar.BackgroundColor3 = Colors.SecondaryBg
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = MainFrame
@@ -103,7 +100,7 @@ function OxireunUI:NewWindow(title)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 15
+    TitleLabel.TextSize = 14
     TitleLabel.Font = Fonts.Title
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
@@ -111,21 +108,21 @@ function OxireunUI:NewWindow(title)
     -- Kontrol butonları - YENİ TASARIM
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 60, 1, 0)
-    Controls.Position = UDim2.new(1, -65, 0, 0)
+    Controls.Size = UDim2.new(0, 55, 1, 0)
+    Controls.Position = UDim2.new(1, -60, 0, 0)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
-    -- Küçültme butonu - SİYAH, YUVARLAK
+    -- Minimize butonu - SİYAH ve YUVARLAK
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
-    MinimizeButton.Size = UDim2.new(0, 24, 0, 24)
-    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -12)
-    MinimizeButton.BackgroundColor3 = Colors.ControlMinimize
+    MinimizeButton.Size = UDim2.new(0, 22, 0, 22)
+    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -11)
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- SİYAH
     MinimizeButton.Text = "-"
     MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 20
-    MinimizeButton.Font = Fonts.Control
+    MinimizeButton.TextSize = 18
+    MinimizeButton.Font = Fonts.Normal
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
     
@@ -133,16 +130,16 @@ function OxireunUI:NewWindow(title)
     minimizeCorner.CornerRadius = UDim.new(1, 0) -- TAM YUVARLAK
     minimizeCorner.Parent = MinimizeButton
     
-    -- Kapatma butonu - SARI, YUVARLAK
+    -- Kapatma butonu - SARI ve YUVARLAK
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
-    CloseButton.Size = UDim2.new(0, 24, 0, 24)
-    CloseButton.Position = UDim2.new(0, 31, 0.5, -12)
-    CloseButton.BackgroundColor3 = Colors.ControlClose
+    CloseButton.Size = UDim2.new(0, 22, 0, 22)
+    CloseButton.Position = UDim2.new(0, 28, 0.5, -11)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 255, 0) -- SARI
     CloseButton.Text = "×"
-    CloseButton.TextColor3 = Colors.Text
-    CloseButton.TextSize = 20
-    CloseButton.Font = Fonts.Control
+    CloseButton.TextColor3 = Color3.fromRGB(0, 0, 0) -- SİYAH YAZI
+    CloseButton.TextSize = 18
+    CloseButton.Font = Fonts.Normal
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
     
@@ -154,7 +151,7 @@ function OxireunUI:NewWindow(title)
     local TabsScrollFrame = Instance.new("ScrollingFrame")
     TabsScrollFrame.Name = "TabsScroll"
     TabsScrollFrame.Size = UDim2.new(1, -20, 0, 28)
-    TabsScrollFrame.Position = UDim2.new(0, 10, 0, 37)
+    TabsScrollFrame.Position = UDim2.new(0, 10, 0, 35)
     TabsScrollFrame.BackgroundTransparency = 1
     TabsScrollFrame.BorderSizePixel = 0
     TabsScrollFrame.ScrollBarThickness = 4
@@ -174,16 +171,16 @@ function OxireunUI:NewWindow(title)
     TabsList.Padding = UDim.new(0, 5)
     TabsList.Parent = TabsContainer
     
-    -- İçerik alanı
+    -- İçerik alanı - BOYUT AYARLANDI
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1, -20, 1, -75)
-    ContentArea.Position = UDim2.new(0, 10, 0, 70)
+    ContentArea.Size = UDim2.new(1, -20, 1, -73) -- Ayarlanmış
+    ContentArea.Position = UDim2.new(0, 10, 0, 68) -- Tab'lerden sonra boşluk
     ContentArea.BackgroundTransparency = 1
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- DRAGGABLE FONKSİYONLUK - KESİN ÇÖZÜM
+    -- TAM DRAGGABLE FONKSİYONLUK - SADECE TITLEBAR
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
     local dragInput, dragStart, startPos
@@ -227,23 +224,25 @@ function OxireunUI:NewWindow(title)
     -- Buton hover efektleri
     local function SetupButtonHover(button, isControlButton)
         if isControlButton then 
+            local originalColor = button.BackgroundColor3
+            
             button.MouseEnter:Connect(function()
                 if button.Name == "Close" then
-                    button.BackgroundColor3 = Color3.fromRGB(255, 220, 50)
+                    button.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+                elseif button.Name == "Minimize" then
+                    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 else
-                    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    button.BackgroundColor3 = Color3.fromRGB(80, 100, 140)
                 end
             end)
             
             button.MouseLeave:Connect(function()
-                if button.Name == "Close" then
-                    button.BackgroundColor3 = Colors.ControlClose
-                else
-                    button.BackgroundColor3 = Colors.ControlMinimize
-                end
+                button.BackgroundColor3 = originalColor
             end)
             return
         end
+        
+        local originalColor = button.BackgroundColor3
         
         button.MouseEnter:Connect(function()
             game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
@@ -253,7 +252,7 @@ function OxireunUI:NewWindow(title)
         
         button.MouseLeave:Connect(function()
             game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-                BackgroundColor3 = Colors.Button
+                BackgroundColor3 = originalColor
             }):Play()
         end)
     end
@@ -261,10 +260,8 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- Buton tıklama efekti (sadece butonlar için)
+    -- Tıklama efekti (SADECE BUTONLAR İÇİN)
     local function CreateClickEffect(button)
-        if button:IsDescendantOf(Controls) then return end -- Kontrol butonları için efekt yok
-        
         local effect = Instance.new("Frame")
         effect.Name = "ClickEffect"
         effect.Size = UDim2.new(1, 0, 1, 0)
@@ -288,16 +285,18 @@ function OxireunUI:NewWindow(title)
     
     -- Buton event'leri
     CloseButton.MouseButton1Click:Connect(function()
+        CreateClickEffect(CloseButton)
         ScreenGui:Destroy()
     end)
     
     MinimizeButton.MouseButton1Click:Connect(function()
+        CreateClickEffect(MinimizeButton)
         if MainFrame.Size.Y.Offset == UI_SIZE.Height then
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 32) -- ANINDA
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 30) -- ANİ KÜÇÜLTME
             TabsScrollFrame.Visible = false
             ContentArea.Visible = false
         else
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height) -- ANINDA
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height) -- ANİ BÜYÜTME
             TabsScrollFrame.Visible = true
             ContentArea.Visible = true
         end
@@ -315,7 +314,7 @@ function OxireunUI:NewWindow(title)
         TabButton.BackgroundColor3 = Colors.TabInactive
         TabButton.Text = name
         TabButton.TextColor3 = Colors.Text
-        TabButton.TextSize = 12
+        TabButton.TextSize = 11
         TabButton.Font = Fonts.Tab
         TabButton.AutoButtonColor = false
         TabButton.Parent = TabsContainer
@@ -345,19 +344,19 @@ function OxireunUI:NewWindow(title)
         sectionCorner.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
-        sectionList.Padding = UDim.new(0, 8)
+        sectionList.Padding = UDim.new(0, 7)
         sectionList.Parent = SectionFrame
         
         local sectionPadding = Instance.new("UIPadding")
-        sectionPadding.PaddingTop = UDim.new(0, 8)
-        sectionPadding.PaddingBottom = UDim.new(0, 8)
-        sectionPadding.PaddingLeft = UDim.new(0, 8)
-        sectionPadding.PaddingRight = UDim.new(0, 8)
+        sectionPadding.PaddingTop = UDim.new(0, 7)
+        sectionPadding.PaddingBottom = UDim.new(0, 7)
+        sectionPadding.PaddingLeft = UDim.new(0, 7)
+        sectionPadding.PaddingRight = UDim.new(0, 7)
         sectionPadding.Parent = SectionFrame
         
         -- Canvas size güncelleme
         sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            SectionFrame.CanvasSize = UDim2.new(0, 0, 0, sectionList.AbsoluteContentSize.Y + 16)
+            SectionFrame.CanvasSize = UDim2.new(0, 0, 0, sectionList.AbsoluteContentSize.Y + 14)
         end)
         
         -- İlk section'u aktif yap
@@ -369,6 +368,8 @@ function OxireunUI:NewWindow(title)
         
         -- Tab değiştirme
         TabButton.MouseButton1Click:Connect(function()
+            CreateClickEffect(TabButton)
+            
             -- Tüm tab'leri pasif yap
             for _, tab in pairs(TabsContainer:GetChildren()) do
                 if tab:IsA("TextButton") then
@@ -451,7 +452,7 @@ function OxireunUI:NewWindow(title)
             local ToggleCircle = Instance.new("Frame")
             ToggleCircle.Name = "Circle"
             ToggleCircle.Size = UDim2.new(0, 16, 0, 16)
-            ToggleCircle.Position = UDim2.new(0, default and 22 or 2, 0.5, -8)
+            ToggleCircle.Position = UDim2.new(0, default and 23 or 2, 0.5, -8)
             ToggleCircle.BackgroundColor3 = Colors.Text
             ToggleCircle.Parent = ToggleButton
             
@@ -474,8 +475,9 @@ function OxireunUI:NewWindow(title)
             end)
             
             ToggleButton.MouseButton1Click:Connect(function()
+                CreateClickEffect(ToggleButton)
                 state = not state
-                local targetPos = state and 22 or 2
+                local targetPos = state and 23 or 2
                 
                 game:GetService("TweenService"):Create(ToggleCircle, TweenInfo.new(0.2), {
                     Position = UDim2.new(0, targetPos, 0.5, -8)
@@ -513,7 +515,7 @@ function OxireunUI:NewWindow(title)
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "Track"
             SliderTrack.Size = UDim2.new(1, 0, 0, 4)
-            SliderTrack.Position = UDim2.new(0, 0, 0, 23)
+            SliderTrack.Position = UDim2.new(0, 0, 0, 22)
             SliderTrack.BackgroundColor3 = Colors.ToggleOff
             SliderTrack.Parent = Slider
             
@@ -761,4 +763,4 @@ function OxireunUI:NewWindow(title)
 end
 
 -- Library'yi döndür
-return OxireunUI.new()
+return BlueUI.new()
