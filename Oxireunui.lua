@@ -1,27 +1,28 @@
--- Oxireun UI Library
--- Final Version with all fixes
+-- Oxireun UI Library - Final Version
+-- Fixed colors, draggable, improved buttons
 
-local BlueUI = {}
-BlueUI.__index = BlueUI
+local OxireunUI = {}
+OxireunUI.__index = OxireunUI
 
--- İyileştirilmiş renk paleti - DAHA GÜZEL RENKLER
+-- İyileştirilmiş gri-mavi renk paleti
 local Colors = {
-    Background = Color3.fromRGB(20, 25, 45),
-    SecondaryBg = Color3.fromRGB(35, 45, 75),
-    SectionBg = Color3.fromRGB(25, 35, 60),
-    Border = Color3.fromRGB(0, 180, 255),
-    Accent = Color3.fromRGB(0, 210, 255),
-    Text = Color3.fromRGB(255, 255, 255),
-    Disabled = Color3.fromRGB(160, 160, 190),
-    Hover = Color3.fromRGB(0, 180, 255, 0.4),
-    Button = Color3.fromRGB(50, 70, 110), -- DAHA GÜZEL GRİ-MAVİ
-    Slider = Color3.fromRGB(0, 180, 255),
-    ToggleOn = Color3.fromRGB(0, 180, 255),
-    ToggleOff = Color3.fromRGB(75, 95, 135),
-    TabActive = Color3.fromRGB(0, 180, 255),
-    TabInactive = Color3.fromRGB(50, 70, 110),
-    ControlOrange = Color3.fromRGB(255, 120, 0), -- ORANGE
-    ControlGreen = Color3.fromRGB(0, 200, 80)  -- YEŞİL
+    Background = Color3.fromRGB(25, 30, 45),
+    SecondaryBg = Color3.fromRGB(35, 45, 65),
+    SectionBg = Color3.fromRGB(30, 40, 60),
+    Border = Color3.fromRGB(60, 120, 200),
+    Accent = Color3.fromRGB(80, 140, 220),
+    Text = Color3.fromRGB(240, 240, 245),
+    Disabled = Color3.fromRGB(120, 120, 140),
+    Hover = Color3.fromRGB(60, 120, 200, 0.3),
+    Button = Color3.fromRGB(50, 70, 100),
+    Slider = Color3.fromRGB(60, 120, 200),
+    ToggleOn = Color3.fromRGB(60, 120, 200),
+    ToggleOff = Color3.fromRGB(70, 80, 110),
+    TabActive = Color3.fromRGB(60, 120, 200),
+    TabInactive = Color3.fromRGB(50, 70, 100),
+    ControlButton = Color3.fromRGB(60, 120, 200),
+    CloseButton = Color3.fromRGB(255, 200, 0), -- SARI
+    MinimizeButton = Color3.fromRGB(0, 255, 0) -- LİME
 }
 
 -- Font ayarları
@@ -30,25 +31,24 @@ local Fonts = {
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
-    Bold = Enum.Font.GothamBold,
-    Code = Enum.Font.Code  -- KOD STİLİ SİMGELER İÇİN
+    Bold = Enum.Font.GothamBold
 }
 
--- UI Boyutları - DAHA KÜÇÜK
+-- UI Boyutları - BİRAZ DAHA KÜÇÜK
 local UI_SIZE = {
-    Width = 310,  -- BİRAZ DAHA KÜÇÜK
-    Height = 320  -- DAHA DA KÜÇÜK YAPILDI
+    Width = 300,
+    Height = 320
 }
 
 -- Ana Library fonksiyonu
-function BlueUI.new()
-    local self = setmetatable({}, BlueUI)
+function OxireunUI.new()
+    local self = setmetatable({}, OxireunUI)
     self.Windows = {}
     return self
 end
 
 -- Yeni pencere oluşturma
-function BlueUI:NewWindow(title)
+function OxireunUI:NewWindow(title)
     local Window = {}
     Window.Title = title or "Oxireun UI"
     Window.Sections = {}
@@ -64,7 +64,7 @@ function BlueUI:NewWindow(title)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
     MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
-    MainFrame.Position = UDim2.new(0, 15, 0.5, -UI_SIZE.Height/2)
+    MainFrame.Position = UDim2.new(0, 20, 0.5, -UI_SIZE.Height/2)
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -73,7 +73,7 @@ function BlueUI:NewWindow(title)
     
     -- Köşe yuvarlatma
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = MainFrame
     
     -- Mavi border
@@ -86,13 +86,13 @@ function BlueUI:NewWindow(title)
     -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
-    TitleBar.Size = UDim2.new(1, 0, 0, 35)
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
     TitleBar.BackgroundColor3 = Colors.SecondaryBg
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = MainFrame
     
     local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
+    titleCorner.CornerRadius = UDim.new(0, 8, 0, 0)
     titleCorner.Parent = TitleBar
     
     -- Başlık
@@ -103,58 +103,58 @@ function BlueUI:NewWindow(title)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 16
+    TitleLabel.TextSize = 15
     TitleLabel.Font = Fonts.Title
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
-    -- Kontrol butonları - YAN YANA YUVARLAK
+    -- Kontrol butonları
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 55, 1, 0)
-    Controls.Position = UDim2.new(1, -60, 0, 0)
+    Controls.Size = UDim2.new(0, 60, 1, 0)
+    Controls.Position = UDim2.new(1, -65, 0, 0)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
-    -- Küçültme butonu - YEŞİL, YUVARLAK, KOD STİLİ SİMGE
+    -- Küçültme butonu - LİME RENK
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
-    MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
-    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -12.5)
-    MinimizeButton.BackgroundColor3 = Colors.ControlGreen
-    MinimizeButton.Text = "−"  -- KOD STİLİ SİMGE
-    MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 22
-    MinimizeButton.Font = Fonts.Code  -- KOD FONTU
+    MinimizeButton.Size = UDim2.new(0, 24, 0, 24)
+    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -12)
+    MinimizeButton.BackgroundColor3 = Colors.MinimizeButton
+    MinimizeButton.Text = "-"
+    MinimizeButton.TextColor3 = Color3.fromRGB(0, 0, 0) -- SİYAH YAZI
+    MinimizeButton.TextSize = 20
+    MinimizeButton.Font = Enum.Font.GothamBold
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
     
     local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(1, 0)  -- TAM YUVARLAK
+    minimizeCorner.CornerRadius = UDim.new(1, 0) -- TAM YUVARLAK
     minimizeCorner.Parent = MinimizeButton
     
-    -- Kapatma butonu - ORANGE, YUVARLAK, KOD STİLİ SİMGE
+    -- Kapatma butonu - SARI RENK
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
-    CloseButton.Size = UDim2.new(0, 25, 0, 25)
-    CloseButton.Position = UDim2.new(0, 30, 0.5, -12.5)
-    CloseButton.BackgroundColor3 = Colors.ControlOrange
-    CloseButton.Text = "×"  -- KOD STİLİ SİMGE
-    CloseButton.TextColor3 = Colors.Text
-    CloseButton.TextSize = 22
-    CloseButton.Font = Fonts.Code  -- KOD FONTU
+    CloseButton.Size = UDim2.new(0, 24, 0, 24)
+    CloseButton.Position = UDim2.new(0, 30, 0.5, -12)
+    CloseButton.BackgroundColor3 = Colors.CloseButton
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = Color3.fromRGB(0, 0, 0) -- SİYAH YAZI
+    CloseButton.TextSize = 20
+    CloseButton.Font = Enum.Font.GothamBold
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
     
     local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(1, 0)  -- TAM YUVARLAK
+    closeCorner.CornerRadius = UDim.new(1, 0) -- TAM YUVARLAK
     closeCorner.Parent = CloseButton
     
     -- Tab'ler için yatay scrolling frame
     local TabsScrollFrame = Instance.new("ScrollingFrame")
     TabsScrollFrame.Name = "TabsScroll"
-    TabsScrollFrame.Size = UDim2.new(1, -20, 0, 30)
-    TabsScrollFrame.Position = UDim2.new(0, 10, 0, 40)
+    TabsScrollFrame.Size = UDim2.new(1, -20, 0, 28)
+    TabsScrollFrame.Position = UDim2.new(0, 10, 0, 37)
     TabsScrollFrame.BackgroundTransparency = 1
     TabsScrollFrame.BorderSizePixel = 0
     TabsScrollFrame.ScrollBarThickness = 4
@@ -177,13 +177,13 @@ function BlueUI:NewWindow(title)
     -- İçerik alanı
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1, -20, 1, -80)
-    ContentArea.Position = UDim2.new(0, 10, 0, 75)
+    ContentArea.Size = UDim2.new(1, -20, 1, -75)
+    ContentArea.Position = UDim2.new(0, 10, 0, 70)
     ContentArea.BackgroundTransparency = 1
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- DRAGGABLE FONKSİYONLUK - TÜM PENCERE İÇİN
+    -- DRAGGABLE FONKSİYONLUK - TÜM UI
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
     local dragInput, dragStart, startPos
@@ -200,6 +200,12 @@ function BlueUI:NewWindow(title)
     
     MainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            -- Butonlara tıklanıyorsa draggable olmasın
+            local target = input.Target
+            if target:IsA("TextButton") then
+                return
+            end
+            
             dragging = true
             dragStart = input.Position
             startPos = MainFrame.Position
@@ -224,30 +230,44 @@ function BlueUI:NewWindow(title)
         end
     end)
     
-    -- Buton hover efektleri - SADECE KONTROL BUTONLARI İÇİN
-    local function SetupControlButtonHover(button, originalColor)
-        button.MouseEnter:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.15), {
-                BackgroundColor3 = Color3.fromRGB(
-                    math.min(originalColor.R * 255 + 30, 255),
-                    math.min(originalColor.G * 255 + 30, 255),
-                    math.min(originalColor.B * 255 + 30, 255)
-                ) / 255
-            }):Play()
-        end)
+    -- Buton event'leri
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+    
+    MinimizeButton.MouseButton1Click:Connect(function()
+        if MainFrame.Size.Y.Offset == UI_SIZE.Height then
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 32) -- ANİDEN KÜÇÜLSÜN
+            TabsScrollFrame.Visible = false
+            ContentArea.Visible = false
+        else
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
+            TabsScrollFrame.Visible = true
+            ContentArea.Visible = true
+        end
+    end)
+    
+    -- Buton hover efektleri - SADECE NORMAL BUTONLAR İÇİN
+    local function SetupButtonHover(button, isControlButton)
+        if isControlButton then 
+            button.MouseEnter:Connect(function()
+                if button.Name == "Close" then
+                    button.BackgroundColor3 = Color3.fromRGB(255, 220, 50)
+                else
+                    button.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+                end
+            end)
+            
+            button.MouseLeave:Connect(function()
+                if button.Name == "Close" then
+                    button.BackgroundColor3 = Colors.CloseButton
+                else
+                    button.BackgroundColor3 = Colors.MinimizeButton
+                end
+            end)
+            return
+        end
         
-        button.MouseLeave:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.15), {
-                BackgroundColor3 = originalColor
-            }):Play()
-        end)
-    end
-    
-    SetupControlButtonHover(CloseButton, Colors.ControlOrange)
-    SetupControlButtonHover(MinimizeButton, Colors.ControlGreen)
-    
-    -- Normal buton hover efektleri
-    local function SetupButtonHover(button)
         button.MouseEnter:Connect(function()
             game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
                 BackgroundColor3 = Colors.Border
@@ -261,7 +281,10 @@ function BlueUI:NewWindow(title)
         end)
     end
     
-    -- Tıklama efekti - SADECE BUTONLAR İÇİN
+    SetupButtonHover(CloseButton, true)
+    SetupButtonHover(MinimizeButton, true)
+    
+    -- Tıklama efekti - SADECE NORMAL BUTONLAR İÇİN
     local function CreateClickEffect(button)
         local effect = Instance.new("Frame")
         effect.Name = "ClickEffect"
@@ -284,23 +307,6 @@ function BlueUI:NewWindow(title)
         end)
     end
     
-    -- Buton event'leri
-    CloseButton.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-    end)
-    
-    MinimizeButton.MouseButton1Click:Connect(function()
-        if MainFrame.Size.Y.Offset == UI_SIZE.Height then
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35)  -- HIZLI KÜÇÜLTME
-            TabsScrollFrame.Visible = false
-            ContentArea.Visible = false
-        else
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)  -- HIZLI BÜYÜTME
-            TabsScrollFrame.Visible = true
-            ContentArea.Visible = true
-        end
-    end)
-    
     -- Yeni section ekleme fonksiyonu
     function Window:NewSection(name)
         local Section = {}
@@ -309,11 +315,11 @@ function BlueUI:NewWindow(title)
         -- Tab butonu oluştur
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name .. "_Tab"
-        TabButton.Size = UDim2.new(0, 65, 0, 25)  -- DAHA KÜÇÜK
+        TabButton.Size = UDim2.new(0, 65, 0, 24)
         TabButton.BackgroundColor3 = Colors.TabInactive
         TabButton.Text = name
         TabButton.TextColor3 = Colors.Text
-        TabButton.TextSize = 11  -- DAHA KÜÇÜK
+        TabButton.TextSize = 11
         TabButton.Font = Fonts.Tab
         TabButton.AutoButtonColor = false
         TabButton.Parent = TabsContainer
@@ -322,7 +328,11 @@ function BlueUI:NewWindow(title)
         tabCorner.CornerRadius = UDim.new(0, 6)
         tabCorner.Parent = TabButton
         
-        SetupButtonHover(TabButton)
+        SetupButtonHover(TabButton, false)
+        
+        TabButton.MouseButton1Click:Connect(function()
+            CreateClickEffect(TabButton)
+        end)
         
         -- Section içeriği için ScrollingFrame
         local SectionFrame = Instance.new("ScrollingFrame")
@@ -343,19 +353,19 @@ function BlueUI:NewWindow(title)
         sectionCorner.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
-        sectionList.Padding = UDim.new(0, 7)  -- DAHA AZ PADDING
+        sectionList.Padding = UDim.new(0, 8)
         sectionList.Parent = SectionFrame
         
         local sectionPadding = Instance.new("UIPadding")
-        sectionPadding.PaddingTop = UDim.new(0, 7)
-        sectionPadding.PaddingBottom = UDim.new(0, 7)
-        sectionPadding.PaddingLeft = UDim.new(0, 7)
-        sectionPadding.PaddingRight = UDim.new(0, 7)
+        sectionPadding.PaddingTop = UDim.new(0, 8)
+        sectionPadding.PaddingBottom = UDim.new(0, 8)
+        sectionPadding.PaddingLeft = UDim.new(0, 8)
+        sectionPadding.PaddingRight = UDim.new(0, 8)
         sectionPadding.Parent = SectionFrame
         
         -- Canvas size güncelleme
         sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            SectionFrame.CanvasSize = UDim2.new(0, 0, 0, sectionList.AbsoluteContentSize.Y + 14)
+            SectionFrame.CanvasSize = UDim2.new(0, 0, 0, sectionList.AbsoluteContentSize.Y + 16)
         end)
         
         -- İlk section'u aktif yap
@@ -391,11 +401,11 @@ function BlueUI:NewWindow(title)
         function Section:CreateButton(name, callback)
             local Button = Instance.new("TextButton")
             Button.Name = name
-            Button.Size = UDim2.new(1, 0, 0, 32)  -- DAHA KÜÇÜK
+            Button.Size = UDim2.new(1, 0, 0, 32)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
             Button.TextColor3 = Colors.Text
-            Button.TextSize = 13  -- DAHA KÜÇÜK
+            Button.TextSize = 13
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
             Button.Parent = SectionFrame
@@ -404,7 +414,7 @@ function BlueUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = Button
             
-            SetupButtonHover(Button)
+            SetupButtonHover(Button, false)
             
             Button.MouseButton1Click:Connect(function()
                 CreateClickEffect(Button)
@@ -419,7 +429,7 @@ function BlueUI:NewWindow(title)
         function Section:CreateToggle(name, default, callback)
             local Toggle = Instance.new("Frame")
             Toggle.Name = name
-            Toggle.Size = UDim2.new(1, 0, 0, 32)  -- DAHA KÜÇÜK
+            Toggle.Size = UDim2.new(1, 0, 0, 32)
             Toggle.BackgroundTransparency = 1
             Toggle.Parent = SectionFrame
             
@@ -428,14 +438,14 @@ function BlueUI:NewWindow(title)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
-            ToggleLabel.TextSize = 13  -- DAHA KÜÇÜK
+            ToggleLabel.TextSize = 13
             ToggleLabel.Font = Fonts.Bold
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
             
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "Toggle"
-            ToggleButton.Size = UDim2.new(0, 42, 0, 20)  -- DAHA KÜÇÜK
+            ToggleButton.Size = UDim2.new(0, 40, 0, 20)
             ToggleButton.Position = UDim2.new(1, -45, 0.5, -10)
             ToggleButton.BackgroundColor3 = default and Colors.ToggleOn or Colors.ToggleOff
             ToggleButton.Text = ""
@@ -448,8 +458,8 @@ function BlueUI:NewWindow(title)
             
             local ToggleCircle = Instance.new("Frame")
             ToggleCircle.Name = "Circle"
-            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)  -- DAHA KÜÇÜK
-            ToggleCircle.Position = UDim2.new(0, default and 22 or 2, 0.5, -8)
+            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)
+            ToggleCircle.Position = UDim2.new(0, default and 21 or 2, 0.5, -8)
             ToggleCircle.BackgroundColor3 = Colors.Text
             ToggleCircle.Parent = ToggleButton
             
@@ -473,7 +483,7 @@ function BlueUI:NewWindow(title)
             
             ToggleButton.MouseButton1Click:Connect(function()
                 state = not state
-                local targetPos = state and 22 or 2
+                local targetPos = state and 21 or 2
                 
                 game:GetService("TweenService"):Create(ToggleCircle, TweenInfo.new(0.2), {
                     Position = UDim2.new(0, targetPos, 0.5, -8)
@@ -494,23 +504,23 @@ function BlueUI:NewWindow(title)
         function Section:CreateSlider(name, min, max, default, callback)
             local Slider = Instance.new("Frame")
             Slider.Name = name
-            Slider.Size = UDim2.new(1, 0, 0, 45)  -- DAHA KÜÇÜK
+            Slider.Size = UDim2.new(1, 0, 0, 45)
             Slider.BackgroundTransparency = 1
             Slider.Parent = SectionFrame
             
             local SliderLabel = Instance.new("TextLabel")
-            SliderLabel.Size = UDim2.new(1, 0, 0, 18)  -- DAHA KÜÇÜK
+            SliderLabel.Size = UDim2.new(1, 0, 0, 18)
             SliderLabel.BackgroundTransparency = 1
-            SliderLabel.Text = "Speed Hack: " .. default
+            SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
-            SliderLabel.TextSize = 13  -- DAHA KÜÇÜK
+            SliderLabel.TextSize = 13
             SliderLabel.Font = Fonts.Bold
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
             
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "Track"
-            SliderTrack.Size = UDim2.new(1, 0, 0, 4)  -- DAHA İNCE
+            SliderTrack.Size = UDim2.new(1, 0, 0, 4)
             SliderTrack.Position = UDim2.new(0, 0, 0, 22)
             SliderTrack.BackgroundColor3 = Colors.ToggleOff
             SliderTrack.Parent = Slider
@@ -531,7 +541,7 @@ function BlueUI:NewWindow(title)
             
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
-            SliderButton.Size = UDim2.new(0, 16, 0, 16)  -- DAHA KÜÇÜK
+            SliderButton.Size = UDim2.new(0, 16, 0, 16)
             SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8)
             SliderButton.BackgroundColor3 = Colors.Text
             SliderButton.Text = ""
@@ -555,7 +565,7 @@ function BlueUI:NewWindow(title)
                 SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
                 
                 local value = math.floor(min + (pos.X.Scale * (max - min)))
-                SliderLabel.Text = "Speed Hack: " .. value
+                SliderLabel.Text = name .. ": " .. value
                 
                 if callback then
                     callback(value)
@@ -564,7 +574,6 @@ function BlueUI:NewWindow(title)
             
             SliderButton.MouseButton1Down:Connect(function()
                 dragging = true
-                CreateClickEffect(SliderButton)
             end)
             
             SliderTrack.InputBegan:Connect(function(input)
@@ -592,7 +601,7 @@ function BlueUI:NewWindow(title)
         function Section:CreateDropdown(name, options, default, callback)
             local Dropdown = Instance.new("Frame")
             Dropdown.Name = name
-            Dropdown.Size = UDim2.new(1, 0, 0, 32)  -- DAHA KÜÇÜK
+            Dropdown.Size = UDim2.new(1, 0, 0, 32)
             Dropdown.BackgroundTransparency = 1
             Dropdown.ClipsDescendants = false
             Dropdown.Parent = SectionFrame
@@ -603,7 +612,7 @@ function BlueUI:NewWindow(title)
             DropdownButton.BackgroundColor3 = Colors.Button
             DropdownButton.Text = options[default] or options[1] or "Select"
             DropdownButton.TextColor3 = Colors.Text
-            DropdownButton.TextSize = 13  -- DAHA KÜÇÜK
+            DropdownButton.TextSize = 13
             DropdownButton.Font = Fonts.Normal
             DropdownButton.AutoButtonColor = false
             DropdownButton.Parent = Dropdown
@@ -612,7 +621,11 @@ function BlueUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
             
-            SetupButtonHover(DropdownButton)
+            SetupButtonHover(DropdownButton, false)
+            
+            DropdownButton.MouseButton1Click:Connect(function()
+                CreateClickEffect(DropdownButton)
+            end)
             
             local open = false
             local OptionsContainer
@@ -626,8 +639,6 @@ function BlueUI:NewWindow(title)
             end
             
             DropdownButton.MouseButton1Click:Connect(function()
-                CreateClickEffect(DropdownButton)
-                
                 if open then
                     CloseOptions()
                     return
@@ -645,7 +656,7 @@ function BlueUI:NewWindow(title)
                 -- Options container
                 OptionsContainer = Instance.new("Frame")
                 OptionsContainer.Name = "OptionsContainer"
-                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 8)  -- DAHA KÜÇÜK
+                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 10)
                 OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 
                                                       0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
                 OptionsContainer.BackgroundColor3 = Colors.SectionBg
@@ -660,12 +671,12 @@ function BlueUI:NewWindow(title)
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
                     OptionButton.Name = option
-                    OptionButton.Size = UDim2.new(1, -8, 0, 20)  -- DAHA KÜÇÜK
-                    OptionButton.Position = UDim2.new(0, 4, 0, (i-1)*22 + 4)
+                    OptionButton.Size = UDim2.new(1, -10, 0, 20)
+                    OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*22 + 5)
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
                     OptionButton.TextColor3 = Colors.Text
-                    OptionButton.TextSize = 11  -- DAHA KÜÇÜK
+                    OptionButton.TextSize = 11
                     OptionButton.Font = Fonts.Normal
                     OptionButton.AutoButtonColor = false
                     OptionButton.ZIndex = 101
@@ -675,13 +686,7 @@ function BlueUI:NewWindow(title)
                     optionCorner.CornerRadius = UDim.new(0, 4)
                     optionCorner.Parent = OptionButton
                     
-                    OptionButton.MouseEnter:Connect(function()
-                        OptionButton.BackgroundColor3 = Colors.Border
-                    end)
-                    
-                    OptionButton.MouseLeave:Connect(function()
-                        OptionButton.BackgroundColor3 = Colors.Button
-                    end)
+                    SetupButtonHover(OptionButton, false)
                     
                     OptionButton.MouseButton1Click:Connect(function()
                         CreateClickEffect(OptionButton)
@@ -718,7 +723,7 @@ function BlueUI:NewWindow(title)
         function Section:CreateTextbox(name, callback)
             local Textbox = Instance.new("Frame")
             Textbox.Name = name
-            Textbox.Size = UDim2.new(1, 0, 0, 32)  -- DAHA KÜÇÜK
+            Textbox.Size = UDim2.new(1, 0, 0, 32)
             Textbox.BackgroundTransparency = 1
             Textbox.Parent = SectionFrame
             
@@ -730,7 +735,7 @@ function BlueUI:NewWindow(title)
             InputBox.PlaceholderText = "Enter"
             InputBox.TextColor3 = Colors.Text
             InputBox.PlaceholderColor3 = Colors.Text
-            InputBox.TextSize = 13  -- DAHA KÜÇÜK
+            InputBox.TextSize = 13
             InputBox.Font = Fonts.Normal
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
             InputBox.Parent = Textbox
@@ -760,4 +765,4 @@ function BlueUI:NewWindow(title)
 end
 
 -- Library'yi döndür
-return BlueUI.new()
+return OxireunUI.new()
