@@ -1,15 +1,15 @@
--- Neon Mavi UI Library
--- Mobile uyumlu, küçük boyutlu
+-- Clean Blue UI Library
+-- Fixed issues, draggable, mobile-friendly
 
-local NeonBlueUI = {}
-NeonBlueUI.__index = NeonBlueUI
+local CleanBlueUI = {}
+CleanBlueUI.__index = CleanBlueUI
 
 -- Açık mavi renk paleti
 local Colors = {
     Background = Color3.fromRGB(15, 20, 35),
     SecondaryBg = Color3.fromRGB(25, 35, 55),
-    Border = Color3.fromRGB(0, 150, 255), -- Açık mavi
-    Accent = Color3.fromRGB(0, 180, 255), -- Daha parlak mavi
+    Border = Color3.fromRGB(0, 150, 255),
+    Accent = Color3.fromRGB(0, 180, 255),
     Text = Color3.fromRGB(240, 245, 255),
     Disabled = Color3.fromRGB(100, 120, 150),
     Hover = Color3.fromRGB(0, 150, 255, 0.2),
@@ -19,29 +19,28 @@ local Colors = {
     ToggleOff = Color3.fromRGB(60, 80, 110)
 }
 
--- UI Boyutları (mobil için optimize)
+-- UI Boyutları
 local UI_SIZE = {
     Width = 320,
     Height = 400
 }
 
 -- Ana Library fonksiyonu
-function NeonBlueUI.new()
-    local self = setmetatable({}, NeonBlueUI)
+function CleanBlueUI.new()
+    local self = setmetatable({}, CleanBlueUI)
     self.Windows = {}
     return self
 end
 
 -- Yeni pencere oluşturma
-function NeonBlueUI:NewWindow(title)
+function CleanBlueUI:NewWindow(title)
     local Window = {}
-    Window.Title = title or "Neon Blue UI"
+    Window.Title = title or "Clean Blue UI"
     Window.Sections = {}
-    Window.Elements = {} -- Tüm elementler buraya eklenecek
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "NeonBlueUI"
+    ScreenGui.Name = "CleanBlueUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
@@ -144,7 +143,13 @@ function NeonBlueUI:NewWindow(title)
     
     local ContentList = Instance.new("UIListLayout")
     ContentList.Padding = UDim.new(0, 8)
+    ContentList.HorizontalAlignment = Enum.HorizontalAlignment.Center
     ContentList.Parent = ContentFrame
+    
+    local ContentPadding = Instance.new("UIPadding")
+    ContentPadding.PaddingTop = UDim.new(0, 5)
+    ContentPadding.PaddingBottom = UDim.new(0, 10)
+    ContentPadding.Parent = ContentFrame
     
     -- Sürükleme fonksiyonelliği
     local dragging = false
@@ -193,8 +198,33 @@ function NeonBlueUI:NewWindow(title)
         end
     end)
     
+    -- Tıklama efekti (sadece buton ve dropdown için)
+    local function CreateClickEffect(button)
+        local effect = Instance.new("Frame")
+        effect.Name = "ClickEffect"
+        effect.Size = UDim2.new(1, 0, 1, 0)
+        effect.BackgroundColor3 = Colors.Accent
+        effect.BackgroundTransparency = 0.7
+        effect.ZIndex = -1
+        effect.Parent = button
+        
+        local effectCorner = Instance.new("UICorner")
+        effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 6)
+        effectCorner.Parent = effect
+        
+        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
+            BackgroundTransparency = 1
+        }):Play()
+        
+        delay(0.3, function()
+            effect:Destroy()
+        end)
+    end
+    
     -- Buton hover efektleri
-    local function SetupButtonHover(button)
+    local function SetupButtonHover(button, isControlButton)
+        if isControlButton then return end
+        
         button.MouseEnter:Connect(function()
             game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
                 BackgroundColor3 = Colors.Border
@@ -208,26 +238,8 @@ function NeonBlueUI:NewWindow(title)
         end)
     end
     
-    SetupButtonHover(CloseButton)
-    SetupButtonHover(MinimizeButton)
-    
-    -- Mavi tıklama efekti
-    local function CreateClickEffect(button)
-        local effect = Instance.new("Frame")
-        effect.Name = "ClickEffect"
-        effect.Size = UDim2.new(1, 0, 1, 0)
-        effect.BackgroundColor3 = Colors.Accent
-        effect.BackgroundTransparency = 0.7
-        effect.Parent = button
-        
-        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
-            BackgroundTransparency = 1
-        }):Play()
-        
-        delay(0.3, function()
-            effect:Destroy()
-        end)
-    end
+    SetupButtonHover(CloseButton, true)
+    SetupButtonHover(MinimizeButton, true)
     
     -- Yeni section ekleme fonksiyonu
     function Window:NewSection(name)
@@ -237,7 +249,7 @@ function NeonBlueUI:NewWindow(title)
         -- Section başlığı
         local SectionLabel = Instance.new("TextLabel")
         SectionLabel.Name = name
-        SectionLabel.Size = UDim2.new(1, 0, 0, 25)
+        SectionLabel.Size = UDim2.new(0.95, 0, 0, 25)
         SectionLabel.BackgroundTransparency = 1
         SectionLabel.Text = name
         SectionLabel.TextColor3 = Colors.Text
@@ -249,7 +261,7 @@ function NeonBlueUI:NewWindow(title)
         -- Section container
         local SectionFrame = Instance.new("Frame")
         SectionFrame.Name = name .. "_Container"
-        SectionFrame.Size = UDim2.new(1, 0, 0, 0)
+        SectionFrame.Size = UDim2.new(0.95, 0, 0, 0)
         SectionFrame.BackgroundColor3 = Colors.SecondaryBg
         SectionFrame.BorderSizePixel = 0
         SectionFrame.Parent = ContentFrame
@@ -259,15 +271,37 @@ function NeonBlueUI:NewWindow(title)
         sectionCorner.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
-        sectionList.Padding = UDim.new(0, 5)
+        sectionList.Padding = UDim.new(0, 8)
         sectionList.Parent = SectionFrame
+        
+        local sectionPadding = Instance.new("UIPadding")
+        sectionPadding.PaddingTop = UDim.new(0, 8)
+        sectionPadding.PaddingBottom = UDim.new(0, 8)
+        sectionPadding.PaddingLeft = UDim.new(0, 8)
+        sectionPadding.PaddingRight = UDim.new(0, 8)
+        sectionPadding.Parent = SectionFrame
+        
+        -- Section boyutunu güncelleme fonksiyonu
+        local function UpdateSectionSize()
+            local totalHeight = 0
+            for _, child in pairs(SectionFrame:GetChildren()) do
+                if child:IsA("Frame") or child:IsA("TextButton") then
+                    totalHeight = totalHeight + child.Size.Y.Offset
+                end
+            end
+            SectionFrame.Size = UDim2.new(0.95, 0, 0, totalHeight + 16 + (#SectionFrame:GetChildren() * sectionList.Padding.Offset))
+        end
+        
+        -- Auto-update section size
+        sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            UpdateSectionSize()
+        end)
         
         -- Element oluşturma fonksiyonları
         function Section:CreateButton(name, callback)
             local Button = Instance.new("TextButton")
             Button.Name = name
-            Button.Size = UDim2.new(1, -10, 0, 35)
-            Button.Position = UDim2.new(0, 5, 0, 5)
+            Button.Size = UDim2.new(1, 0, 0, 35)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
             Button.TextColor3 = Colors.Text
@@ -285,7 +319,7 @@ function NeonBlueUI:NewWindow(title)
             btnStroke.Thickness = 1
             btnStroke.Parent = Button
             
-            SetupButtonHover(Button)
+            SetupButtonHover(Button, false)
             
             Button.MouseButton1Click:Connect(function()
                 CreateClickEffect(Button)
@@ -294,8 +328,7 @@ function NeonBlueUI:NewWindow(title)
                 end
             end)
             
-            -- Section boyutunu güncelle
-            SectionFrame.Size = UDim2.new(1, 0, 0, sectionList.AbsoluteContentSize.Y + 10)
+            UpdateSectionSize()
             
             return Button
         end
@@ -303,8 +336,7 @@ function NeonBlueUI:NewWindow(title)
         function Section:CreateToggle(name, default, callback)
             local Toggle = Instance.new("Frame")
             Toggle.Name = name
-            Toggle.Size = UDim2.new(1, -10, 0, 35)
-            Toggle.Position = UDim2.new(0, 5, 0, 5)
+            Toggle.Size = UDim2.new(1, 0, 0, 35)
             Toggle.BackgroundTransparency = 1
             Toggle.Parent = SectionFrame
             
@@ -344,8 +376,19 @@ function NeonBlueUI:NewWindow(title)
             
             local state = default or false
             
+            ToggleButton.MouseEnter:Connect(function()
+                game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
+                    BackgroundColor3 = state and Colors.Accent or Colors.Hover
+                }):Play()
+            end)
+            
+            ToggleButton.MouseLeave:Connect(function()
+                game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
+                    BackgroundColor3 = state and Colors.ToggleOn or Colors.ToggleOff
+                }):Play()
+            end)
+            
             ToggleButton.MouseButton1Click:Connect(function()
-                CreateClickEffect(ToggleButton)
                 state = not state
                 local targetPos = state and 24 or 2
                 
@@ -362,10 +405,7 @@ function NeonBlueUI:NewWindow(title)
                 end
             end)
             
-            SetupButtonHover(ToggleButton)
-            
-            -- Section boyutunu güncelle
-            SectionFrame.Size = UDim2.new(1, 0, 0, sectionList.AbsoluteContentSize.Y + 10)
+            UpdateSectionSize()
             
             return Toggle
         end
@@ -373,8 +413,7 @@ function NeonBlueUI:NewWindow(title)
         function Section:CreateSlider(name, min, max, default, callback)
             local Slider = Instance.new("Frame")
             Slider.Name = name
-            Slider.Size = UDim2.new(1, -10, 0, 50)
-            Slider.Position = UDim2.new(0, 5, 0, 5)
+            Slider.Size = UDim2.new(1, 0, 0, 50)
             Slider.BackgroundTransparency = 1
             Slider.Parent = SectionFrame
             
@@ -458,8 +497,7 @@ function NeonBlueUI:NewWindow(title)
                 end
             end)
             
-            -- Section boyutunu güncelle
-            SectionFrame.Size = UDim2.new(1, 0, 0, sectionList.AbsoluteContentSize.Y + 10)
+            UpdateSectionSize()
             
             return Slider
         end
@@ -467,17 +505,16 @@ function NeonBlueUI:NewWindow(title)
         function Section:CreateDropdown(name, options, default, callback)
             local Dropdown = Instance.new("Frame")
             Dropdown.Name = name
-            Dropdown.Size = UDim2.new(1, -10, 0, 35)
-            Dropdown.Position = UDim2.new(0, 5, 0, 5)
+            Dropdown.Size = UDim2.new(1, 0, 0, 35)
             Dropdown.BackgroundTransparency = 1
-            Dropdown.ClipsDescendants = true
+            Dropdown.ClipsDescendants = false
             Dropdown.Parent = SectionFrame
             
             local DropdownButton = Instance.new("TextButton")
             DropdownButton.Name = "DropdownButton"
             DropdownButton.Size = UDim2.new(1, 0, 0, 35)
             DropdownButton.BackgroundColor3 = Colors.Button
-            DropdownButton.Text = name .. ": " .. (options[default] or "Select")
+            DropdownButton.Text = name .. ": " .. (options[default] or options[1] or "Select")
             DropdownButton.TextColor3 = Colors.Text
             DropdownButton.TextSize = 13
             DropdownButton.Font = Enum.Font.Gotham
@@ -488,64 +525,76 @@ function NeonBlueUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
             
+            SetupButtonHover(DropdownButton, false)
+            
             local open = false
+            local OptionsContainer
+            
+            local function CloseOptions()
+                if OptionsContainer then
+                    OptionsContainer:Destroy()
+                    OptionsContainer = nil
+                end
+                open = false
+                Dropdown.Size = UDim2.new(1, 0, 0, 35)
+                UpdateSectionSize()
+            end
             
             DropdownButton.MouseButton1Click:Connect(function()
                 CreateClickEffect(DropdownButton)
-                open = not open
                 
                 if open then
-                    local OptionsFrame = Instance.new("Frame")
-                    OptionsFrame.Name = "Options"
-                    OptionsFrame.Size = UDim2.new(1, 0, 0, #options * 30)
-                    OptionsFrame.Position = UDim2.new(0, 0, 1, 5)
-                    OptionsFrame.BackgroundColor3 = Colors.SecondaryBg
-                    OptionsFrame.Parent = Dropdown
-                    
-                    local optionsCorner = Instance.new("UICorner")
-                    optionsCorner.CornerRadius = UDim.new(0, 6)
-                    optionsCorner.Parent = OptionsFrame
-                    
-                    for i, option in pairs(options) do
-                        local OptionButton = Instance.new("TextButton")
-                        OptionButton.Name = option
-                        OptionButton.Size = UDim2.new(1, -10, 0, 25)
-                        OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*30 + 5)
-                        OptionButton.BackgroundColor3 = Colors.Button
-                        OptionButton.Text = option
-                        OptionButton.TextColor3 = Colors.Text
-                        OptionButton.TextSize = 12
-                        OptionButton.Font = Enum.Font.Gotham
-                        OptionButton.AutoButtonColor = false
-                        OptionButton.Parent = OptionsFrame
-                        
-                        local optionCorner = Instance.new("UICorner")
-                        optionCorner.CornerRadius = UDim.new(0, 4)
-                        optionCorner.Parent = OptionButton
-                        
-                        SetupButtonHover(OptionButton)
-                        
-                        OptionButton.MouseButton1Click:Connect(function()
-                            CreateClickEffect(OptionButton)
-                            DropdownButton.Text = name .. ": " .. option
-                            if callback then
-                                callback(option)
-                            end
-                            OptionsFrame:Destroy()
-                            open = false
-                        end)
-                    end
-                else
-                    if Dropdown:FindFirstChild("Options") then
-                        Dropdown.Options:Destroy()
-                    end
+                    CloseOptions()
+                    return
                 end
+                
+                open = true
+                
+                OptionsContainer = Instance.new("Frame")
+                OptionsContainer.Name = "OptionsContainer"
+                OptionsContainer.Size = UDim2.new(1, 0, 0, #options * 35 + 5)
+                OptionsContainer.Position = UDim2.new(0, 0, 1, 5)
+                OptionsContainer.BackgroundColor3 = Colors.SecondaryBg
+                OptionsContainer.Parent = Dropdown
+                
+                local optionsCorner = Instance.new("UICorner")
+                optionsCorner.CornerRadius = UDim.new(0, 6)
+                optionsCorner.Parent = OptionsContainer
+                
+                for i, option in pairs(options) do
+                    local OptionButton = Instance.new("TextButton")
+                    OptionButton.Name = option
+                    OptionButton.Size = UDim2.new(1, -10, 0, 30)
+                    OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*35 + 5)
+                    OptionButton.BackgroundColor3 = Colors.Button
+                    OptionButton.Text = option
+                    OptionButton.TextColor3 = Colors.Text
+                    OptionButton.TextSize = 12
+                    OptionButton.Font = Enum.Font.Gotham
+                    OptionButton.AutoButtonColor = false
+                    OptionButton.Parent = OptionsContainer
+                    
+                    local optionCorner = Instance.new("UICorner")
+                    optionCorner.CornerRadius = UDim.new(0, 4)
+                    optionCorner.Parent = OptionButton
+                    
+                    SetupButtonHover(OptionButton, false)
+                    
+                    OptionButton.MouseButton1Click:Connect(function()
+                        CreateClickEffect(OptionButton)
+                        DropdownButton.Text = name .. ": " .. option
+                        if callback then
+                            callback(option)
+                        end
+                        CloseOptions()
+                    end)
+                end
+                
+                Dropdown.Size = UDim2.new(1, 0, 0, 35 + OptionsContainer.Size.Y.Offset)
+                UpdateSectionSize()
             end)
             
-            SetupButtonHover(DropdownButton)
-            
-            -- Section boyutunu güncelle
-            SectionFrame.Size = UDim2.new(1, 0, 0, sectionList.AbsoluteContentSize.Y + 10)
+            UpdateSectionSize()
             
             return Dropdown
         end
@@ -553,8 +602,7 @@ function NeonBlueUI:NewWindow(title)
         function Section:CreateTextbox(name, callback)
             local Textbox = Instance.new("Frame")
             Textbox.Name = name
-            Textbox.Size = UDim2.new(1, -10, 0, 35)
-            Textbox.Position = UDim2.new(0, 5, 0, 5)
+            Textbox.Size = UDim2.new(1, 0, 0, 35)
             Textbox.BackgroundTransparency = 1
             Textbox.Parent = SectionFrame
             
@@ -579,14 +627,18 @@ function NeonBlueUI:NewWindow(title)
             inputPadding.PaddingLeft = UDim.new(0, 10)
             inputPadding.Parent = InputBox
             
+            local inputStroke = Instance.new("UIStroke")
+            inputStroke.Color = Colors.Border
+            inputStroke.Thickness = 1
+            inputStroke.Parent = InputBox
+            
             InputBox.FocusLost:Connect(function()
                 if callback then
                     callback(InputBox.Text)
                 end
             end)
             
-            -- Section boyutunu güncelle
-            SectionFrame.Size = UDim2.new(1, 0, 0, sectionList.AbsoluteContentSize.Y + 10)
+            UpdateSectionSize()
             
             return Textbox
         end
@@ -603,4 +655,4 @@ function NeonBlueUI:NewWindow(title)
 end
 
 -- Library'yi döndür
-return NeonBlueUI.new()
+return CleanBlueUI.new()
