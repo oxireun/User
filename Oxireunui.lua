@@ -1,8 +1,8 @@
--- Clean Blue UI Library
--- Fixed issues, draggable, mobile-friendly
+-- Draggable Blue UI Library
+-- Fixed dropdown, tab system, draggable
 
-local CleanBlueUI = {}
-CleanBlueUI.__index = CleanBlueUI
+local DraggableBlueUI = {}
+DraggableBlueUI.__index = DraggableBlueUI
 
 -- Açık mavi renk paleti
 local Colors = {
@@ -16,7 +16,9 @@ local Colors = {
     Button = Color3.fromRGB(40, 60, 90),
     Slider = Color3.fromRGB(0, 150, 255),
     ToggleOn = Color3.fromRGB(0, 150, 255),
-    ToggleOff = Color3.fromRGB(60, 80, 110)
+    ToggleOff = Color3.fromRGB(60, 80, 110),
+    TabActive = Color3.fromRGB(0, 150, 255),
+    TabInactive = Color3.fromRGB(40, 60, 90)
 }
 
 -- UI Boyutları
@@ -26,21 +28,22 @@ local UI_SIZE = {
 }
 
 -- Ana Library fonksiyonu
-function CleanBlueUI.new()
-    local self = setmetatable({}, CleanBlueUI)
+function DraggableBlueUI.new()
+    local self = setmetatable({}, DraggableBlueUI)
     self.Windows = {}
     return self
 end
 
 -- Yeni pencere oluşturma
-function CleanBlueUI:NewWindow(title)
+function DraggableBlueUI:NewWindow(title)
     local Window = {}
-    Window.Title = title or "Clean Blue UI"
+    Window.Title = title or "Blue UI"
     Window.Sections = {}
+    Window.CurrentSection = nil
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "CleanBlueUI"
+    ScreenGui.Name = "DraggableBlueUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
@@ -65,7 +68,7 @@ function CleanBlueUI:NewWindow(title)
     border.Thickness = 2
     border.Parent = MainFrame
     
-    -- Başlık çubuğu
+    -- Başlık çubuğu (DRAGGABLE ALANI)
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
     TitleBar.Size = UDim2.new(1, 0, 0, 35)
@@ -130,30 +133,42 @@ function CleanBlueUI:NewWindow(title)
     minimizeCorner.CornerRadius = UDim.new(0, 5)
     minimizeCorner.Parent = MinimizeButton
     
-    -- İçerik alanı
-    local ContentFrame = Instance.new("ScrollingFrame")
-    ContentFrame.Name = "Content"
-    ContentFrame.Size = UDim2.new(1, -20, 1, -55)
-    ContentFrame.Position = UDim2.new(0, 10, 0, 45)
-    ContentFrame.BackgroundTransparency = 1
-    ContentFrame.BorderSizePixel = 0
-    ContentFrame.ScrollBarThickness = 4
-    ContentFrame.ScrollBarImageColor3 = Colors.Border
-    ContentFrame.Parent = MainFrame
+    -- Tab'ler için container (yatay)
+    local TabsContainer = Instance.new("Frame")
+    TabsContainer.Name = "Tabs"
+    TabsContainer.Size = UDim2.new(1, -20, 0, 35)
+    TabsContainer.Position = UDim2.new(0, 10, 0, 40)
+    TabsContainer.BackgroundTransparency = 1
+    TabsContainer.Parent = MainFrame
     
-    local ContentList = Instance.new("UIListLayout")
-    ContentList.Padding = UDim.new(0, 8)
-    ContentList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    ContentList.Parent = ContentFrame
+    local TabsList = Instance.new("UIListLayout")
+    TabsList.FillDirection = Enum.FillDirection.Horizontal
+    TabsList.Padding = UDim.new(0, 5)
+    TabsList.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    TabsList.Parent = TabsContainer
     
-    local ContentPadding = Instance.new("UIPadding")
-    ContentPadding.PaddingTop = UDim.new(0, 5)
-    ContentPadding.PaddingBottom = UDim.new(0, 10)
-    ContentPadding.Parent = ContentFrame
+    -- İçerik alanı (tüm section'lar için)
+    local ContentArea = Instance.new("Frame")
+    ContentArea.Name = "ContentArea"
+    ContentArea.Size = UDim2.new(1, -20, 1, -90)
+    ContentArea.Position = UDim2.new(0, 10, 0, 80)
+    ContentArea.BackgroundTransparency = 1
+    ContentArea.ClipsDescendants = true
+    ContentArea.Parent = MainFrame
     
-    -- Sürükleme fonksiyonelliği
+    -- DRAGGABLE FONKSİYONLUK
     local dragging = false
     local dragInput, dragStart, startPos
+    
+    local function updateDrag(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
     
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -177,9 +192,7 @@ function CleanBlueUI:NewWindow(title)
     
     game:GetService("UserInputService").InputChanged:Connect(function(input)
         if dragging and input == dragInput then
-            local delta = input.Position - dragStart
-            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                          startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            updateDrag(input)
         end
     end)
     
@@ -191,10 +204,12 @@ function CleanBlueUI:NewWindow(title)
     MinimizeButton.MouseButton1Click:Connect(function()
         if MainFrame.Size.Y.Offset == UI_SIZE.Height then
             MainFrame:TweenSize(UDim2.new(0, UI_SIZE.Width, 0, 35), "Out", "Quad", 0.2, true)
-            ContentFrame.Visible = false
+            TabsContainer.Visible = false
+            ContentArea.Visible = false
         else
             MainFrame:TweenSize(UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height), "Out", "Quad", 0.2, true)
-            ContentFrame.Visible = true
+            TabsContainer.Visible = true
+            ContentArea.Visible = true
         end
     end)
     
@@ -238,70 +253,91 @@ function CleanBlueUI:NewWindow(title)
         end)
     end
     
-    SetupButtonHover(CloseButton, true)
-    SetupButtonHover(MinimizeButton, true)
-    
     -- Yeni section ekleme fonksiyonu
     function Window:NewSection(name)
         local Section = {}
         Section.Name = name
+        Section.Elements = {}
         
-        -- Section başlığı
-        local SectionLabel = Instance.new("TextLabel")
-        SectionLabel.Name = name
-        SectionLabel.Size = UDim2.new(0.95, 0, 0, 25)
-        SectionLabel.BackgroundTransparency = 1
-        SectionLabel.Text = name
-        SectionLabel.TextColor3 = Colors.Text
-        SectionLabel.TextSize = 14
-        SectionLabel.Font = Enum.Font.GothamBold
-        SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
-        SectionLabel.Parent = ContentFrame
+        -- Tab butonu oluştur
+        local TabButton = Instance.new("TextButton")
+        TabButton.Name = name .. "_Tab"
+        TabButton.Size = UDim2.new(0, 70, 0, 30)
+        TabButton.BackgroundColor3 = Colors.TabInactive
+        TabButton.Text = name
+        TabButton.TextColor3 = Colors.Text
+        TabButton.TextSize = 12
+        TabButton.Font = Enum.Font.Gotham
+        TabButton.AutoButtonColor = false
+        TabButton.Parent = TabsContainer
         
-        -- Section container
-        local SectionFrame = Instance.new("Frame")
-        SectionFrame.Name = name .. "_Container"
-        SectionFrame.Size = UDim2.new(0.95, 0, 0, 0)
-        SectionFrame.BackgroundColor3 = Colors.SecondaryBg
+        local tabCorner = Instance.new("UICorner")
+        tabCorner.CornerRadius = UDim.new(0, 6)
+        tabCorner.Parent = TabButton
+        
+        local tabStroke = Instance.new("UIStroke")
+        tabStroke.Color = Colors.Border
+        tabStroke.Thickness = 1
+        tabStroke.Parent = TabButton
+        
+        -- Section içeriği için ScrollingFrame
+        local SectionFrame = Instance.new("ScrollingFrame")
+        SectionFrame.Name = name .. "_Content"
+        SectionFrame.Size = UDim2.new(1, 0, 1, 0)
+        SectionFrame.BackgroundTransparency = 1
         SectionFrame.BorderSizePixel = 0
-        SectionFrame.Parent = ContentFrame
-        
-        local sectionCorner = Instance.new("UICorner")
-        sectionCorner.CornerRadius = UDim.new(0, 8)
-        sectionCorner.Parent = SectionFrame
+        SectionFrame.ScrollBarThickness = 4
+        SectionFrame.ScrollBarImageColor3 = Colors.Border
+        SectionFrame.Visible = false
+        SectionFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        SectionFrame.Parent = ContentArea
         
         local sectionList = Instance.new("UIListLayout")
         sectionList.Padding = UDim.new(0, 8)
         sectionList.Parent = SectionFrame
         
         local sectionPadding = Instance.new("UIPadding")
-        sectionPadding.PaddingTop = UDim.new(0, 8)
-        sectionPadding.PaddingBottom = UDim.new(0, 8)
-        sectionPadding.PaddingLeft = UDim.new(0, 8)
-        sectionPadding.PaddingRight = UDim.new(0, 8)
+        sectionPadding.PaddingTop = UDim.new(0, 5)
+        sectionPadding.PaddingLeft = UDim.new(0, 5)
+        sectionPadding.PaddingRight = UDim.new(0, 5)
         sectionPadding.Parent = SectionFrame
         
-        -- Section boyutunu güncelleme fonksiyonu
-        local function UpdateSectionSize()
-            local totalHeight = 0
-            for _, child in pairs(SectionFrame:GetChildren()) do
-                if child:IsA("Frame") or child:IsA("TextButton") then
-                    totalHeight = totalHeight + child.Size.Y.Offset
-                end
-            end
-            SectionFrame.Size = UDim2.new(0.95, 0, 0, totalHeight + 16 + (#SectionFrame:GetChildren() * sectionList.Padding.Offset))
+        -- İlk section'u aktif yap
+        if #Window.Sections == 0 then
+            TabButton.BackgroundColor3 = Colors.TabActive
+            SectionFrame.Visible = true
+            Window.CurrentSection = Section
         end
         
-        -- Auto-update section size
-        sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            UpdateSectionSize()
+        -- Tab değiştirme
+        TabButton.MouseButton1Click:Connect(function()
+            -- Tüm tab'leri pasif yap
+            for _, tab in pairs(TabsContainer:GetChildren()) do
+                if tab:IsA("TextButton") then
+                    tab.BackgroundColor3 = Colors.TabInactive
+                end
+            end
+            
+            -- Tüm section'ları gizle
+            for _, frame in pairs(ContentArea:GetChildren()) do
+                if frame:IsA("ScrollingFrame") then
+                    frame.Visible = false
+                end
+            end
+            
+            -- Aktif tab'i ve section'u göster
+            TabButton.BackgroundColor3 = Colors.TabActive
+            SectionFrame.Visible = true
+            Window.CurrentSection = Section
         end)
+        
+        SetupButtonHover(TabButton, false)
         
         -- Element oluşturma fonksiyonları
         function Section:CreateButton(name, callback)
             local Button = Instance.new("TextButton")
             Button.Name = name
-            Button.Size = UDim2.new(1, 0, 0, 35)
+            Button.Size = UDim2.new(1, -10, 0, 35)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
             Button.TextColor3 = Colors.Text
@@ -328,15 +364,13 @@ function CleanBlueUI:NewWindow(title)
                 end
             end)
             
-            UpdateSectionSize()
-            
             return Button
         end
         
         function Section:CreateToggle(name, default, callback)
             local Toggle = Instance.new("Frame")
             Toggle.Name = name
-            Toggle.Size = UDim2.new(1, 0, 0, 35)
+            Toggle.Size = UDim2.new(1, -10, 0, 35)
             Toggle.BackgroundTransparency = 1
             Toggle.Parent = SectionFrame
             
@@ -405,15 +439,13 @@ function CleanBlueUI:NewWindow(title)
                 end
             end)
             
-            UpdateSectionSize()
-            
             return Toggle
         end
         
         function Section:CreateSlider(name, min, max, default, callback)
             local Slider = Instance.new("Frame")
             Slider.Name = name
-            Slider.Size = UDim2.new(1, 0, 0, 50)
+            Slider.Size = UDim2.new(1, -10, 0, 50)
             Slider.BackgroundTransparency = 1
             Slider.Parent = SectionFrame
             
@@ -497,15 +529,13 @@ function CleanBlueUI:NewWindow(title)
                 end
             end)
             
-            UpdateSectionSize()
-            
             return Slider
         end
         
         function Section:CreateDropdown(name, options, default, callback)
             local Dropdown = Instance.new("Frame")
             Dropdown.Name = name
-            Dropdown.Size = UDim2.new(1, 0, 0, 35)
+            Dropdown.Size = UDim2.new(1, -10, 0, 35)
             Dropdown.BackgroundTransparency = 1
             Dropdown.ClipsDescendants = false
             Dropdown.Parent = SectionFrame
@@ -536,8 +566,6 @@ function CleanBlueUI:NewWindow(title)
                     OptionsContainer = nil
                 end
                 open = false
-                Dropdown.Size = UDim2.new(1, 0, 0, 35)
-                UpdateSectionSize()
             end
             
             DropdownButton.MouseButton1Click:Connect(function()
@@ -550,35 +578,58 @@ function CleanBlueUI:NewWindow(title)
                 
                 open = true
                 
+                -- Options için bir ScreenGui oluştur (UI dışında gözüksün)
+                local OptionsScreenGui = Instance.new("ScreenGui")
+                OptionsScreenGui.Name = "DropdownOptions"
+                OptionsScreenGui.ResetOnSpawn = false
+                OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+                OptionsScreenGui.Parent = game:GetService("CoreGui")
+                
+                -- Options container
                 OptionsContainer = Instance.new("Frame")
                 OptionsContainer.Name = "OptionsContainer"
-                OptionsContainer.Size = UDim2.new(1, 0, 0, #options * 35 + 5)
-                OptionsContainer.Position = UDim2.new(0, 0, 1, 5)
+                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
+                OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 
+                                                      0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
                 OptionsContainer.BackgroundColor3 = Colors.SecondaryBg
-                OptionsContainer.Parent = Dropdown
+                OptionsContainer.BorderSizePixel = 0
+                OptionsContainer.ZIndex = 100
+                OptionsContainer.Parent = OptionsScreenGui
                 
                 local optionsCorner = Instance.new("UICorner")
                 optionsCorner.CornerRadius = UDim.new(0, 6)
                 optionsCorner.Parent = OptionsContainer
                 
+                local optionsStroke = Instance.new("UIStroke")
+                optionsStroke.Color = Colors.Border
+                optionsStroke.Thickness = 1
+                optionsStroke.Parent = OptionsContainer
+                
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
                     OptionButton.Name = option
-                    OptionButton.Size = UDim2.new(1, -10, 0, 30)
-                    OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*35 + 5)
+                    OptionButton.Size = UDim2.new(1, -10, 0, 22)
+                    OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*25 + 5)
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
                     OptionButton.TextColor3 = Colors.Text
-                    OptionButton.TextSize = 12
+                    OptionButton.TextSize = 11
                     OptionButton.Font = Enum.Font.Gotham
                     OptionButton.AutoButtonColor = false
+                    OptionButton.ZIndex = 101
                     OptionButton.Parent = OptionsContainer
                     
                     local optionCorner = Instance.new("UICorner")
                     optionCorner.CornerRadius = UDim.new(0, 4)
                     optionCorner.Parent = OptionButton
                     
-                    SetupButtonHover(OptionButton, false)
+                    OptionButton.MouseEnter:Connect(function()
+                        OptionButton.BackgroundColor3 = Colors.Border
+                    end)
+                    
+                    OptionButton.MouseLeave:Connect(function()
+                        OptionButton.BackgroundColor3 = Colors.Button
+                    end)
                     
                     OptionButton.MouseButton1Click:Connect(function()
                         CreateClickEffect(OptionButton)
@@ -587,14 +638,28 @@ function CleanBlueUI:NewWindow(title)
                             callback(option)
                         end
                         CloseOptions()
+                        OptionsScreenGui:Destroy()
                     end)
                 end
                 
-                Dropdown.Size = UDim2.new(1, 0, 0, 35 + OptionsContainer.Size.Y.Offset)
-                UpdateSectionSize()
+                -- Mouse dışında tıklayınca kapat
+                local function checkClickOutside(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+                        local buttonPos = DropdownButton.AbsolutePosition
+                        local buttonSize = DropdownButton.AbsoluteSize
+                        
+                        -- Eğer butonun dışına tıklandıysa
+                        if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                               mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
+                            CloseOptions()
+                            OptionsScreenGui:Destroy()
+                        end
+                    end
+                end
+                
+                game:GetService("UserInputService").InputBegan:Connect(checkClickOutside)
             end)
-            
-            UpdateSectionSize()
             
             return Dropdown
         end
@@ -602,7 +667,7 @@ function CleanBlueUI:NewWindow(title)
         function Section:CreateTextbox(name, callback)
             local Textbox = Instance.new("Frame")
             Textbox.Name = name
-            Textbox.Size = UDim2.new(1, 0, 0, 35)
+            Textbox.Size = UDim2.new(1, -10, 0, 35)
             Textbox.BackgroundTransparency = 1
             Textbox.Parent = SectionFrame
             
@@ -638,8 +703,6 @@ function CleanBlueUI:NewWindow(title)
                 end
             end)
             
-            UpdateSectionSize()
-            
             return Textbox
         end
         
@@ -655,4 +718,4 @@ function CleanBlueUI:NewWindow(title)
 end
 
 -- Library'yi döndür
-return CleanBlueUI.new()
+return DraggableBlueUI.new()
