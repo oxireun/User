@@ -1,32 +1,32 @@
--- Oxireun UI Library - Final Draggable Version
--- Perfect draggable, better control buttons
+-- Blade Runner 2049 Neon UI
+-- Purple theme with moving neon borders, Fight Club style font
 
-local OxireunUI = {}
-OxireunUI.__index = OxireunUI
+local BladeRunnerUI = {}
+BladeRunnerUI.__index = BladeRunnerUI
 
--- İyileştirilmiş mavi renk paleti
+-- Mor neon renk paleti (Blade Runner 2049 tarzı)
 local Colors = {
-    Background = Color3.fromRGB(20, 25, 45),
-    SecondaryBg = Color3.fromRGB(35, 45, 80),
-    SectionBg = Color3.fromRGB(25, 35, 65),
-    Border = Color3.fromRGB(0, 180, 255),
-    Accent = Color3.fromRGB(0, 200, 255),
+    Background = Color3.fromRGB(10, 5, 20),
+    SecondaryBg = Color3.fromRGB(20, 10, 35),
+    SectionBg = Color3.fromRGB(15, 8, 28),
+    Border = Color3.fromRGB(138, 43, 226), -- Neon mor
+    Accent = Color3.fromRGB(148, 0, 211), -- Daha parlak mor
     Text = Color3.fromRGB(255, 255, 255),
-    Disabled = Color3.fromRGB(150, 150, 180),
-    Hover = Color3.fromRGB(0, 180, 255, 0.3),
-    Button = Color3.fromRGB(50, 80, 140),
-    Slider = Color3.fromRGB(0, 180, 255),
-    ToggleOn = Color3.fromRGB(0, 180, 255),
-    ToggleOff = Color3.fromRGB(80, 110, 160),
-    TabActive = Color3.fromRGB(0, 180, 255),
-    TabInactive = Color3.fromRGB(50, 80, 140),
-    ControlButton = Color3.fromRGB(60, 90, 150),
-    CloseButton = Color3.fromRGB(200, 70, 70) -- UI ile uyumlu kırmızı
+    Disabled = Color3.fromRGB(100, 100, 150),
+    Hover = Color3.fromRGB(138, 43, 226, 0.3),
+    Button = Color3.fromRGB(40, 20, 70),
+    Slider = Color3.fromRGB(138, 43, 226),
+    ToggleOn = Color3.fromRGB(138, 43, 226),
+    ToggleOff = Color3.fromRGB(60, 30, 100),
+    TabActive = Color3.fromRGB(138, 43, 226),
+    TabInactive = Color3.fromRGB(40, 20, 70),
+    ControlButton = Color3.fromRGB(50, 25, 90),
+    CloseButton = Color3.fromRGB(180, 50, 80) -- Morumsu kırmızı
 }
 
--- Font ayarları
+-- Font ayarları - Fight Club tarzı
 local Fonts = {
-    Title = Enum.Font.GothamBold,
+    Title = Enum.Font.SourceSansBold, -- Fight Club tarzı
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
@@ -40,22 +40,22 @@ local UI_SIZE = {
 }
 
 -- Ana Library fonksiyonu
-function OxireunUI.new()
-    local self = setmetatable({}, OxireunUI)
+function BladeRunnerUI.new()
+    local self = setmetatable({}, BladeRunnerUI)
     self.Windows = {}
     return self
 end
 
 -- Yeni pencere oluşturma
-function OxireunUI:NewWindow(title)
+function BladeRunnerUI:NewWindow(title)
     local Window = {}
-    Window.Title = title or "Oxireun UI"
+    Window.Title = title or "Blade Runner UI"
     Window.Sections = {}
     Window.CurrentSection = nil
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "OxireunUI"
+    ScreenGui.Name = "BladeRunnerUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
@@ -75,12 +75,35 @@ function OxireunUI:NewWindow(title)
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
     
-    -- Mavi border
-    local border = Instance.new("UIStroke")
-    border.Color = Colors.Border
-    border.Thickness = 2
-    border.Transparency = 0
-    border.Parent = MainFrame
+    -- NEON BORDER (HAREKETLİ EFEKT)
+    local neonBorder = Instance.new("UIStroke")
+    neonBorder.Name = "NeonBorder"
+    neonBorder.Color = Colors.Border
+    neonBorder.Thickness = 3
+    neonBorder.Transparency = 0
+    neonBorder.Parent = MainFrame
+    
+    -- Neon efekti için pulsating animasyon
+    local TweenService = game:GetService("TweenService")
+    local pulseTween = TweenService:Create(neonBorder, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        Color = Colors.Accent,
+        Thickness = 4
+    })
+    pulseTween:Play()
+    
+    -- İkinci katman neon efekti
+    local neonGlow = Instance.new("UIStroke")
+    neonGlow.Name = "NeonGlow"
+    neonGlow.Color = Colors.Accent
+    neonGlow.Thickness = 2
+    neonGlow.Transparency = 0.5
+    neonGlow.Parent = MainFrame
+    
+    local glowTween = TweenService:Create(neonGlow, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        Transparency = 0.2,
+        Thickness = 3
+    })
+    glowTween:Play()
     
     -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
@@ -94,59 +117,59 @@ function OxireunUI:NewWindow(title)
     titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
     titleCorner.Parent = TitleBar
     
-    -- Başlık
+    -- Başlık - FIGHT CLUB STYLE
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
     TitleLabel.Position = UDim2.new(0, 10, 0, 0)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = Window.Title
+    TitleLabel.Text = string.upper(Window.Title) -- BÜYÜK HARF
     TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 16
+    TitleLabel.TextSize = 18
     TitleLabel.Font = Fonts.Title
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
-    -- Kontrol butonları
+    -- Kontrol butonları - HAVALI TASARIM
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 60, 1, 0)
-    Controls.Position = UDim2.new(1, -65, 0, 0)
+    Controls.Size = UDim2.new(0, 55, 1, 0)
+    Controls.Position = UDim2.new(1, -60, 0, 0)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
-    -- Küçültme butonu
+    -- Küçültme butonu - DAHA KÜÇÜK
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
-    MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
-    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -12.5)
+    MinimizeButton.Size = UDim2.new(0, 22, 0, 22) -- DAHA KÜÇÜK
+    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -11)
     MinimizeButton.BackgroundColor3 = Colors.ControlButton
-    MinimizeButton.Text = "-"
+    MinimizeButton.Text = "−" -- Daha şık çizgi
     MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 22
+    MinimizeButton.TextSize = 18
     MinimizeButton.Font = Fonts.Normal
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
     
     local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(1, 0)
+    minimizeCorner.CornerRadius = UDim.new(0, 5)
     minimizeCorner.Parent = MinimizeButton
     
-    -- Kapatma butonu
+    -- Kapatma butonu - DAHA KÜÇÜK ve ">"
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
-    CloseButton.Size = UDim2.new(0, 25, 0, 25)
-    CloseButton.Position = UDim2.new(0, 30, 0.5, -12.5)
+    CloseButton.Size = UDim2.new(0, 22, 0, 22) -- DAHA KÜÇÜK
+    CloseButton.Position = UDim2.new(0, 28, 0.5, -11)
     CloseButton.BackgroundColor3 = Colors.CloseButton
-    CloseButton.Text = "×"
+    CloseButton.Text = ">" -- İSTEĞE GÖRE
     CloseButton.TextColor3 = Colors.Text
-    CloseButton.TextSize = 20
+    CloseButton.TextSize = 16
     CloseButton.Font = Fonts.Normal
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
     
     local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(1, 0)
+    closeCorner.CornerRadius = UDim.new(0, 5)
     closeCorner.Parent = CloseButton
     
     -- Tab'ler için yatay scrolling frame
@@ -193,10 +216,10 @@ function OxireunUI:NewWindow(title)
         effect.Parent = button
         
         local effectCorner = Instance.new("UICorner")
-        effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 6)
+        effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 5)
         effectCorner.Parent = effect
         
-        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
+        TweenService:Create(effect, TweenInfo.new(0.3), {
             BackgroundTransparency = 1
         }):Play()
         
@@ -210,9 +233,9 @@ function OxireunUI:NewWindow(title)
         if isControlButton then 
             button.MouseEnter:Connect(function()
                 if button.Name == "Close" then
-                    button.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+                    button.BackgroundColor3 = Color3.fromRGB(200, 70, 100)
                 else
-                    button.BackgroundColor3 = Color3.fromRGB(80, 110, 170)
+                    button.BackgroundColor3 = Color3.fromRGB(70, 40, 120)
                 end
             end)
             
@@ -227,13 +250,13 @@ function OxireunUI:NewWindow(title)
         end
         
         button.MouseEnter:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+            TweenService:Create(button, TweenInfo.new(0.2), {
                 BackgroundColor3 = Colors.Border
             }):Play()
         end)
         
         button.MouseLeave:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+            TweenService:Create(button, TweenInfo.new(0.2), {
                 BackgroundColor3 = Colors.Button
             }):Play()
         end)
@@ -242,13 +265,12 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- TAM DRAGGABLE - YENİ VE KESİN ÇÖZÜM
+    -- DRAGGABLE - KESİN ÇÖZÜM
     local UserInputService = game:GetService("UserInputService")
     local RunService = game:GetService("RunService")
     local dragging = false
     local dragStart, startPos
     
-    -- Mouse'u takip eden fonksiyon
     local function updateDrag()
         if not dragging then return end
         
@@ -262,20 +284,17 @@ function OxireunUI:NewWindow(title)
         )
     end
     
-    -- Sürükleme başlatma
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = Vector2.new(input.Position.X, input.Position.Y)
             startPos = MainFrame.Position
             
-            -- Mouse hareketini dinle
             local connection
             connection = RunService.Heartbeat:Connect(function()
                 updateDrag()
             end)
             
-            -- Mouse bırakıldığında
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -330,6 +349,11 @@ function OxireunUI:NewWindow(title)
         tabCorner.CornerRadius = UDim.new(0, 6)
         tabCorner.Parent = TabButton
         
+        local tabStroke = Instance.new("UIStroke")
+        tabStroke.Color = Colors.Border
+        tabStroke.Thickness = 1
+        tabStroke.Parent = TabButton
+        
         SetupButtonHover(TabButton, false)
         
         -- Section içeriği için ScrollingFrame
@@ -349,6 +373,12 @@ function OxireunUI:NewWindow(title)
         local sectionCorner = Instance.new("UICorner")
         sectionCorner.CornerRadius = UDim.new(0, 8)
         sectionCorner.Parent = SectionFrame
+        
+        local sectionStroke = Instance.new("UIStroke")
+        sectionStroke.Color = Colors.Border
+        sectionStroke.Thickness = 1
+        sectionStroke.Transparency = 0.5
+        sectionStroke.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
         sectionList.Padding = UDim.new(0, 8)
@@ -411,6 +441,11 @@ function OxireunUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = Button
             
+            local btnStroke = Instance.new("UIStroke")
+            btnStroke.Color = Colors.Border
+            btnStroke.Thickness = 1
+            btnStroke.Parent = Button
+            
             SetupButtonHover(Button, false)
             
             Button.MouseButton1Click:Connect(function()
@@ -467,13 +502,13 @@ function OxireunUI:NewWindow(title)
             local state = default or false
             
             ToggleButton.MouseEnter:Connect(function()
-                game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
+                TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
                     BackgroundColor3 = state and Colors.Accent or Colors.Hover
                 }):Play()
             end)
             
             ToggleButton.MouseLeave:Connect(function()
-                game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
+                TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
                     BackgroundColor3 = state and Colors.ToggleOn or Colors.ToggleOff
                 }):Play()
             end)
@@ -483,11 +518,11 @@ function OxireunUI:NewWindow(title)
                 state = not state
                 local targetPos = state and 24 or 2
                 
-                game:GetService("TweenService"):Create(ToggleCircle, TweenInfo.new(0.2), {
+                TweenService:Create(ToggleCircle, TweenInfo.new(0.2), {
                     Position = UDim2.new(0, targetPos, 0.5, -9)
                 }):Play()
                 
-                game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
+                TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
                     BackgroundColor3 = state and Colors.ToggleOn or Colors.ToggleOff
                 }):Play()
                 
@@ -581,13 +616,13 @@ function OxireunUI:NewWindow(title)
                 end
             end)
             
-            game:GetService("UserInputService").InputEnded:Connect(function(input)
+            UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
                 end
             end)
             
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
+            UserInputService.InputChanged:Connect(function(input)
                 if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                     updateSlider(input)
                 end
@@ -618,6 +653,11 @@ function OxireunUI:NewWindow(title)
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
+            
+            local btnStroke = Instance.new("UIStroke")
+            btnStroke.Color = Colors.Border
+            btnStroke.Thickness = 1
+            btnStroke.Parent = DropdownButton
             
             SetupButtonHover(DropdownButton, false)
             
@@ -661,6 +701,11 @@ function OxireunUI:NewWindow(title)
                 local optionsCorner = Instance.new("UICorner")
                 optionsCorner.CornerRadius = UDim.new(0, 6)
                 optionsCorner.Parent = OptionsContainer
+                
+                local optionsStroke = Instance.new("UIStroke")
+                optionsStroke.Color = Colors.Border
+                optionsStroke.Thickness = 1
+                optionsStroke.Parent = OptionsContainer
                 
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
@@ -743,6 +788,11 @@ function OxireunUI:NewWindow(title)
             inputCorner.CornerRadius = UDim.new(0, 6)
             inputCorner.Parent = InputBox
             
+            local inputStroke = Instance.new("UIStroke")
+            inputStroke.Color = Colors.Border
+            inputStroke.Thickness = 1
+            inputStroke.Parent = InputBox
+            
             InputBox.FocusLost:Connect(function()
                 if callback then
                     callback(InputBox.Text)
@@ -764,4 +814,4 @@ function OxireunUI:NewWindow(title)
 end
 
 -- Library'yi döndür
-return OxireunUI.new()
+return BladeRunnerUI.new()
