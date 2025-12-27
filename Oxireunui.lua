@@ -1,5 +1,5 @@
--- Oxireun UI Library - Slider Fixed Version
--- Slider only works when dragging slider elements
+-- Oxireun UI Library - Slider Fixed + Draggable TitleBar
+-- Sadece istenen değişiklikler: UI draggable yapıldı ve slider bug düzeltildi
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
@@ -13,7 +13,7 @@ local Colors = {
     Accent = Color3.fromRGB(0, 200, 255),
     Text = Color3.fromRGB(255, 255, 255),
     Disabled = Color3.fromRGB(150, 150, 180),
-    Hover = Color3.fromRGB(0, 180, 255, 0.3),
+    Hover = Color3.fromRGB(0, 180, 255), -- alpha kaldırıldı (Color3 sadece RGB alır)
     Button = Color3.fromRGB(50, 80, 140),
     Slider = Color3.fromRGB(0, 180, 255),
     ToggleOn = Color3.fromRGB(0, 180, 255),
@@ -91,7 +91,7 @@ function OxireunUI:NewWindow(title)
     TitleBar.Parent = MainFrame
     
     local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
+    titleCorner.CornerRadius = UDim.new(0, 10)
     titleCorner.Parent = TitleBar
     
     -- Başlık
@@ -182,7 +182,7 @@ function OxireunUI:NewWindow(title)
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
     
-    -- TIKLAMA EFEKTİ
+    -- TIKLAMA EFEKTI
     local function CreateClickEffect(button)
         local effect = Instance.new("Frame")
         effect.Name = "ClickEffect"
@@ -201,11 +201,13 @@ function OxireunUI:NewWindow(title)
         }):Play()
         
         delay(0.3, function()
-            effect:Destroy()
+            if effect and effect.Parent then
+                effect:Destroy()
+            end
         end)
     end
     
-    -- BUTON HOVER EFEKTLERİ
+    -- BUTON HOVER EFEKTLERI
     local function SetupButtonHover(button, isControlButton)
         if isControlButton then 
             local originalColor = button.BackgroundColor3
@@ -244,10 +246,12 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK
+    -- DRAGGABLE FONKSIYONLUK (TitleBar üzerinden sürükleme)
     local UserInputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
     local draggingUI = false
-    local dragStartUI, startPosUI
+    local dragStartUI = nil
+    local startPosUI = nil
     
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -255,6 +259,7 @@ function OxireunUI:NewWindow(title)
             dragStartUI = Vector2.new(input.Position.X, input.Position.Y)
             startPosUI = MainFrame.Position
             
+            -- eğer kullanıcı mouse'u bırakırsa drag'i bitir
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     draggingUI = false
@@ -263,8 +268,15 @@ function OxireunUI:NewWindow(title)
         end
     end)
     
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if draggingUI then
+    -- Ayrıca kullanıcı pencerenin içinden başka bir yere mouse ile sürükleme yapıyorsa drag halen devam etmesin.
+    TitleBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingUI = false
+        end
+    end)
+    
+    RunService.Heartbeat:Connect(function()
+        if draggingUI and dragStartUI and startPosUI then
             local mouse = UserInputService:GetMouseLocation()
             local delta = Vector2.new(mouse.X, mouse.Y) - dragStartUI
             MainFrame.Position = UDim2.new(
@@ -501,7 +513,7 @@ function OxireunUI:NewWindow(title)
             local SliderLabel = Instance.new("TextLabel")
             SliderLabel.Size = UDim2.new(1, 0, 0, 20)
             SliderLabel.BackgroundTransparency = 1
-            SliderLabel.Text = name .. ": " .. default
+            SliderLabel.Text = name .. ": " .. tostring(default)
             SliderLabel.TextColor3 = Colors.Text
             SliderLabel.TextSize = 14
             SliderLabel.Font = Fonts.Bold
@@ -521,7 +533,11 @@ function OxireunUI:NewWindow(title)
             
             local SliderFill = Instance.new("Frame")
             SliderFill.Name = "Fill"
-            SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+            local initialPos = 0
+            if max > min then
+                initialPos = math.clamp((default - min) / (max - min), 0, 1)
+            end
+            SliderFill.Size = UDim2.new(initialPos, 0, 1, 0)
             SliderFill.BackgroundColor3 = Colors.Slider
             SliderFill.Parent = SliderTrack
             
@@ -542,80 +558,58 @@ function OxireunUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(1, 0)
             btnCorner.Parent = SliderButton
             
-            -- FIXED SLIDER: Only works when specifically interacting with slider
+            -- FIXED SLIDER: Only drags when interacting with slider elements
             local sliderDragging = false
-            local sliderConnection
-            
-            local function updateSlider()
-                if not sliderDragging then return end
-                
-                local mouse = UserInputService:GetMouseLocation()
-                local relativeX = (mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+            local function updateSliderFromMouse(mouseX)
+                local relativeX = (mouseX - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
                 local pos = math.clamp(relativeX, 0, 1)
                 
                 SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
                 SliderFill.Size = UDim2.new(pos, 0, 1, 0)
                 
                 local value = math.floor(min + (pos * (max - min)))
-                SliderLabel.Text = name .. ": " .. value
+                SliderLabel.Text = name .. ": " .. tostring(value)
                 
                 if callback then
                     callback(value)
                 end
             end
             
-            -- Start dragging when clicking slider button
-            local function startSliderDrag()
-                sliderDragging = true
-                if sliderConnection then
-                    sliderConnection:Disconnect()
-                end
-                sliderConnection = game:GetService("RunService").Heartbeat:Connect(updateSlider)
-            end
-            
-            -- Stop dragging
-            local function stopSliderDrag()
-                sliderDragging = false
-                if sliderConnection then
-                    sliderConnection:Disconnect()
-                    sliderConnection = nil
-                end
-            end
-            
-            -- Slider button drag
+            -- Slider button drag başlat
             SliderButton.MouseButton1Down:Connect(function()
-                startSliderDrag()
+                sliderDragging = true
             end)
             
-            -- Slider track click
+            -- Slider track'a tıklayınca doğrudan oraya git
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    startSliderDrag()
-                    local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
-                    local pos = math.clamp(relativeX, 0, 1)
-                    
-                    SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
-                    SliderFill.Size = UDim2.new(pos, 0, 1, 0)
-                    
-                    local value = math.floor(min + (pos * (max - min)))
-                    SliderLabel.Text = name .. ": " .. value
-                    
-                    if callback then
-                        callback(value)
-                    end
+                    local mousePos = UserInputService:GetMouseLocation()
+                    updateSliderFromMouse(mousePos.X)
+                    sliderDragging = true
                 end
             end)
             
-            -- Stop dragging when mouse is released ANYWHERE
+            -- Global mouse up to stop dragging
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    stopSliderDrag()
+                    sliderDragging = false
                 end
             end)
             
-            -- Clean up when slider is destroyed
+            -- Update slider while dragging (run service)
+            local sliderConnection
+            sliderConnection = RunService.Heartbeat:Connect(function()
+                if sliderDragging then
+                    local mousePos = UserInputService:GetMouseLocation()
+                    updateSliderFromMouse(mousePos.X)
+                end
+            end)
+            
+            -- Clean up connection when slider yok edilir
             Slider.Destroying:Connect(function()
-                stopSliderDrag()
+                if sliderConnection then
+                    sliderConnection:Disconnect()
+                end
             end)
             
             return Slider
@@ -648,6 +642,7 @@ function OxireunUI:NewWindow(title)
             
             local open = false
             local OptionsContainer
+            local optionsGuiConnection
             
             local function CloseOptions()
                 if OptionsContainer then
@@ -655,6 +650,10 @@ function OxireunUI:NewWindow(title)
                     OptionsContainer = nil
                 end
                 open = false
+                if optionsGuiConnection then
+                    optionsGuiConnection:Disconnect()
+                    optionsGuiConnection = nil
+                end
             end
             
             DropdownButton.MouseButton1Click:Connect(function()
@@ -738,7 +737,7 @@ function OxireunUI:NewWindow(title)
                     end
                 end
                 
-                UserInputService.InputBegan:Connect(checkClickOutside)
+                optionsGuiConnection = UserInputService.InputBegan:Connect(checkClickOutside)
             end)
             
             return Dropdown
