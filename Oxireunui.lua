@@ -1,10 +1,10 @@
--- Oxireun UI Library - Slider Fixed Version
--- Slider only drags when interacting with slider elements
+-- Oxireun UI Library - COMPLETELY FIXED SLIDER
+-- Slider only works when clicking on slider elements
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
 
--- İyileştirilmiş mavi renk paleti
+-- Renk paleti
 local Colors = {
     Background = Color3.fromRGB(20, 25, 45),
     SecondaryBg = Color3.fromRGB(35, 45, 80),
@@ -366,21 +366,18 @@ function OxireunUI:NewWindow(title)
         TabButton.MouseButton1Click:Connect(function()
             CreateClickEffect(TabButton)
             
-            -- Tüm tab'leri pasif yap
             for _, tab in pairs(TabsContainer:GetChildren()) do
                 if tab:IsA("TextButton") then
                     tab.BackgroundColor3 = Colors.TabInactive
                 end
             end
             
-            -- Tüm section'ları gizle
             for _, frame in pairs(ContentArea:GetChildren()) do
                 if frame:IsA("ScrollingFrame") then
                     frame.Visible = false
                 end
             end
             
-            -- Aktif tab'i ve section'u göster
             TabButton.BackgroundColor3 = Colors.TabActive
             SectionFrame.Visible = true
             Window.CurrentSection = Section
@@ -542,14 +539,18 @@ function OxireunUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(1, 0)
             btnCorner.Parent = SliderButton
             
-            -- FIXED SLIDER: Only drags when interacting with slider elements
+            -- TAM FIXED SLIDER - YENİ YÖNTEM
             local sliderDragging = false
+            local sliderConnection
             
             local function updateSlider()
                 if not sliderDragging then return end
                 
                 local mouse = UserInputService:GetMouseLocation()
-                local relativeX = (mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                local trackPos = SliderTrack.AbsolutePosition
+                local trackSize = SliderTrack.AbsoluteSize
+                
+                local relativeX = (mouse.X - trackPos.X) / trackSize.X
                 local pos = math.clamp(relativeX, 0, 1)
                 
                 SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
@@ -566,13 +567,24 @@ function OxireunUI:NewWindow(title)
             -- Slider button drag
             SliderButton.MouseButton1Down:Connect(function()
                 sliderDragging = true
+                
+                -- Start updating slider
+                sliderConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                    updateSlider()
+                end)
             end)
             
             -- Slider track click
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     sliderDragging = true
-                    local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                    
+                    -- Immediate update on click
+                    local mouse = UserInputService:GetMouseLocation()
+                    local trackPos = SliderTrack.AbsolutePosition
+                    local trackSize = SliderTrack.AbsoluteSize
+                    
+                    local relativeX = (mouse.X - trackPos.X) / trackSize.X
                     local pos = math.clamp(relativeX, 0, 1)
                     
                     SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
@@ -584,29 +596,39 @@ function OxireunUI:NewWindow(title)
                     if callback then
                         callback(value)
                     end
+                    
+                    -- Start continuous updating
+                    if sliderConnection then
+                        sliderConnection:Disconnect()
+                    end
+                    sliderConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                        updateSlider()
+                    end)
                 end
             end)
             
-            -- Global mouse up to stop dragging
-            UserInputService.InputEnded:Connect(function(input)
+            -- Mouse up anywhere stops dragging
+            local function onMouseUp(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    sliderDragging = false
+                    if sliderDragging then
+                        sliderDragging = false
+                        if sliderConnection then
+                            sliderConnection:Disconnect()
+                            sliderConnection = nil
+                        end
+                    end
                 end
-            end)
+            end
             
-            -- Update slider while dragging
-            local sliderConnection
-            sliderConnection = game:GetService("RunService").Heartbeat:Connect(function()
-                if sliderDragging then
-                    updateSlider()
-                end
-            end)
+            -- Connect mouse up event
+            UserInputService.InputEnded:Connect(onMouseUp)
             
-            -- Clean up connection when slider is destroyed
+            -- Clean up when slider is destroyed
             Slider.Destroying:Connect(function()
                 if sliderConnection then
                     sliderConnection:Disconnect()
                 end
+                UserInputService.InputEnded:Disconnect(onMouseUp)
             end)
             
             return Slider
