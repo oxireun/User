@@ -238,35 +238,52 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK
+    -- DRAGGABLE FONKSİYONLUK - DÜZELTİLDİ
     local UserInputService = game:GetService("UserInputService")
-    local draggingUI = false
-    local dragStartUI, startPosUI
+    local RunService = game:GetService("RunService")
+    
+    local dragging = false
+    local dragStart = Vector2.new(0, 0)
+    local startPosition = Vector2.new(0, 0)
+    
+    local function updateDrag()
+        if not dragging then return end
+        local mouse = UserInputService:GetMouseLocation()
+        local delta = mouse - dragStart
+        local newPosition = startPosition + delta
+        
+        MainFrame.Position = UDim2.new(0, newPosition.X, 0, newPosition.Y)
+    end
     
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            draggingUI = true
-            dragStartUI = Vector2.new(input.Position.X, input.Position.Y)
-            startPosUI = MainFrame.Position
-            
+            dragging = true
+            dragStart = UserInputService:GetMouseLocation()
+            startPosition = Vector2.new(MainFrame.Position.X.Offset, MainFrame.Position.Y.Offset)
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
-                    draggingUI = false
+                    dragging = false
                 end
             end)
         end
     end)
     
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if draggingUI then
-            local mouse = UserInputService:GetMouseLocation()
-            local delta = Vector2.new(mouse.X, mouse.Y) - dragStartUI
-            MainFrame.Position = UDim2.new(
-                startPosUI.X.Scale,
-                startPosUI.X.Offset + delta.X,
-                startPosUI.Y.Scale,
-                startPosUI.Y.Offset + delta.Y
-            )
+    TitleBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    local dragConnection
+    dragConnection = RunService.RenderStepped:Connect(function()
+        if dragging then
+            updateDrag()
+        end
+    end)
+    
+    MainFrame.Destroying:Connect(function()
+        if dragConnection then
+            dragConnection:Disconnect()
         end
     end)
     
