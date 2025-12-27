@@ -1,5 +1,5 @@
 -- Oxireun UI Library - Final Fixed Version
--- Fixed slider and draggable issues
+-- Fixed slider dragging and UI dragging issues
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
@@ -20,6 +20,7 @@ local Colors = {
     ToggleOff = Color3.fromRGB(80, 110, 160),
     TabActive = Color3.fromRGB(0, 180, 255),
     TabInactive = Color3.fromRGB(50, 80, 140),
+    ControlButton = Color3.fromRGB(60, 90, 150),
     MinimizeButton = Color3.fromRGB(70, 100, 160),
     CloseButton = Color3.fromRGB(200, 70, 70)
 }
@@ -246,9 +247,11 @@ function OxireunUI:NewWindow(title)
     
     -- DRAGGABLE FONKSİYONLUK - SADECE BAŞLIK ÇUBUĞUNDAN
     local UserInputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
     local dragging = false
     local dragStart, startPos
     
+    -- Sadece TitleBar'dan sürükleme
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
@@ -263,7 +266,7 @@ function OxireunUI:NewWindow(title)
         end
     end)
     
-    game:GetService("RunService").Heartbeat:Connect(function()
+    RunService.Heartbeat:Connect(function()
         if dragging then
             local mouse = UserInputService:GetMouseLocation()
             local delta = Vector2.new(mouse.X, mouse.Y) - dragStart
@@ -496,6 +499,7 @@ function OxireunUI:NewWindow(title)
             Slider.Name = name
             Slider.Size = UDim2.new(1, 0, 0, 50)
             Slider.BackgroundTransparency = 1
+            Slider.ClipsDescendants = true  -- SÜRÜKLENEN KISMI KISITLA
             Slider.Parent = SectionFrame
             
             local SliderLabel = Instance.new("TextLabel")
@@ -510,9 +514,10 @@ function OxireunUI:NewWindow(title)
             
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "Track"
-            SliderTrack.Size = UDim2.new(1, -12, 0, 5) -- KÜÇÜLTÜLDÜ UI SINIRLARI İÇİN
-            SliderTrack.Position = UDim2.new(0, 6, 0, 25) -- ORTALANDI
+            SliderTrack.Size = UDim2.new(1, 0, 0, 5)
+            SliderTrack.Position = UDim2.new(0, 0, 0, 25)
             SliderTrack.BackgroundColor3 = Colors.ToggleOff
+            SliderTrack.ClipsDescendants = true  -- TRACK'İ DE KISITLA
             SliderTrack.Parent = Slider
             
             local trackCorner = Instance.new("UICorner")
@@ -531,8 +536,8 @@ function OxireunUI:NewWindow(title)
             
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
-            SliderButton.Size = UDim2.new(0, 16, 0, 16) -- DAHA KÜÇÜK
-            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8) -- AYARLANDI
+            SliderButton.Size = UDim2.new(0, 16, 0, 16)  -- DAHA KÜÇÜK
+            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8)  -- AYARLANDI
             SliderButton.BackgroundColor3 = Colors.Text
             SliderButton.Text = ""
             SliderButton.AutoButtonColor = false
@@ -543,6 +548,7 @@ function OxireunUI:NewWindow(title)
             btnCorner.Parent = SliderButton
             
             local sliderDragging = false
+            local sliderDragStart
             
             local function updateSlider()
                 if not sliderDragging then return end
@@ -551,7 +557,7 @@ function OxireunUI:NewWindow(title)
                 local trackPos = SliderTrack.AbsolutePosition
                 local trackSize = SliderTrack.AbsoluteSize
                 
-                -- UI içinde kalması için sınırlar
+                -- Track'in sınırları içinde kal
                 local relativeX = (mouse.X - trackPos.X) / trackSize.X
                 local pos = math.clamp(relativeX, 0, 1)
                 
@@ -568,11 +574,14 @@ function OxireunUI:NewWindow(title)
             
             SliderButton.MouseButton1Down:Connect(function()
                 sliderDragging = true
+                sliderDragStart = Vector2.new(UserInputService:GetMouseLocation().X, 0)
             end)
             
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     sliderDragging = true
+                    sliderDragStart = Vector2.new(input.Position.X, 0)
+                    
                     local trackPos = SliderTrack.AbsolutePosition
                     local trackSize = SliderTrack.AbsoluteSize
                     local relativeX = (input.Position.X - trackPos.X) / trackSize.X
@@ -590,17 +599,24 @@ function OxireunUI:NewWindow(title)
                 end
             end)
             
-            -- Slider'i kontrol et
+            -- Slider için ayrı runservice connection
             local sliderConnection
-            sliderConnection = game:GetService("RunService").Heartbeat:Connect(function()
-                if sliderDragging then
+            SliderButton.MouseButton1Down:Connect(function()
+                sliderDragging = true
+                sliderDragStart = Vector2.new(UserInputService:GetMouseLocation().X, 0)
+                
+                sliderConnection = RunService.Heartbeat:Connect(function()
                     updateSlider()
-                end
+                end)
             end)
             
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     sliderDragging = false
+                    if sliderConnection then
+                        sliderConnection:Disconnect()
+                        sliderConnection = nil
+                    end
                 end
             end)
             
