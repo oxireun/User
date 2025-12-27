@@ -533,8 +533,9 @@ function OxireunUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(1, 0)
             btnCorner.Parent = SliderButton
             
-            -- FIXED: Only drags when interacting with slider elements
+            -- TAM DÜZELTME: Sadece slider elemanlarına tıklanıldığında çalışsın
             local sliderDragging = false
+            local mouseDownOnSlider = false
             
             local function updateSlider()
                 if not sliderDragging then return end
@@ -554,38 +555,78 @@ function OxireunUI:NewWindow(title)
                 end
             end
             
-            -- Slider button drag
+            -- SADECE SLIDER BUTON VE TRACK ÜZERİNDE MOUSE DOWN
             SliderButton.MouseButton1Down:Connect(function()
                 sliderDragging = true
+                mouseDownOnSlider = true
             end)
             
-            -- Slider track click - FIXED: Only works when clicking on slider track
-            SliderTrack.InputBegan:Connect(function(input)
+            SliderTrack.MouseButton1Down:Connect(function()
+                sliderDragging = true
+                mouseDownOnSlider = true
+                -- Track'e tıklanıldığında anında değeri güncelle
+                local mouse = UserInputService:GetMouseLocation()
+                local relativeX = (mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                local pos = math.clamp(relativeX, 0, 1)
+                
+                SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
+                SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                
+                local value = math.floor(min + (pos * (max - min)))
+                SliderLabel.Text = name .. ": " .. value
+                
+                if callback then
+                    callback(value)
+                end
+            end)
+            
+            -- MOUSE UP olayını slider elemanlarında dinle
+            local function stopDragging()
+                sliderDragging = false
+                mouseDownOnSlider = false
+            end
+            
+            SliderButton.MouseButton1Up:Connect(stopDragging)
+            SliderTrack.MouseButton1Up:Connect(stopDragging)
+            
+            -- Global mouse up durumunda da sliderDragging'i durdur
+            local inputEndConnection
+            inputEndConnection = UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    sliderDragging = true
-                    local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
-                    local pos = math.clamp(relativeX, 0, 1)
+                    stopDragging()
+                end
+            end)
+            
+            -- Slider elemanları dışına tıklandığında da dragging durdurulsun
+            local function checkClickOutside()
+                if sliderDragging and not mouseDownOnSlider then
+                    stopDragging()
+                end
+            end
+            
+            -- Herhangi bir yere tıklandığında kontrol et
+            local globalClickConnection
+            globalClickConnection = UserInputService.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    local mouseTarget = UserInputService:GetMouseLocation()
+                    local trackPos = SliderTrack.AbsolutePosition
+                    local trackSize = SliderTrack.AbsoluteSize
+                    local buttonPos = SliderButton.AbsolutePosition
+                    local buttonSize = SliderButton.AbsoluteSize
                     
-                    SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
-                    SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                    -- Tıklanan yer slider track veya button üzerinde mi?
+                    local isOnTrack = mouseTarget.X >= trackPos.X and mouseTarget.X <= trackPos.X + trackSize.X and
+                                      mouseTarget.Y >= trackPos.Y and mouseTarget.Y <= trackPos.Y + trackSize.Y
+                    local isOnButton = mouseTarget.X >= buttonPos.X and mouseTarget.X <= buttonPos.X + buttonSize.X and
+                                       mouseTarget.Y >= buttonPos.Y and mouseTarget.Y <= buttonPos.Y + buttonSize.Y
                     
-                    local value = math.floor(min + (pos * (max - min)))
-                    SliderLabel.Text = name .. ": " .. value
-                    
-                    if callback then
-                        callback(value)
+                    if not (isOnTrack or isOnButton) then
+                        stopDragging()
                     end
                 end
             end)
             
-            -- Global mouse up to stop dragging
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    sliderDragging = false
-                end
-            end)
-            
-            -- Update slider while dragging - FIXED: Only update when dragging slider elements
+            -- Slider'ı güncelle
             local sliderConnection
             sliderConnection = game:GetService("RunService").Heartbeat:Connect(function()
                 if sliderDragging then
@@ -593,10 +634,16 @@ function OxireunUI:NewWindow(title)
                 end
             end)
             
-            -- Clean up connection when slider is destroyed
+            -- Bağlantıları temizle
             Slider.Destroying:Connect(function()
                 if sliderConnection then
                     sliderConnection:Disconnect()
+                end
+                if inputEndConnection then
+                    inputEndConnection:Disconnect()
+                end
+                if globalClickConnection then
+                    globalClickConnection:Disconnect()
                 end
             end)
             
