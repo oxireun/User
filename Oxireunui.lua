@@ -1,32 +1,32 @@
--- Blade Runner 2049 Neon UI
--- Purple theme, fight club font, animated neon border
+-- Neon Blade Runner UI Library
+-- Mor neon temalı, draggable, fight club fontlu
 
-local BladeRunnerUI = {}
-BladeRunnerUI.__index = BladeRunnerUI
+local NeonUI = {}
+NeonUI.__index = NeonUI
 
--- Blade Runner 2049 Neon Mor renk paleti
+-- Blade Runner 2049 tarzı mor neon renk paleti
 local Colors = {
     Background = Color3.fromRGB(10, 10, 20),
     SecondaryBg = Color3.fromRGB(20, 15, 35),
-    SectionBg = Color3.fromRGB(15, 10, 30),
-    Border = Color3.fromRGB(138, 43, 226), -- Neon mor
-    Accent = Color3.fromRGB(148, 0, 211), -- Parlak mor
+    SectionBg = Color3.fromRGB(25, 20, 45),
+    Border = Color3.fromRGB(148, 0, 211), -- Neon mor
+    Accent = Color3.fromRGB(186, 85, 211), -- Açık mor
     Text = Color3.fromRGB(255, 255, 255),
     Disabled = Color3.fromRGB(100, 100, 130),
-    Hover = Color3.fromRGB(138, 43, 226, 0.3),
-    Button = Color3.fromRGB(40, 30, 60),
-    Slider = Color3.fromRGB(138, 43, 226),
-    ToggleOn = Color3.fromRGB(138, 43, 226),
-    ToggleOff = Color3.fromRGB(60, 45, 90),
-    TabActive = Color3.fromRGB(138, 43, 226),
-    TabInactive = Color3.fromRGB(40, 30, 60),
-    ControlButton = Color3.fromRGB(50, 35, 80),
-    CloseButton = Color3.fromRGB(180, 60, 90) -- Mor-kırmızı karışımı
+    Hover = Color3.fromRGB(148, 0, 211, 0.3),
+    Button = Color3.fromRGB(40, 30, 70),
+    Slider = Color3.fromRGB(148, 0, 211),
+    ToggleOn = Color3.fromRGB(148, 0, 211),
+    ToggleOff = Color3.fromRGB(60, 50, 90),
+    TabActive = Color3.fromRGB(148, 0, 211),
+    TabInactive = Color3.fromRGB(40, 30, 70),
+    ControlButton = Color3.fromRGB(60, 40, 100),
+    CloseButton = Color3.fromRGB(200, 50, 80) -- Neon kırmızı
 }
 
--- Font ayarları - Fight Club tarzı font
+-- Font ayarları
 local Fonts = {
-    Title = Enum.Font.Fantasy, -- Fight Club'a benzer font
+    Title = Enum.Font.Fantasy, -- Fight Club tarzı font
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
@@ -35,62 +35,27 @@ local Fonts = {
 
 -- UI Boyutları
 local UI_SIZE = {
-    Width = 310,
-    Height = 320
+    Width = 320,
+    Height = 350
 }
 
 -- Ana Library fonksiyonu
-function BladeRunnerUI.new()
-    local self = setmetatable({}, BladeRunnerUI)
+function NeonUI.new()
+    local self = setmetatable({}, NeonUI)
     self.Windows = {}
     return self
 end
 
--- Neon efekti oluşturma
-local function CreateNeonEffect(frame)
-    local outerGlow = Instance.new("UIStroke")
-    outerGlow.Name = "OuterNeon"
-    outerGlow.Color = Colors.Accent
-    outerGlow.Thickness = 2
-    outerGlow.Transparency = 0.5
-    outerGlow.Parent = frame
-    
-    local innerGlow = Instance.new("UIStroke")
-    innerGlow.Name = "InnerNeon"
-    innerGlow.Color = Colors.Border
-    innerGlow.Thickness = 1
-    innerGlow.Transparency = 0.3
-    innerGlow.Parent = frame
-    
-    -- Animasyonlu neon efekti
-    local pulse = 0
-    local pulseDirection = 1
-    
-    game:GetService("RunService").Heartbeat:Connect(function(delta)
-        pulse = pulse + (delta * 2 * pulseDirection)
-        if pulse >= 1 then
-            pulseDirection = -1
-        elseif pulse <= 0 then
-            pulseDirection = 1
-        end
-        
-        outerGlow.Transparency = 0.3 + (pulse * 0.2)
-        innerGlow.Transparency = 0.1 + (pulse * 0.2)
-    end)
-    
-    return {outerGlow, innerGlow}
-end
-
 -- Yeni pencere oluşturma
-function BladeRunnerUI:NewWindow(title)
+function NeonUI:NewWindow(title)
     local Window = {}
-    Window.Title = title or "Blade Runner"
+    Window.Title = title or "Neon UI"
     Window.Sections = {}
     Window.CurrentSection = nil
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "BladeRunnerUI"
+    ScreenGui.Name = "NeonUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
@@ -107,88 +72,110 @@ function BladeRunnerUI:NewWindow(title)
     
     -- Köşe yuvarlatma
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = MainFrame
     
-    -- Neon border efekti
-    CreateNeonEffect(MainFrame)
+    -- Neon border - Blade Runner tarzı
+    local border = Instance.new("UIStroke")
+    border.Color = Colors.Border
+    border.Thickness = 2
+    border.Transparency = 0
+    border.Parent = MainFrame
+    
+    -- Neon efekt için animasyon
+    local neonGlow = Instance.new("UIStroke")
+    neonGlow.Color = Colors.Accent
+    neonGlow.Thickness = 3
+    neonGlow.Transparency = 0.7
+    neonGlow.Parent = MainFrame
+    
+    -- Neon animasyonu
+    game:GetService("TweenService"):Create(neonGlow, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        Transparency = 0.3
+    }):Play()
     
     -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
-    TitleBar.Size = UDim2.new(1, 0, 0, 35)
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
     TitleBar.BackgroundColor3 = Colors.SecondaryBg
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = MainFrame
     
     local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
+    titleCorner.CornerRadius = UDim.new(0, 8, 0, 0)
     titleCorner.Parent = TitleBar
     
-    -- Başlık - FIGHT CLUB TARZI
+    -- Başlık - Fight Club tarzı font
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+    TitleLabel.Position = UDim2.new(0, 12, 0, 0)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text
     TitleLabel.TextSize = 18
-    TitleLabel.Font = Fonts.Title
+    TitleLabel.Font = Fonts.Title -- Fight Club tarzı font
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
     -- Kontrol butonları - DAHA KÜÇÜK VE HAVALI
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 50, 1, 0)
-    Controls.Position = UDim2.new(1, -55, 0, 0)
+    Controls.Size = UDim2.new(0, 55, 1, 0)
+    Controls.Position = UDim2.new(1, -60, 0, 0)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
-    -- Küçültme butonu - DAHA KÜÇÜK
+    -- Küçültme butonu - KÜÇÜK ve HAVALI
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
-    MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
-    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -10)
+    MinimizeButton.Size = UDim2.new(0, 22, 0, 22) -- DAHA KÜÇÜK
+    MinimizeButton.Position = UDim2.new(0, 0, 0.5, -11)
     MinimizeButton.BackgroundColor3 = Colors.ControlButton
     MinimizeButton.Text = "–"
     MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 18
+    MinimizeButton.TextSize = 20
     MinimizeButton.Font = Fonts.Normal
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
     
     local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(1, 0)
+    minimizeCorner.CornerRadius = UDim.new(0, 5) -- HAVALI KÖŞELER
     minimizeCorner.Parent = MinimizeButton
     
-    -- Kapatma butonu - DAHA KÜÇÜK ve ">" simgesi
+    local minimizeStroke = Instance.new("UIStroke")
+    minimizeStroke.Color = Colors.Border
+    minimizeStroke.Thickness = 1
+    minimizeStroke.Parent = MinimizeButton
+    
+    -- Kapatma butonu - KÜÇÜK ve HAVALI, ">" sembolü
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
-    CloseButton.Size = UDim2.new(0, 20, 0, 20)
-    CloseButton.Position = UDim2.new(0, 25, 0.5, -10)
+    CloseButton.Size = UDim2.new(0, 22, 0, 22) -- DAHA KÜÇÜK
+    CloseButton.Position = UDim2.new(0, 28, 0.5, -11)
     CloseButton.BackgroundColor3 = Colors.CloseButton
     CloseButton.Text = ">"
     CloseButton.TextColor3 = Colors.Text
     CloseButton.TextSize = 16
-    CloseButton.Font = Fonts.Normal
+    CloseButton.Font = Enum.Font.GothamBold
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
     
     local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(1, 0)
+    closeCorner.CornerRadius = UDim.new(0, 5) -- HAVALI KÖŞELER
     closeCorner.Parent = CloseButton
     
-    -- Butonlara neon efekti
-    CreateNeonEffect(MinimizeButton)
-    CreateNeonEffect(CloseButton)
+    local closeStroke = Instance.new("UIStroke")
+    closeStroke.Color = Color3.fromRGB(255, 100, 100)
+    closeStroke.Thickness = 1
+    closeStroke.Parent = CloseButton
     
     -- Tab'ler için yatay scrolling frame
     local TabsScrollFrame = Instance.new("ScrollingFrame")
     TabsScrollFrame.Name = "TabsScroll"
-    TabsScrollFrame.Size = UDim2.new(1, -20, 0, 30)
-    TabsScrollFrame.Position = UDim2.new(0, 10, 0, 40)
+    TabsScrollFrame.Size = UDim2.new(1, -20, 0, 28)
+    TabsScrollFrame.Position = UDim2.new(0, 10, 0, 37)
     TabsScrollFrame.BackgroundTransparency = 1
     TabsScrollFrame.BorderSizePixel = 0
     TabsScrollFrame.ScrollBarThickness = 4
@@ -211,8 +198,8 @@ function BladeRunnerUI:NewWindow(title)
     -- İçerik alanı
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1, -20, 1, -80)
-    ContentArea.Position = UDim2.new(0, 10, 0, 75)
+    ContentArea.Size = UDim2.new(1, -20, 1, -75)
+    ContentArea.Position = UDim2.new(0, 10, 0, 70)
     ContentArea.BackgroundTransparency = 1
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
@@ -228,7 +215,7 @@ function BladeRunnerUI:NewWindow(title)
         effect.Parent = button
         
         local effectCorner = Instance.new("UICorner")
-        effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 6)
+        effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 5)
         effectCorner.Parent = effect
         
         game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
@@ -245,9 +232,9 @@ function BladeRunnerUI:NewWindow(title)
         if isControlButton then 
             button.MouseEnter:Connect(function()
                 if button.Name == "Close" then
-                    button.BackgroundColor3 = Color3.fromRGB(200, 80, 100)
+                    button.BackgroundColor3 = Color3.fromRGB(220, 70, 90)
                 else
-                    button.BackgroundColor3 = Color3.fromRGB(70, 50, 110)
+                    button.BackgroundColor3 = Color3.fromRGB(80, 60, 130)
                 end
             end)
             
@@ -277,12 +264,13 @@ function BladeRunnerUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE - KESİN ÇÖZÜM
+    -- TAM DRAGGABLE - KESİN ÇÖZÜM
     local UserInputService = game:GetService("UserInputService")
     local RunService = game:GetService("RunService")
     local dragging = false
     local dragStart, startPos
     
+    -- Mouse'u takip eden fonksiyon
     local function updateDrag()
         if not dragging then return end
         
@@ -296,17 +284,20 @@ function BladeRunnerUI:NewWindow(title)
         )
     end
     
+    -- Sürükleme başlatma
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = Vector2.new(input.Position.X, input.Position.Y)
             startPos = MainFrame.Position
             
+            -- Mouse hareketini dinle
             local connection
             connection = RunService.Heartbeat:Connect(function()
                 updateDrag()
             end)
             
+            -- Mouse bırakıldığında
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -328,7 +319,7 @@ function BladeRunnerUI:NewWindow(title)
     MinimizeButton.MouseButton1Click:Connect(function()
         CreateClickEffect(MinimizeButton)
         if not minimized then
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35)
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 32)
             TabsScrollFrame.Visible = false
             ContentArea.Visible = false
             minimized = true
@@ -348,7 +339,7 @@ function BladeRunnerUI:NewWindow(title)
         -- Tab butonu oluştur
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name .. "_Tab"
-        TabButton.Size = UDim2.new(0, 70, 0, 25)
+        TabButton.Size = UDim2.new(0, 70, 0, 24)
         TabButton.BackgroundColor3 = Colors.TabInactive
         TabButton.Text = name
         TabButton.TextColor3 = Colors.Text
@@ -380,6 +371,12 @@ function BladeRunnerUI:NewWindow(title)
         local sectionCorner = Instance.new("UICorner")
         sectionCorner.CornerRadius = UDim.new(0, 8)
         sectionCorner.Parent = SectionFrame
+        
+        -- Section neon border
+        local sectionNeon = Instance.new("UIStroke")
+        sectionNeon.Color = Colors.Border
+        sectionNeon.Thickness = 1
+        sectionNeon.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
         sectionList.Padding = UDim.new(0, 8)
@@ -441,6 +438,11 @@ function BladeRunnerUI:NewWindow(title)
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = Button
+            
+            local btnStroke = Instance.new("UIStroke")
+            btnStroke.Color = Colors.Border
+            btnStroke.Thickness = 1
+            btnStroke.Parent = Button
             
             SetupButtonHover(Button, false)
             
@@ -650,6 +652,11 @@ function BladeRunnerUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
             
+            local btnStroke = Instance.new("UIStroke")
+            btnStroke.Color = Colors.Border
+            btnStroke.Thickness = 1
+            btnStroke.Parent = DropdownButton
+            
             SetupButtonHover(DropdownButton, false)
             
             local open = false
@@ -692,6 +699,11 @@ function BladeRunnerUI:NewWindow(title)
                 local optionsCorner = Instance.new("UICorner")
                 optionsCorner.CornerRadius = UDim.new(0, 6)
                 optionsCorner.Parent = OptionsContainer
+                
+                local optionsStroke = Instance.new("UIStroke")
+                optionsStroke.Color = Colors.Border
+                optionsStroke.Thickness = 1
+                optionsStroke.Parent = OptionsContainer
                 
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
@@ -774,6 +786,11 @@ function BladeRunnerUI:NewWindow(title)
             inputCorner.CornerRadius = UDim.new(0, 6)
             inputCorner.Parent = InputBox
             
+            local inputStroke = Instance.new("UIStroke")
+            inputStroke.Color = Colors.Border
+            inputStroke.Thickness = 1
+            inputStroke.Parent = InputBox
+            
             InputBox.FocusLost:Connect(function()
                 if callback then
                     callback(InputBox.Text)
@@ -795,4 +812,4 @@ function BladeRunnerUI:NewWindow(title)
 end
 
 -- Library'yi döndür
-return BladeRunnerUI.new()
+return NeonUI.new()
