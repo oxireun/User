@@ -1,5 +1,5 @@
--- Oxireun UI Library - Slider Fixed + Draggable TitleBar
--- Sadece istenen değişiklikler: UI draggable yapıldı ve slider bug düzeltildi
+-- Oxireun UI Library - Slider Fixed Version
+-- Slider only drags when interacting with slider elements
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
@@ -13,7 +13,7 @@ local Colors = {
     Accent = Color3.fromRGB(0, 200, 255),
     Text = Color3.fromRGB(255, 255, 255),
     Disabled = Color3.fromRGB(150, 150, 180),
-    Hover = Color3.fromRGB(0, 180, 255), -- alpha kaldırıldı (Color3 sadece RGB alır)
+    Hover = Color3.fromRGB(0, 180, 255, 0.3),
     Button = Color3.fromRGB(50, 80, 140),
     Slider = Color3.fromRGB(0, 180, 255),
     ToggleOn = Color3.fromRGB(0, 180, 255),
@@ -52,13 +52,13 @@ function OxireunUI:NewWindow(title)
     Window.Title = title or "Oxireun UI"
     Window.Sections = {}
     Window.CurrentSection = nil
-    
+
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "OxireunUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
+
     -- Ana pencere
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
@@ -69,19 +69,19 @@ function OxireunUI:NewWindow(title)
     MainFrame.ClipsDescendants = true
     MainFrame.Active = true
     MainFrame.Parent = ScreenGui
-    
+
     -- Köşe yuvarlatma
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
-    
+
     -- Mavi border
     local border = Instance.new("UIStroke")
     border.Color = Colors.Border
     border.Thickness = 2
     border.Transparency = 0
     border.Parent = MainFrame
-    
+
     -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
@@ -89,11 +89,11 @@ function OxireunUI:NewWindow(title)
     TitleBar.BackgroundColor3 = Colors.SecondaryBg
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = MainFrame
-    
+
     local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 10)
+    titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
     titleCorner.Parent = TitleBar
-    
+
     -- Başlık
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
@@ -106,7 +106,7 @@ function OxireunUI:NewWindow(title)
     TitleLabel.Font = Fonts.Title
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
-    
+
     -- Kontrol butonları
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
@@ -114,7 +114,7 @@ function OxireunUI:NewWindow(title)
     Controls.Position = UDim2.new(1, -65, 0, 0)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
-    
+
     -- Küçültme butonu
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
@@ -127,11 +127,11 @@ function OxireunUI:NewWindow(title)
     MinimizeButton.Font = Fonts.Normal
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
-    
+
     local minimizeCorner = Instance.new("UICorner")
     minimizeCorner.CornerRadius = UDim.new(1, 0)
     minimizeCorner.Parent = MinimizeButton
-    
+
     -- Kapatma butonu
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
@@ -144,11 +144,11 @@ function OxireunUI:NewWindow(title)
     CloseButton.Font = Fonts.Normal
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
-    
+
     local closeCorner = Instance.new("UICorner")
     closeCorner.CornerRadius = UDim.new(1, 0)
     closeCorner.Parent = CloseButton
-    
+
     -- Tab'ler için yatay scrolling frame
     local TabsScrollFrame = Instance.new("ScrollingFrame")
     TabsScrollFrame.Name = "TabsScroll"
@@ -161,18 +161,18 @@ function OxireunUI:NewWindow(title)
     TabsScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.X
     TabsScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
     TabsScrollFrame.Parent = MainFrame
-    
+
     local TabsContainer = Instance.new("Frame")
     TabsContainer.Name = "TabsContainer"
     TabsContainer.Size = UDim2.new(0, 0, 1, 0)
     TabsContainer.BackgroundTransparency = 1
     TabsContainer.Parent = TabsScrollFrame
-    
+
     local TabsList = Instance.new("UIListLayout")
     TabsList.FillDirection = Enum.FillDirection.Horizontal
     TabsList.Padding = UDim.new(0, 5)
     TabsList.Parent = TabsContainer
-    
+
     -- İçerik alanı
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
@@ -181,8 +181,8 @@ function OxireunUI:NewWindow(title)
     ContentArea.BackgroundTransparency = 1
     ContentArea.ClipsDescendants = true
     ContentArea.Parent = MainFrame
-    
-    -- TIKLAMA EFEKTI
+
+    -- TIKLAMA EFEKTİ
     local function CreateClickEffect(button)
         local effect = Instance.new("Frame")
         effect.Name = "ClickEffect"
@@ -191,27 +191,25 @@ function OxireunUI:NewWindow(title)
         effect.BackgroundTransparency = 0.7
         effect.ZIndex = -1
         effect.Parent = button
-        
+
         local effectCorner = Instance.new("UICorner")
         effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 6)
         effectCorner.Parent = effect
-        
+
         game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
             BackgroundTransparency = 1
         }):Play()
-        
+
         delay(0.3, function()
-            if effect and effect.Parent then
-                effect:Destroy()
-            end
+            effect:Destroy()
         end)
     end
-    
-    -- BUTON HOVER EFEKTLERI
+
+    -- BUTON HOVER EFEKTLERİ
     local function SetupButtonHover(button, isControlButton)
-        if isControlButton then 
+        if isControlButton then   
             local originalColor = button.BackgroundColor3
-            
+
             button.MouseEnter:Connect(function()
                 game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
                     BackgroundColor3 = Color3.fromRGB(
@@ -221,7 +219,7 @@ function OxireunUI:NewWindow(title)
                     )
                 }):Play()
             end)
-            
+
             button.MouseLeave:Connect(function()
                 game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
                     BackgroundColor3 = originalColor
@@ -229,37 +227,34 @@ function OxireunUI:NewWindow(title)
             end)
             return
         end
-        
+
         button.MouseEnter:Connect(function()
             game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
                 BackgroundColor3 = Colors.Border
             }):Play()
         end)
-        
+
         button.MouseLeave:Connect(function()
             game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
                 BackgroundColor3 = Colors.Button
             }):Play()
         end)
     end
-    
+
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
-    
-    -- DRAGGABLE FONKSIYONLUK (TitleBar üzerinden sürükleme)
+
+    -- DRAGGABLE FONKSİYONLUK
     local UserInputService = game:GetService("UserInputService")
-    local RunService = game:GetService("RunService")
     local draggingUI = false
-    local dragStartUI = nil
-    local startPosUI = nil
-    
+    local dragStartUI, startPosUI
+
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             draggingUI = true
             dragStartUI = Vector2.new(input.Position.X, input.Position.Y)
             startPosUI = MainFrame.Position
-            
-            -- eğer kullanıcı mouse'u bırakırsa drag'i bitir
+
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     draggingUI = false
@@ -267,16 +262,9 @@ function OxireunUI:NewWindow(title)
             end)
         end
     end)
-    
-    -- Ayrıca kullanıcı pencerenin içinden başka bir yere mouse ile sürükleme yapıyorsa drag halen devam etmesin.
-    TitleBar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            draggingUI = false
-        end
-    end)
-    
-    RunService.Heartbeat:Connect(function()
-        if draggingUI and dragStartUI and startPosUI then
+
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if draggingUI then
             local mouse = UserInputService:GetMouseLocation()
             local delta = Vector2.new(mouse.X, mouse.Y) - dragStartUI
             MainFrame.Position = UDim2.new(
@@ -287,13 +275,13 @@ function OxireunUI:NewWindow(title)
             )
         end
     end)
-    
+
     -- Buton event'leri
     CloseButton.MouseButton1Click:Connect(function()
         CreateClickEffect(CloseButton)
         ScreenGui:Destroy()
     end)
-    
+
     local minimized = false
     MinimizeButton.MouseButton1Click:Connect(function()
         CreateClickEffect(MinimizeButton)
@@ -309,12 +297,12 @@ function OxireunUI:NewWindow(title)
             minimized = false
         end
     end)
-    
+
     -- Yeni section ekleme fonksiyonu
     function Window:NewSection(name)
         local Section = {}
         Section.Name = name
-        
+
         -- Tab butonu oluştur
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name .. "_Tab"
@@ -326,13 +314,13 @@ function OxireunUI:NewWindow(title)
         TabButton.Font = Fonts.Tab
         TabButton.AutoButtonColor = false
         TabButton.Parent = TabsContainer
-        
+
         local tabCorner = Instance.new("UICorner")
         tabCorner.CornerRadius = UDim.new(0, 6)
         tabCorner.Parent = TabButton
-        
+
         SetupButtonHover(TabButton, false)
-        
+
         -- Section içeriği için ScrollingFrame
         local SectionFrame = Instance.new("ScrollingFrame")
         SectionFrame.Name = name .. "_Content"
@@ -346,58 +334,58 @@ function OxireunUI:NewWindow(title)
         SectionFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
         SectionFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
         SectionFrame.Parent = ContentArea
-        
+
         local sectionCorner = Instance.new("UICorner")
         sectionCorner.CornerRadius = UDim.new(0, 8)
         sectionCorner.Parent = SectionFrame
-        
+
         local sectionList = Instance.new("UIListLayout")
         sectionList.Padding = UDim.new(0, 8)
         sectionList.Parent = SectionFrame
-        
+
         local sectionPadding = Instance.new("UIPadding")
         sectionPadding.PaddingTop = UDim.new(0, 8)
         sectionPadding.PaddingBottom = UDim.new(0, 8)
         sectionPadding.PaddingLeft = UDim.new(0, 8)
         sectionPadding.PaddingRight = UDim.new(0, 8)
         sectionPadding.Parent = SectionFrame
-        
+
         -- Canvas size güncelleme
         sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             SectionFrame.CanvasSize = UDim2.new(0, 0, 0, sectionList.AbsoluteContentSize.Y + 16)
         end)
-        
+
         -- İlk section'u aktif yap
         if #Window.Sections == 0 then
             TabButton.BackgroundColor3 = Colors.TabActive
             SectionFrame.Visible = true
             Window.CurrentSection = Section
         end
-        
+
         -- Tab değiştirme
         TabButton.MouseButton1Click:Connect(function()
             CreateClickEffect(TabButton)
-            
+
             -- Tüm tab'leri pasif yap
             for _, tab in pairs(TabsContainer:GetChildren()) do
                 if tab:IsA("TextButton") then
                     tab.BackgroundColor3 = Colors.TabInactive
                 end
             end
-            
+
             -- Tüm section'ları gizle
             for _, frame in pairs(ContentArea:GetChildren()) do
                 if frame:IsA("ScrollingFrame") then
                     frame.Visible = false
                 end
             end
-            
+
             -- Aktif tab'i ve section'u göster
             TabButton.BackgroundColor3 = Colors.TabActive
             SectionFrame.Visible = true
             Window.CurrentSection = Section
         end)
-        
+
         -- Element oluşturma fonksiyonları
         function Section:CreateButton(name, callback)
             local Button = Instance.new("TextButton")
@@ -410,30 +398,30 @@ function OxireunUI:NewWindow(title)
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
             Button.Parent = SectionFrame
-            
+
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = Button
-            
+
             SetupButtonHover(Button, false)
-            
+
             Button.MouseButton1Click:Connect(function()
                 CreateClickEffect(Button)
                 if callback then
                     callback()
                 end
             end)
-            
+
             return Button
         end
-        
+
         function Section:CreateToggle(name, default, callback)
             local Toggle = Instance.new("Frame")
             Toggle.Name = name
             Toggle.Size = UDim2.new(1, 0, 0, 35)
             Toggle.BackgroundTransparency = 1
             Toggle.Parent = SectionFrame
-            
+
             local ToggleLabel = Instance.new("TextLabel")
             ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
             ToggleLabel.BackgroundTransparency = 1
@@ -443,7 +431,7 @@ function OxireunUI:NewWindow(title)
             ToggleLabel.Font = Fonts.Bold
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
-            
+
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "Toggle"
             ToggleButton.Size = UDim2.new(0, 45, 0, 22)
@@ -452,99 +440,95 @@ function OxireunUI:NewWindow(title)
             ToggleButton.Text = ""
             ToggleButton.AutoButtonColor = false
             ToggleButton.Parent = Toggle
-            
+
             local toggleCorner = Instance.new("UICorner")
             toggleCorner.CornerRadius = UDim.new(1, 0)
             toggleCorner.Parent = ToggleButton
-            
+
             local ToggleCircle = Instance.new("Frame")
             ToggleCircle.Name = "Circle"
             ToggleCircle.Size = UDim2.new(0, 18, 0, 18)
             ToggleCircle.Position = UDim2.new(0, default and 24 or 2, 0.5, -9)
             ToggleCircle.BackgroundColor3 = Colors.Text
             ToggleCircle.Parent = ToggleButton
-            
+
             local circleCorner = Instance.new("UICorner")
             circleCorner.CornerRadius = UDim.new(1, 0)
             circleCorner.Parent = ToggleCircle
-            
+
             local state = default or false
-            
+
             ToggleButton.MouseEnter:Connect(function()
                 game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
                     BackgroundColor3 = state and Colors.Accent or Colors.Hover
                 }):Play()
             end)
-            
+
             ToggleButton.MouseLeave:Connect(function()
                 game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
                     BackgroundColor3 = state and Colors.ToggleOn or Colors.ToggleOff
                 }):Play()
             end)
-            
+
             ToggleButton.MouseButton1Click:Connect(function()
                 CreateClickEffect(ToggleButton)
                 state = not state
                 local targetPos = state and 24 or 2
-                
+
                 game:GetService("TweenService"):Create(ToggleCircle, TweenInfo.new(0.2), {
                     Position = UDim2.new(0, targetPos, 0.5, -9)
                 }):Play()
-                
+
                 game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
                     BackgroundColor3 = state and Colors.ToggleOn or Colors.ToggleOff
                 }):Play()
-                
+
                 if callback then
                     callback(state)
                 end
             end)
-            
+
             return Toggle
         end
-        
+
         function Section:CreateSlider(name, min, max, default, callback)
             local Slider = Instance.new("Frame")
             Slider.Name = name
             Slider.Size = UDim2.new(1, 0, 0, 50)
             Slider.BackgroundTransparency = 1
             Slider.Parent = SectionFrame
-            
+
             local SliderLabel = Instance.new("TextLabel")
             SliderLabel.Size = UDim2.new(1, 0, 0, 20)
             SliderLabel.BackgroundTransparency = 1
-            SliderLabel.Text = name .. ": " .. tostring(default)
+            SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
             SliderLabel.TextSize = 14
             SliderLabel.Font = Fonts.Bold
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
-            
+
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "Track"
             SliderTrack.Size = UDim2.new(1, 0, 0, 5)
             SliderTrack.Position = UDim2.new(0, 0, 0, 25)
             SliderTrack.BackgroundColor3 = Colors.ToggleOff
             SliderTrack.Parent = Slider
-            
+
             local trackCorner = Instance.new("UICorner")
             trackCorner.CornerRadius = UDim.new(1, 0)
             trackCorner.Parent = SliderTrack
-            
+
             local SliderFill = Instance.new("Frame")
             SliderFill.Name = "Fill"
-            local initialPos = 0
-            if max > min then
-                initialPos = math.clamp((default - min) / (max - min), 0, 1)
-            end
-            SliderFill.Size = UDim2.new(initialPos, 0, 1, 0)
+            SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
             SliderFill.BackgroundColor3 = Colors.Slider
             SliderFill.Parent = SliderTrack
-            
+
             local fillCorner = Instance.new("UICorner")
             fillCorner.CornerRadius = UDim.new(1, 0)
             fillCorner.Parent = SliderFill
-            
+
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
             SliderButton.Size = UDim2.new(0, 18, 0, 18)
@@ -553,68 +537,94 @@ function OxireunUI:NewWindow(title)
             SliderButton.Text = ""
             SliderButton.AutoButtonColor = false
             SliderButton.Parent = SliderTrack
-            
+
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(1, 0)
             btnCorner.Parent = SliderButton
-            
+
             -- FIXED SLIDER: Only drags when interacting with slider elements
             local sliderDragging = false
-            local function updateSliderFromMouse(mouseX)
-                local relativeX = (mouseX - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+            local activeInput = nil
+
+            local function updateSlider()
+                if not sliderDragging then return end
+
+                local mouse = UserInputService:GetMouseLocation()
+                local relativeX = (mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
                 local pos = math.clamp(relativeX, 0, 1)
-                
+
                 SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
                 SliderFill.Size = UDim2.new(pos, 0, 1, 0)
-                
+
                 local value = math.floor(min + (pos * (max - min)))
-                SliderLabel.Text = name .. ": " .. tostring(value)
-                
+                SliderLabel.Text = name .. ": " .. value
+
                 if callback then
                     callback(value)
                 end
             end
-            
-            -- Slider button drag başlat
-            SliderButton.MouseButton1Down:Connect(function()
-                sliderDragging = true
+
+            -- Start drag when input begins on the slider button (capture the input object)
+            SliderButton.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    sliderDragging = true
+                    activeInput = input
+                    -- Ensure we clear dragging when THIS input ends
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            sliderDragging = false
+                            activeInput = nil
+                        end
+                    end)
+                end
             end)
-            
-            -- Slider track'a tıklayınca doğrudan oraya git
+
+            -- Start drag when clicking the track (we get the input param here)
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    local mousePos = UserInputService:GetMouseLocation()
-                    updateSliderFromMouse(mousePos.X)
                     sliderDragging = true
+                    activeInput = input
+
+                    local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                    local pos = math.clamp(relativeX, 0, 1)
+
+                    SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
+                    SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+
+                    local value = math.floor(min + (pos * (max - min)))
+                    SliderLabel.Text = name .. ": " .. value
+
+                    if callback then
+                        callback(value)
+                    end
+
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            sliderDragging = false
+                            activeInput = nil
+                        end
+                    end)
                 end
             end)
-            
-            -- Global mouse up to stop dragging
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    sliderDragging = false
-                end
-            end)
-            
-            -- Update slider while dragging (run service)
+
+            -- Update slider while dragging (runs only when sliderDragging is true)
             local sliderConnection
-            sliderConnection = RunService.Heartbeat:Connect(function()
+            sliderConnection = game:GetService("RunService").Heartbeat:Connect(function()
                 if sliderDragging then
-                    local mousePos = UserInputService:GetMouseLocation()
-                    updateSliderFromMouse(mousePos.X)
+                    updateSlider()
                 end
             end)
-            
-            -- Clean up connection when slider yok edilir
+
+            -- Clean up connection when slider is destroyed
             Slider.Destroying:Connect(function()
                 if sliderConnection then
                     sliderConnection:Disconnect()
                 end
             end)
-            
+
             return Slider
         end
-        
+
         function Section:CreateDropdown(name, options, default, callback)
             local Dropdown = Instance.new("Frame")
             Dropdown.Name = name
@@ -622,7 +632,7 @@ function OxireunUI:NewWindow(title)
             Dropdown.BackgroundTransparency = 1
             Dropdown.ClipsDescendants = false
             Dropdown.Parent = SectionFrame
-            
+
             local DropdownButton = Instance.new("TextButton")
             DropdownButton.Name = "DropdownButton"
             DropdownButton.Size = UDim2.new(1, 0, 0, 35)
@@ -633,59 +643,54 @@ function OxireunUI:NewWindow(title)
             DropdownButton.Font = Fonts.Normal
             DropdownButton.AutoButtonColor = false
             DropdownButton.Parent = Dropdown
-            
+
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = DropdownButton
-            
+
             SetupButtonHover(DropdownButton, false)
-            
+
             local open = false
             local OptionsContainer
-            local optionsGuiConnection
-            
+
             local function CloseOptions()
                 if OptionsContainer then
                     OptionsContainer:Destroy()
                     OptionsContainer = nil
                 end
                 open = false
-                if optionsGuiConnection then
-                    optionsGuiConnection:Disconnect()
-                    optionsGuiConnection = nil
-                end
             end
-            
+
             DropdownButton.MouseButton1Click:Connect(function()
                 CreateClickEffect(DropdownButton)
-                
+
                 if open then
                     CloseOptions()
                     return
                 end
-                
+
                 open = true
-                
+
                 local OptionsScreenGui = Instance.new("ScreenGui")
                 OptionsScreenGui.Name = "DropdownOptions"
                 OptionsScreenGui.ResetOnSpawn = false
                 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
                 OptionsScreenGui.Parent = game:GetService("CoreGui")
-                
+
                 OptionsContainer = Instance.new("Frame")
                 OptionsContainer.Name = "OptionsContainer"
                 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-                OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 
+                OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X,   
                                                       0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
                 OptionsContainer.BackgroundColor3 = Colors.SectionBg
                 OptionsContainer.BorderSizePixel = 0
                 OptionsContainer.ZIndex = 100
                 OptionsContainer.Parent = OptionsScreenGui
-                
+
                 local optionsCorner = Instance.new("UICorner")
                 optionsCorner.CornerRadius = UDim.new(0, 6)
                 optionsCorner.Parent = OptionsContainer
-                
+
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
                     OptionButton.Name = option
@@ -699,19 +704,19 @@ function OxireunUI:NewWindow(title)
                     OptionButton.AutoButtonColor = false
                     OptionButton.ZIndex = 101
                     OptionButton.Parent = OptionsContainer
-                    
+
                     local optionCorner = Instance.new("UICorner")
                     optionCorner.CornerRadius = UDim.new(0, 4)
                     optionCorner.Parent = OptionButton
-                    
+
                     OptionButton.MouseEnter:Connect(function()
                         OptionButton.BackgroundColor3 = Colors.Border
                     end)
-                    
+
                     OptionButton.MouseLeave:Connect(function()
                         OptionButton.BackgroundColor3 = Colors.Button
                     end)
-                    
+
                     OptionButton.MouseButton1Click:Connect(function()
                         CreateClickEffect(OptionButton)
                         DropdownButton.Text = option
@@ -722,13 +727,13 @@ function OxireunUI:NewWindow(title)
                         OptionsScreenGui:Destroy()
                     end)
                 end
-                
+
                 local function checkClickOutside(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
                         local mousePos = UserInputService:GetMouseLocation()
                         local buttonPos = DropdownButton.AbsolutePosition
                         local buttonSize = DropdownButton.AbsoluteSize
-                        
+
                         if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
                                mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
                             CloseOptions()
@@ -736,20 +741,20 @@ function OxireunUI:NewWindow(title)
                         end
                     end
                 end
-                
-                optionsGuiConnection = UserInputService.InputBegan:Connect(checkClickOutside)
+
+                UserInputService.InputBegan:Connect(checkClickOutside)
             end)
-            
+
             return Dropdown
         end
-        
+
         function Section:CreateTextbox(name, callback)
             local Textbox = Instance.new("Frame")
             Textbox.Name = name
             Textbox.Size = UDim2.new(1, 0, 0, 35)
             Textbox.BackgroundTransparency = 1
             Textbox.Parent = SectionFrame
-            
+
             local InputBox = Instance.new("TextBox")
             InputBox.Name = "Input"
             InputBox.Size = UDim2.new(1, 0, 1, 0)
@@ -762,27 +767,27 @@ function OxireunUI:NewWindow(title)
             InputBox.Font = Fonts.Normal
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
             InputBox.Parent = Textbox
-            
+
             local inputCorner = Instance.new("UICorner")
             inputCorner.CornerRadius = UDim.new(0, 6)
             inputCorner.Parent = InputBox
-            
+
             InputBox.FocusLost:Connect(function()
                 if callback then
                     callback(InputBox.Text)
                 end
             end)
-            
+
             return Textbox
         end
-        
+
         table.insert(Window.Sections, Section)
         return Section
     end
-    
+
     -- Pencereyi parent'e ekle
     ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    
+
     table.insert(self.Windows, Window)
     return Window
 end
