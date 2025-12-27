@@ -1,5 +1,5 @@
 --[[
-    Blade Runner 2049 Theme UI Library - Düzeltilmiş
+    Blade Runner 2049 Theme UI Library - Güncellenmiş
     GitHub: https://raw.githubusercontent.com/username/blade-ui/main/main.lua
     Tasarım: Neon mor, yuvarlak köşeler, Blade Runner 2049 tarzı
 ]]
@@ -72,48 +72,6 @@ local function RippleEffect(button)
     end)
 end
 
--- Düzeltilmiş drag sistemi
-local function MakeDraggable(frame, dragPart)
-    local dragging = false
-    local dragInput, dragStart, startPos
-    
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale, 
-            startPos.X.Offset + delta.X, 
-            startPos.Y.Scale, 
-            startPos.Y.Offset + delta.Y
-        )
-    end
-    
-    dragPart.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    
-    dragPart.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
-end
-
 -- Ana Library fonksiyonu
 function BladesRunnerUI:NewWindow(title)
     local screenGui = Instance.new("ScreenGui")
@@ -180,39 +138,39 @@ function BladesRunnerUI:NewWindow(title)
     titleLabel.ZIndex = 12
     titleLabel.Parent = titleBar
     
-    -- KÜÇÜLTÜLMÜŞ kontrol butonları
+    -- Kontrol butonları (küçük ve yuvarlak)
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 25, 0, 25) -- Daha küçük
-    closeButton.Position = UDim2.new(1, -30, 0.5, -12.5)
+    closeButton.Size = UDim2.new(0, 22, 0, 22) -- Daha küçük
+    closeButton.Position = UDim2.new(1, -32, 0.5, -11) -- Pozisyon güncellendi
     closeButton.AnchorPoint = Vector2.new(1, 0.5)
     closeButton.BackgroundColor3 = Theme.Danger
     closeButton.Text = "×"
     closeButton.TextColor3 = Color3.new(1, 1, 1)
-    closeButton.TextSize = 18 -- Daha küçük yazı
+    closeButton.TextSize = 16 -- Daha küçük yazı
     closeButton.Font = Enum.Font.GothamBold
     closeButton.ZIndex = 12
     closeButton.Parent = titleBar
     
     local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 6) -- Daha küçük yuvarlak
+    closeCorner.CornerRadius = UDim.new(1, 0) -- Tam yuvarlak
     closeCorner.Parent = closeButton
     
     local minimizeButton = Instance.new("TextButton")
     minimizeButton.Name = "MinimizeButton"
-    minimizeButton.Size = UDim2.new(0, 25, 0, 25) -- Daha küçük
-    minimizeButton.Position = UDim2.new(1, -60, 0.5, -12.5)
+    minimizeButton.Size = UDim2.new(0, 22, 0, 22) -- Daha küçük
+    minimizeButton.Position = UDim2.new(1, -59, 0.5, -11) -- Pozisyon güncellendi
     minimizeButton.AnchorPoint = Vector2.new(1, 0.5)
     minimizeButton.BackgroundColor3 = Theme.Accent2
     minimizeButton.Text = "-"
     minimizeButton.TextColor3 = Color3.new(1, 1, 1)
-    minimizeButton.TextSize = 18 -- Daha küçük yazı
+    minimizeButton.TextSize = 16 -- Daha küçük yazı
     minimizeButton.Font = Enum.Font.GothamBold
     minimizeButton.ZIndex = 12
     minimizeButton.Parent = titleBar
     
     local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(0, 6) -- Daha küçük yuvarlak
+    minimizeCorner.CornerRadius = UDim.new(1, 0) -- Tam yuvarlak
     minimizeCorner.Parent = minimizeButton
     
     -- Sekme konteyneri
@@ -241,8 +199,44 @@ function BladesRunnerUI:NewWindow(title)
     contentContainer.ZIndex = 10
     contentContainer.Parent = mainWindow
     
-    -- DÜZELTİLMİŞ sürükleme işlevselliği
-    MakeDraggable(mainWindow, titleBar)
+    -- Sürükleme işlevselliği - DÜZGÜN ÇALIŞAN VERSİYON
+    local dragging = false
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        mainWindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    local dragConnection
+    
+    local function startDrag(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainWindow.Position
+            
+            dragConnection = UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    update(input)
+                end
+            end)
+        end
+    end
+    
+    local function endDrag(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+            if dragConnection then
+                dragConnection:Disconnect()
+                dragConnection = nil
+            end
+        end
+    end
+    
+    titleBar.InputBegan:Connect(startDrag)
+    titleBar.InputEnded:Connect(endDrag)
     
     -- Buton event'leri
     closeButton.MouseButton1Click:Connect(function()
@@ -561,11 +555,10 @@ function BladesRunnerUI:NewWindow(title)
             
             local sliderTrack = Instance.new("Frame")
             sliderTrack.Name = "Track"
-            sliderTrack.Size = UDim2.new(1, 0, 0, 6) -- Daha ince track
-            sliderTrack.Position = UDim2.new(0, 0, 0, 35) -- Daha aşağıda
+            sliderTrack.Size = UDim2.new(1, 0, 0, 8)
+            sliderTrack.Position = UDim2.new(0, 0, 0, 30)
             sliderTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
             sliderTrack.ZIndex = 11
-            sliderTrack.ClipsDescendants = true -- Eklenen: içeriği kırp
             sliderTrack.Parent = slider
             
             local trackCorner = Instance.new("UICorner")
@@ -583,11 +576,10 @@ function BladesRunnerUI:NewWindow(title)
             fillCorner.CornerRadius = UDim.new(1, 0)
             fillCorner.Parent = sliderFill
             
-            -- DÜZELTİLMİŞ: Daha küçük ve içeride kalan slider button
             local sliderButton = Instance.new("TextButton")
             sliderButton.Name = "SliderButton"
-            sliderButton.Size = UDim2.new(0, 16, 0, 16) -- Daha küçük
-            sliderButton.Position = UDim2.new(sliderFill.Size.X.Scale, -8, 0.5, -8)
+            sliderButton.Size = UDim2.new(0, 18, 0, 18) -- Daha küçük yap
+            sliderButton.Position = UDim2.new(sliderFill.Size.X.Scale, -9, 0.5, -9) -- Pozisyon ayarlandı
             sliderButton.BackgroundColor3 = Color3.new(1, 1, 1)
             sliderButton.AutoButtonColor = false
             sliderButton.Text = ""
@@ -600,8 +592,8 @@ function BladesRunnerUI:NewWindow(title)
             
             local dragging = false
             local value = default
+            local sliderDragConnection
             
-            -- DÜZELTİLMİŞ slider update fonksiyonu
             local function updateSlider(input)
                 if not input then return end
                 
@@ -611,7 +603,7 @@ function BladesRunnerUI:NewWindow(title)
                 value = math.floor(min + (max - min) * relativeX)
                 
                 sliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
-                sliderButton.Position = UDim2.new(relativeX, -8, 0.5, -8) -- Düzeltilmiş pozisyon
+                sliderButton.Position = UDim2.new(relativeX, -9, 0.5, -9) -- Pozisyon güncellendi
                 sliderLabel.Text = name .. ": " .. tostring(value)
                 
                 if callback then
@@ -619,37 +611,40 @@ function BladesRunnerUI:NewWindow(title)
                 end
             end
             
-            -- DÜZELTİLMİŞ: Input event'lerini düzenle
-            local function onInputBegan(input)
+            local function startSlide(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
-                    updateSlider(input)
                     
-                    local connection
-                    connection = UserInputService.InputChanged:Connect(function(changedInput)
-                        if changedInput.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-                            updateSlider(changedInput)
-                        end
-                    end)
-                    
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            dragging = false
-                            connection:Disconnect()
+                    sliderDragConnection = UserInputService.InputChanged:Connect(function(input)
+                        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                            updateSlider(input)
                         end
                     end)
                 end
             end
             
-            sliderButton.InputBegan:Connect(onInputBegan)
-            sliderTrack.InputBegan:Connect(onInputBegan)
+            local function endSlide(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                    if sliderDragConnection then
+                        sliderDragConnection:Disconnect()
+                        sliderDragConnection = nil
+                    end
+                end
+            end
+            
+            sliderButton.InputBegan:Connect(startSlide)
+            sliderTrack.InputBegan:Connect(startSlide)
+            
+            sliderButton.InputEnded:Connect(endSlide)
+            sliderTrack.InputEnded:Connect(endSlide)
             
             return {
                 Set = function(newValue)
                     value = math.clamp(newValue, min, max)
                     local relativeX = (value - min) / (max - min)
                     sliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
-                    sliderButton.Position = UDim2.new(relativeX, -8, 0.5, -8)
+                    sliderButton.Position = UDim2.new(relativeX, -9, 0.5, -9)
                     sliderLabel.Text = name .. ": " .. tostring(value)
                     
                     if callback then
