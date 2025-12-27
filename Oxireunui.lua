@@ -1,26 +1,28 @@
--- Oxireun UI Library - Final Version
--- All fixes applied: draggable, slider fixed, better colors, instant minimize
+-- Oxireun UI Library - Final Fixed Version
+-- All issues fixed: draggable, slider, control buttons
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
 
--- İyileştirilmiş mavi renk paleti - daha güzel mavi tonlar
+-- İyileştirilmiş mavi renk paleti
 local Colors = {
     Background = Color3.fromRGB(20, 25, 45),
-    SecondaryBg = Color3.fromRGB(35, 45, 80), -- DAHA MAVİMSİ
-    SectionBg = Color3.fromRGB(25, 35, 65), -- DAHA MAVİ
-    Border = Color3.fromRGB(0, 180, 255), -- DAHA CANLI MAVİ
+    SecondaryBg = Color3.fromRGB(35, 45, 80),
+    SectionBg = Color3.fromRGB(25, 35, 65),
+    Border = Color3.fromRGB(0, 180, 255),
     Accent = Color3.fromRGB(0, 200, 255),
-    Text = Color3.fromRGB(255, 255, 255), -- BEYAZ
+    Text = Color3.fromRGB(255, 255, 255),
     Disabled = Color3.fromRGB(150, 150, 180),
     Hover = Color3.fromRGB(0, 180, 255, 0.3),
-    Button = Color3.fromRGB(50, 80, 140), -- DAHA MAVİ BUTON
+    Button = Color3.fromRGB(50, 80, 140),
     Slider = Color3.fromRGB(0, 180, 255),
     ToggleOn = Color3.fromRGB(0, 180, 255),
-    ToggleOff = Color3.fromRGB(80, 110, 160), -- DAHA MAVİ
+    ToggleOff = Color3.fromRGB(80, 110, 160),
     TabActive = Color3.fromRGB(0, 180, 255),
     TabInactive = Color3.fromRGB(50, 80, 140),
-    ControlButton = Color3.fromRGB(60, 90, 150) -- KONTROL BUTONLARI İÇİN MAVİ
+    ControlButton = Color3.fromRGB(60, 90, 150),
+    MinimizeButton = Color3.fromRGB(70, 100, 160), -- Minimize butonu için özel renk
+    CloseButton = Color3.fromRGB(200, 70, 70) -- Kapatma butonu için özel renk
 }
 
 -- Font ayarları
@@ -32,10 +34,10 @@ local Fonts = {
     Bold = Enum.Font.GothamBold
 }
 
--- UI Boyutları - BİRAZ DAHA KÜÇÜK
+-- UI Boyutları
 local UI_SIZE = {
     Width = 310,
-    Height = 320  -- DAHA KÜÇÜK
+    Height = 320
 }
 
 -- Ana Library fonksiyonu
@@ -106,7 +108,7 @@ function OxireunUI:NewWindow(title)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
-    -- Kontrol butonları - YENİ TASARIM
+    -- Kontrol butonları - UI'ye uygun renkler
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
     Controls.Size = UDim2.new(0, 60, 1, 0)
@@ -114,12 +116,12 @@ function OxireunUI:NewWindow(title)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
-    -- Küçültme butonu - YUVARLAK ve "-" simgesi
+    -- Küçültme butonu - "-" simgesi, UI uygun renk
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
     MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
     MinimizeButton.Position = UDim2.new(0, 0, 0.5, -12.5)
-    MinimizeButton.BackgroundColor3 = Colors.ControlButton
+    MinimizeButton.BackgroundColor3 = Colors.MinimizeButton
     MinimizeButton.Text = "-"
     MinimizeButton.TextColor3 = Colors.Text
     MinimizeButton.TextSize = 22
@@ -128,15 +130,15 @@ function OxireunUI:NewWindow(title)
     MinimizeButton.Parent = Controls
     
     local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(1, 0) -- TAM YUVARLAK
+    minimizeCorner.CornerRadius = UDim.new(1, 0)
     minimizeCorner.Parent = MinimizeButton
     
-    -- Kapatma butonu - YUVARLAK ve ">" simgesi
+    -- Kapatma butonu - ">" simgesi, UI uygun renk
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
     CloseButton.Size = UDim2.new(0, 25, 0, 25)
     CloseButton.Position = UDim2.new(0, 30, 0.5, -12.5)
-    CloseButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+    CloseButton.BackgroundColor3 = Colors.CloseButton
     CloseButton.Text = ">"
     CloseButton.TextColor3 = Colors.Text
     CloseButton.TextSize = 18
@@ -145,7 +147,7 @@ function OxireunUI:NewWindow(title)
     CloseButton.Parent = Controls
     
     local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(1, 0) -- TAM YUVARLAK
+    closeCorner.CornerRadius = UDim.new(1, 0)
     closeCorner.Parent = CloseButton
     
     -- Tab'ler için yatay scrolling frame
@@ -207,18 +209,22 @@ function OxireunUI:NewWindow(title)
     -- BUTON HOVER EFEKTLERİ
     local function SetupButtonHover(button, isControlButton)
         if isControlButton then 
+            local originalColor = button.BackgroundColor3
+            
             button.MouseEnter:Connect(function()
                 game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-                    BackgroundColor3 = Color3.fromRGB(100, 130, 190)
+                    BackgroundColor3 = Color3.fromRGB(
+                        math.min(originalColor.R * 255 + 30, 255),
+                        math.min(originalColor.G * 255 + 30, 255),
+                        math.min(originalColor.B * 255 + 30, 255)
+                    )
                 }):Play()
             end)
             
             button.MouseLeave:Connect(function()
-                if button.Name == "Close" then
-                    button.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-                else
-                    button.BackgroundColor3 = Colors.ControlButton
-                end
+                game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
+                    BackgroundColor3 = originalColor
+                }):Play()
             end)
             return
         end
@@ -239,26 +245,15 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK - TÜM PENCERE İÇİN
+    -- DRAGGABLE FONKSİYONLUK - KESİN ÇÖZÜM
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
-    local dragInput, dragStart, startPos
+    local dragStart, startPos
     
-    local function update(input)
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-    
-    -- Sadece başlık çubuğundan değil, tüm pencereden sürükleme
-    MainFrame.InputBegan:Connect(function(input)
+    TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = input.Position
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
             startPos = MainFrame.Position
             
             input.Changed:Connect(function()
@@ -269,15 +264,16 @@ function OxireunUI:NewWindow(title)
         end
     end)
     
-    MainFrame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if dragging then
+            local mouse = UserInputService:GetMouseLocation()
+            local delta = Vector2.new(mouse.X, mouse.Y) - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
     
@@ -291,12 +287,12 @@ function OxireunUI:NewWindow(title)
     MinimizeButton.MouseButton1Click:Connect(function()
         CreateClickEffect(MinimizeButton)
         if not minimized then
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35) -- ANINDA KÜÇÜLT
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35)
             TabsScrollFrame.Visible = false
             ContentArea.Visible = false
             minimized = true
         else
-            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height) -- ANINDA BÜYÜT
+            MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
             TabsScrollFrame.Visible = true
             ContentArea.Visible = true
             minimized = false
@@ -549,17 +545,17 @@ function OxireunUI:NewWindow(title)
             
             local dragging = false
             
-            local function updateSlider(input)
-                local pos = UDim2.new(
-                    math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
-                    -9,
-                    0.5,
-                    -9
-                )
-                SliderButton.Position = pos
-                SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
+            local function updateSlider()
+                if not dragging then return end
                 
-                local value = math.floor(min + (pos.X.Scale * (max - min)))
+                local mouse = UserInputService:GetMouseLocation()
+                local relativeX = (mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                local pos = math.clamp(relativeX, 0, 1)
+                
+                SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
+                SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                
+                local value = math.floor(min + (pos * (max - min)))
                 SliderLabel.Text = name .. ": " .. value
                 
                 if callback then
@@ -574,19 +570,30 @@ function OxireunUI:NewWindow(title)
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
-                    updateSlider(input)
+                    local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                    local pos = math.clamp(relativeX, 0, 1)
+                    
+                    SliderButton.Position = UDim2.new(pos, -9, 0.5, -9)
+                    SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                    
+                    local value = math.floor(min + (pos * (max - min)))
+                    SliderLabel.Text = name .. ": " .. value
+                    
+                    if callback then
+                        callback(value)
+                    end
+                end
+            end)
+            
+            game:GetService("RunService").Heartbeat:Connect(function()
+                if dragging then
+                    updateSlider()
                 end
             end)
             
             game:GetService("UserInputService").InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
-                end
-            end)
-            
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    updateSlider(input)
                 end
             end)
             
