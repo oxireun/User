@@ -659,6 +659,10 @@ local OptionsContainer
 local OptionsScreenGui
 
 local function CloseOptions()
+if OptionsContainer then
+OptionsContainer:Destroy()
+OptionsContainer = nil
+end
 if OptionsScreenGui then
 OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
@@ -730,13 +734,19 @@ end)
 end
 
 local function checkClickOutside(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and open then
 local mousePos = UserInputService:GetMouseLocation()
+local containerPos = OptionsContainer.AbsolutePosition
+local containerSize = OptionsContainer.AbsoluteSize
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
 
-if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
+local isInContainer = mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+                     mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y
+local isInButton = mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                  mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
+
+if not isInContainer and not isInButton then
 CloseOptions()
 end
 end
