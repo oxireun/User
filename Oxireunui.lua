@@ -34,9 +34,9 @@ Color3.fromRGB(190, 70, 240), -- Pembe-mor
 Color3.fromRGB(160, 30, 190) -- Derin mor
 }
 
--- Font ayarları
+-- Font ayarları - BOLD FONT EKLENDİ
 local Fonts = {
-Title = Enum.Font.SciFi, -- Fight Club tarzı font
+Title = Enum.Font.GothamBold, -- BOLD FONT (GothamBold)
 Normal = Enum.Font.Gotham,
 Tab = Enum.Font.Gotham,
 Button = Enum.Font.Gotham,
@@ -119,7 +119,7 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
 titleCorner.Parent = TitleBar
 
--- Başlık - FIGHT CLUB FONTU
+-- Başlık - BOLD FONT (GothamBold)
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "Title"
 TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -128,7 +128,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = Window.Title
 TitleLabel.TextColor3 = Colors.Text -- BEYAZ
 TitleLabel.TextSize = 17
-TitleLabel.Font = Fonts.Title
+TitleLabel.Font = Fonts.Title -- GOTHAM BOLD FONT
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
@@ -576,45 +576,55 @@ local btnCorner = Instance.new("UICorner")
 btnCorner.CornerRadius = UDim.new(1, 0)
 btnCorner.Parent = SliderButton
 
+-- ESKİ SLIDER SİSTEMİ (DÜZGÜN ÇALIŞAN)
 local dragging = false
 
 local function updateSlider(input)
-local pos = UDim2.new(
-math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
--9,
-0.5,
--9
-)
-SliderButton.Position = pos
-SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
-local value = math.floor(min + (pos.X.Scale * (max - min)))
-SliderLabel.Text = name .. ": " .. value
-if callback then
-callback(value)
-end
+    if not dragging then return end
+    
+    local delta = input.Position - SliderTrack.AbsolutePosition
+    local percentage = math.clamp(delta.X / SliderTrack.AbsoluteSize.X, 0, 1)
+    local value = math.floor(min + (percentage * (max - min)))
+    
+    SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+    SliderButton.Position = UDim2.new(percentage, -9, 0.5, -9)
+    SliderLabel.Text = name .. ": " .. value
+    
+    if callback then
+        callback(value)
+    end
 end
 
 SliderButton.MouseButton1Down:Connect(function()
-dragging = true
+    dragging = true
 end)
 
 SliderTrack.InputBegan:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
-dragging = true
-updateSlider(input)
-end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        local percentage = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
+        local value = math.floor(min + (percentage * (max - min)))
+        
+        SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+        SliderButton.Position = UDim2.new(percentage, -9, 0.5, -9)
+        SliderLabel.Text = name .. ": " .. value
+        
+        if callback then
+            callback(value)
+        end
+    end
 end)
 
 game:GetService("UserInputService").InputEnded:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
-dragging = false
-end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
 end)
 
 game:GetService("UserInputService").InputChanged:Connect(function(input)
-if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-updateSlider(input)
-end
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateSlider(input)
+    end
 end)
 
 return Slider
