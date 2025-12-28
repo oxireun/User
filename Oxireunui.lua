@@ -24,19 +24,19 @@ local Colors = {
     CloseButton = Color3.fromRGB(180, 60, 60) -- Kırmızı kapatma butonu
 }
 
--- RGB renkleri (YAVAŞ animasyon için) - MODIFIED: More purple/pink focused colors
+-- RGB renkleri (YAVAŞ animasyon için)
 local RGBColors = {
-    Color3.fromRGB(200, 60, 230),   -- Açık mor/Pembe
     Color3.fromRGB(180, 50, 220),   -- Mor
-    Color3.fromRGB(220, 80, 240),   -- Parlak pembe
-    Color3.fromRGB(160, 40, 200),   -- Koyu mor
+    Color3.fromRGB(150, 50, 200),   -- Koyu mor
+    Color3.fromRGB(200, 60, 230),   -- Açık mor
+    Color3.fromRGB(170, 40, 210),   -- Orta mor
     Color3.fromRGB(190, 70, 240),   -- Pembe-mor
-    Color3.fromRGB(170, 30, 210)    -- Derin mor
+    Color3.fromRGB(160, 30, 190)    -- Derin mor
 }
 
--- Font ayarları
+-- Font ayarları - DÜZELTİLDİ: Başlık için daha iyi bir font
 local Fonts = {
-    Title = Enum.Font.SciFi, -- Fight Club tarzı font
+    Title = Enum.Font.GothamBold, -- Daha güzel bir font
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
@@ -85,19 +85,19 @@ function OxireunUI:NewWindow(title)
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
     
-    -- YAVAŞ ANİMASYONLU RGB BORDER - MODIFIED: Thinner, more transparent border for weakened edges
+    -- YAVAŞ ANİMASYONLU RGB BORDER
     local rgbBorder = Instance.new("UIStroke")
     rgbBorder.Name = "RGBBorder"
     rgbBorder.Color = RGBColors[1]
-    rgbBorder.Thickness = 2  -- MODIFIED: Reduced from 3 to 2
-    rgbBorder.Transparency = 0.2  -- MODIFIED: Increased transparency
+    rgbBorder.Thickness = 3
+    rgbBorder.Transparency = 0
     rgbBorder.Parent = MainFrame
     
-    -- YAVAŞ RGB animasyonu - MODIFIED: Slower animation speed
+    -- YAVAŞ RGB animasyonu
     local colorIndex = 1
     local rgbAnimation
     rgbAnimation = game:GetService("RunService").Heartbeat:Connect(function()
-        colorIndex = colorIndex + 0.005  -- MODIFIED: Much slower (0.008 -> 0.005)
+        colorIndex = colorIndex + 0.008 -- ÇOK DAHA YAVAŞ (0.02 -> 0.008)
         if colorIndex > #RGBColors then
             colorIndex = 1
         end
@@ -121,7 +121,7 @@ function OxireunUI:NewWindow(title)
     titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
     titleCorner.Parent = TitleBar
     
-    -- Başlık - FIGHT CLUB FONTU - MODIFIED: Bold title text
+    -- Başlık - DÜZELTİLDİ: Daha güzel font
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -129,9 +129,8 @@ function OxireunUI:NewWindow(title)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text -- BEYAZ
-    TitleLabel.TextSize = 17
-    TitleLabel.Font = Fonts.Title
-    TitleLabel.FontFace = Font.new("rbxasset://fonts/families/SciFi.json", Enum.FontWeight.Bold) -- MODIFIED: Bold weight[citation:6]
+    TitleLabel.TextSize = 18 -- DÜZELTİLDİ: Daha büyük yazı
+    TitleLabel.Font = Fonts.Title -- DÜZELTİLDİ: GothamBold font
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
@@ -270,26 +269,24 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK - Improved version
+    -- DÜZELTİLDİ: Daha iyi draggable fonksiyonluk
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
     local dragStart, startPos
     
     local function updateInput(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            if not dragging then
-                dragging = true
-                dragStart = input.Position
-                startPos = MainFrame.Position
-                
-                local connection
-                connection = input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        dragging = false
-                        connection:Disconnect()
-                    end
-                end)
-            end
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            
+            local connection
+            connection = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    connection:Disconnect()
+                end
+            end)
         end
     end
     
@@ -305,8 +302,11 @@ function OxireunUI:NewWindow(title)
         end
     end
     
-    -- Connect input events for dragging
-    TitleBar.InputBegan:Connect(updateInput)
+    -- Draggable için event'leri bağla
+    TitleBar.InputBegan:Connect(function(input)
+        updateInput(input)
+    end)
+    
     UserInputService.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             updateDrag(input)
@@ -566,11 +566,10 @@ function OxireunUI:NewWindow(title)
             fillCorner.CornerRadius = UDim.new(1, 0)
             fillCorner.Parent = SliderFill
             
-            -- MODIFIED: Smaller slider handle
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
-            SliderButton.Size = UDim2.new(0, 14, 0, 14)  -- MODIFIED: Reduced from (0, 18, 0, 18)
-            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -7, 0.5, -7)  -- MODIFIED: Adjusted from -9 to -7
+            SliderButton.Size = UDim2.new(0, 18, 0, 18)
+            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -9, 0.5, -9)
             SliderButton.BackgroundColor3 = Colors.Text -- BEYAZ
             SliderButton.Text = ""
             SliderButton.AutoButtonColor = false
@@ -585,9 +584,9 @@ function OxireunUI:NewWindow(title)
             local function updateSlider(input)
                 local pos = UDim2.new(
                     math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
-                    -7,  -- MODIFIED: Adjusted from -9 to -7
+                    -9,
                     0.5,
-                    -7   -- MODIFIED: Adjusted from -9 to -7
+                    -9
                 )
                 SliderButton.Position = pos
                 SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
