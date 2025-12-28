@@ -34,9 +34,9 @@ Color3.fromRGB(190, 70, 240), -- Pembe-mor
 Color3.fromRGB(160, 30, 190) -- Derin mor
 }
 
--- Font ayarları (BAŞLIK BOLD YAPILDI)
+-- Font ayarları (Başlık için BOLD font)
 local Fonts = {
-Title = Enum.Font.GothamBold, -- Başlık BOLD yapıldı
+Title = Enum.Font.GothamBold, -- BOLD BAŞLIK
 Normal = Enum.Font.Gotham,
 Tab = Enum.Font.Gotham,
 Button = Enum.Font.Gotham,
@@ -128,7 +128,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = Window.Title
 TitleLabel.TextColor3 = Colors.Text -- BEYAZ
 TitleLabel.TextSize = 17
-TitleLabel.Font = Fonts.Title -- BOLD font
+TitleLabel.Font = Fonts.Title -- BOLD FONT
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
@@ -525,100 +525,100 @@ end)
 return Toggle
 end
 
--- ESKİ SLİDER KODU (DÜZELTİLDİ)
+-- ESKİ SLİDER FONKSİYONU (ORİJİNAL)
 function Section:CreateSlider(name, min, max, default, callback)
-    local Slider = Instance.new("Frame")
-    Slider.Name = name
-    Slider.Size = UDim2.new(1, 0, 0, 50)
-    Slider.BackgroundTransparency = 1
-    Slider.Parent = SectionFrame
+local Slider = Instance.new("Frame")
+Slider.Name = name
+Slider.Size = UDim2.new(1, 0, 0, 50)
+Slider.BackgroundTransparency = 1
+Slider.Parent = SectionFrame
 
-    local SliderLabel = Instance.new("TextLabel")
-    SliderLabel.Size = UDim2.new(1, 0, 0, 20)
-    SliderLabel.BackgroundTransparency = 1
-    SliderLabel.Text = name .. ": " .. default
-    SliderLabel.TextColor3 = Colors.Text -- BEYAZ
-    SliderLabel.TextSize = 14
-    SliderLabel.Font = Fonts.Bold
-    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SliderLabel.Parent = Slider
+local SliderLabel = Instance.new("TextLabel")
+SliderLabel.Size = UDim2.new(1, 0, 0, 20)
+SliderLabel.BackgroundTransparency = 1
+SliderLabel.Text = name .. ": " .. default
+SliderLabel.TextColor3 = Colors.Text -- BEYAZ
+SliderLabel.TextSize = 14
+SliderLabel.Font = Fonts.Bold
+SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.Parent = Slider
 
-    local SliderTrack = Instance.new("Frame")
-    SliderTrack.Name = "Track"
-    SliderTrack.Size = UDim2.new(1, 0, 0, 5)
-    SliderTrack.Position = UDim2.new(0, 0, 0, 25)
-    SliderTrack.BackgroundColor3 = Colors.ToggleOff
-    SliderTrack.Parent = Slider
+local SliderTrack = Instance.new("Frame")
+SliderTrack.Name = "Track"
+SliderTrack.Size = UDim2.new(1, 0, 0, 5)
+SliderTrack.Position = UDim2.new(0, 0, 0, 25)
+SliderTrack.BackgroundColor3 = Colors.ToggleOff
+SliderTrack.Parent = Slider
 
-    local trackCorner = Instance.new("UICorner")
-    trackCorner.CornerRadius = UDim.new(1, 0)
-    trackCorner.Parent = SliderTrack
+local trackCorner = Instance.new("UICorner")
+trackCorner.CornerRadius = UDim.new(1, 0)
+trackCorner.Parent = SliderTrack
 
-    local SliderFill = Instance.new("Frame")
-    SliderFill.Name = "Fill"
-    SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    SliderFill.BackgroundColor3 = Colors.Slider
-    SliderFill.Parent = SliderTrack
+local SliderFill = Instance.new("Frame")
+SliderFill.Name = "Fill"
+SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+SliderFill.BackgroundColor3 = Colors.Slider
+SliderFill.Parent = SliderTrack
 
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(1, 0)
-    fillCorner.Parent = SliderFill
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(1, 0)
+fillCorner.Parent = SliderFill
 
-    local SliderButton = Instance.new("TextButton")
-    SliderButton.Name = "SliderButton"
-    SliderButton.Size = UDim2.new(0, 18, 0, 18)
-    SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -9, 0.5, -9)
-    SliderButton.BackgroundColor3 = Colors.Text -- BEYAZ
-    SliderButton.Text = ""
-    SliderButton.AutoButtonColor = false
-    SliderButton.Parent = SliderTrack
+local SliderButton = Instance.new("TextButton")
+SliderButton.Name = "SliderButton"
+SliderButton.Size = UDim2.new(0, 18, 0, 18)
+SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -9, 0.5, -9)
+SliderButton.BackgroundColor3 = Colors.Text -- BEYAZ
+SliderButton.Text = ""
+SliderButton.AutoButtonColor = false
+SliderButton.Parent = SliderTrack
 
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(1, 0)
-    btnCorner.Parent = SliderButton
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(1, 0)
+btnCorner.Parent = SliderButton
 
-    local dragging = false
+local draggingSlider = false
 
-    local function updateSlider(input)
-        local pos = UDim2.new(
-            math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
-            -9,
-            0.5,
-            -9
-        )
-        SliderButton.Position = pos
-        SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
-        local value = math.floor(min + (pos.X.Scale * (max - min)))
-        SliderLabel.Text = name .. ": " .. value
-        if callback then
-            callback(value)
-        end
-    end
+local function updateSlider(input)
+local pos = UDim2.new(
+math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
+-9,
+0.5,
+-9
+)
+SliderButton.Position = pos
+SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
+local value = math.floor(min + (pos.X.Scale * (max - min)))
+SliderLabel.Text = name .. ": " .. value
+if callback then
+callback(value)
+end
+end
 
-    SliderButton.MouseButton1Down:Connect(function()
-        dragging = true
-    end)
+SliderButton.MouseButton1Down:Connect(function()
+draggingSlider = true
+end)
 
-    SliderTrack.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            updateSlider(input)
-        end
-    end)
+SliderTrack.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+draggingSlider = true
+updateSlider(input)
+end
+end)
 
-    game:GetService("UserInputService").InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+draggingSlider = false
+end
+end)
 
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateSlider(input)
-        end
-    end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+updateSlider(input)
+end
+end)
 
-    return Slider
+return Slider
 end
 
 function Section:CreateDropdown(name, options, default, callback)
