@@ -34,9 +34,9 @@ Color3.fromRGB(190, 70, 240), -- Pembe-mor
 Color3.fromRGB(160, 30, 190) -- Derin mor
 }
 
--- Font ayarları
+-- Font ayarları (BAŞLIK BOLD YAPILDI)
 local Fonts = {
-Title = Enum.Font.SciFi, -- Fight Club tarzı font
+Title = Enum.Font.GothamBold, -- BOLD ve KALIN font (Eski: Enum.Font.SciFi)
 Normal = Enum.Font.Gotham,
 Tab = Enum.Font.Gotham,
 Button = Enum.Font.Gotham,
@@ -119,7 +119,7 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
 titleCorner.Parent = TitleBar
 
--- Başlık - FIGHT CLUB FONTU (BOLD)
+-- Başlık - BOLD ve KALIN FONT
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "Title"
 TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -128,7 +128,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = Window.Title
 TitleLabel.TextColor3 = Colors.Text -- BEYAZ
 TitleLabel.TextSize = 17
-TitleLabel.Font = Fonts.Title
+TitleLabel.Font = Fonts.Title -- BOLD FONT
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
@@ -525,6 +525,7 @@ end)
 return Toggle
 end
 
+-- ESKİ SLİDER KODU (ÇALIŞAN HALİ)
 function Section:CreateSlider(name, min, max, default, callback)
 local Slider = Instance.new("Frame")
 Slider.Name = name
@@ -577,6 +578,7 @@ btnCorner.CornerRadius = UDim.new(1, 0)
 btnCorner.Parent = SliderButton
 
 local dragging = false
+
 local function updateSlider(input)
 local pos = UDim2.new(
 math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
