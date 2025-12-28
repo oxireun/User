@@ -1,4 +1,4 @@
--- Oxireun UI Library - Slow RGB Border, Purple Theme (Modified draggable + title font + element ordering)
+-- Oxireun UI Library - Slow RGB Border, Purple Theme
 -- Slow RGB animation, purple theme with white text
 
 local OxireunUI = {}
@@ -24,19 +24,19 @@ local Colors = {
     CloseButton = Color3.fromRGB(180, 60, 60) -- Kırmızı kapatma butonu
 }
 
--- RGB renkleri (YAVAŞ animasyon için) - MODIFIED: More purple/pink focused colors
+-- RGB renkleri (YAVAŞ animasyon için)
 local RGBColors = {
-    Color3.fromRGB(200, 60, 230),   -- Açık mor/Pembe
     Color3.fromRGB(180, 50, 220),   -- Mor
-    Color3.fromRGB(220, 80, 240),   -- Parlak pembe
-    Color3.fromRGB(160, 40, 200),   -- Koyu mor
+    Color3.fromRGB(150, 50, 200),   -- Koyu mor
+    Color3.fromRGB(200, 60, 230),   -- Açık mor
+    Color3.fromRGB(170, 40, 210),   -- Orta mor
     Color3.fromRGB(190, 70, 240),   -- Pembe-mor
-    Color3.fromRGB(170, 30, 210)    -- Derin mor
+    Color3.fromRGB(160, 30, 190)    -- Derin mor
 }
 
--- Font ayarları (Title font değişti: GothamBold)
+-- Font ayarları - DÜZELTİLDİ: Başlık için daha iyi bir font
 local Fonts = {
-    Title = Enum.Font.GothamBold,
+    Title = Enum.Font.GothamBold, -- Daha güzel bir font
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
@@ -85,19 +85,19 @@ function OxireunUI:NewWindow(title)
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
     
-    -- YAVAŞ ANİMASYONLU RGB BORDER - MODIFIED: Thinner, more transparent border for weakened edges
+    -- YAVAŞ ANİMASYONLU RGB BORDER
     local rgbBorder = Instance.new("UIStroke")
     rgbBorder.Name = "RGBBorder"
     rgbBorder.Color = RGBColors[1]
-    rgbBorder.Thickness = 2  -- MODIFIED: Reduced from 3 to 2
-    rgbBorder.Transparency = 0.2  -- MODIFIED: Increased transparency
+    rgbBorder.Thickness = 3
+    rgbBorder.Transparency = 0
     rgbBorder.Parent = MainFrame
     
-    -- YAVAŞ RGB animasyonu - MODIFIED: Slower animation speed
+    -- YAVAŞ RGB animasyonu
     local colorIndex = 1
     local rgbAnimation
     rgbAnimation = game:GetService("RunService").Heartbeat:Connect(function()
-        colorIndex = colorIndex + 0.005  -- MODIFIED: Much slower (0.008 -> 0.005)
+        colorIndex = colorIndex + 0.008 -- ÇOK DAHA YAVAŞ (0.02 -> 0.008)
         if colorIndex > #RGBColors then
             colorIndex = 1
         end
@@ -121,7 +121,7 @@ function OxireunUI:NewWindow(title)
     titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
     titleCorner.Parent = TitleBar
     
-    -- Başlık - FONT DEĞİŞTİRİLDİ (GothamBold)
+    -- Başlık - DÜZELTİLDİ: Daha güzel font
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -129,8 +129,8 @@ function OxireunUI:NewWindow(title)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text -- BEYAZ
-    TitleLabel.TextSize = 17
-    TitleLabel.Font = Fonts.Title
+    TitleLabel.TextSize = 18 -- DÜZELTİLDİ: Daha büyük yazı
+    TitleLabel.Font = Fonts.Title -- DÜZELTİLDİ: GothamBold font
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
@@ -269,59 +269,30 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK - Improved version (can drag from anywhere on the UI except when clicking interactive elements)
+    -- DÜZELTİLDİ: Daha iyi draggable fonksiyonluk
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
     local dragStart, startPos
     
-    local function isPointInsideGui(x, y, gui)
-        local pos = gui.AbsolutePosition
-        local size = gui.AbsoluteSize
-        return x >= pos.X and x <= pos.X + size.X and y >= pos.Y and y <= pos.Y + size.Y
-    end
-    
-    local function isInteractiveGuiObject(obj)
-        if not obj then return false end
-        local class = obj.ClassName
-        -- these classes we consider interactive and should not start a window drag when clicked on
-        if class == "TextButton" or class == "ImageButton" or class == "TextBox" or class == "ImageLabel" or class == "TextLabel" then
-            -- TextLabel/ImageLabel often are non-interactive, but including them avoids accidental drags over labels;
-            -- main interactive blockers are TextButton/TextBox/ImageButton
-            return class == "TextButton" or class == "ImageButton" or class == "TextBox"
-        end
-        return false
-    end
-    
-    UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    local function updateInput(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local mousePos = UserInputService:GetMouseLocation()
-            local mx, my = mousePos.X, mousePos.Y
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
             
-            -- check inside main frame
-            if isPointInsideGui(mx, my, MainFrame) then
-                -- find gui objects at that position (prevents dragging when clicking on buttons/textboxes)
-                local guiObjects = UserInputService:GetGuiObjectsAtPosition(mx, my)
-                local blockDrag = false
-                for _, obj in ipairs(guiObjects) do
-                    if obj and obj:IsDescendantOf(MainFrame) and isInteractiveGuiObject(obj) then
-                        blockDrag = true
-                        break
-                    end
+            local connection
+            connection = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    connection:Disconnect()
                 end
-                
-                if not blockDrag then
-                    dragging = true
-                    dragStart = Vector2.new(mx, my)
-                    startPos = MainFrame.Position
-                end
-            end
+            end)
         end
-    end)
+    end
     
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local mousePos = UserInputService:GetMouseLocation()
-            local delta = Vector2.new(mousePos.X, mousePos.Y) - dragStart
+    local function updateDrag(input)
+        if dragging then
+            local delta = input.Position - dragStart
             MainFrame.Position = UDim2.new(
                 startPos.X.Scale,
                 startPos.X.Offset + delta.X,
@@ -329,11 +300,16 @@ function OxireunUI:NewWindow(title)
                 startPos.Y.Offset + delta.Y
             )
         end
+    end
+    
+    -- Draggable için event'leri bağla
+    TitleBar.InputBegan:Connect(function(input)
+        updateInput(input)
     end)
     
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateDrag(input)
         end
     end)
     
@@ -366,7 +342,6 @@ function OxireunUI:NewWindow(title)
     function Window:NewSection(name)
         local Section = {}
         Section.Name = name
-        Section._elementCounter = 0 -- element sırasını garanti etmek için sayaç
         
         -- Tab butonu oluştur
         local TabButton = Instance.new("TextButton")
@@ -449,11 +424,6 @@ function OxireunUI:NewWindow(title)
         end)
         
         -- Element oluşturma fonksiyonları
-        function Section:_nextOrder()
-            self._elementCounter = self._elementCounter + 1
-            return self._elementCounter
-        end
-        
         function Section:CreateButton(name, callback)
             local Button = Instance.new("TextButton")
             Button.Name = name
@@ -465,7 +435,6 @@ function OxireunUI:NewWindow(title)
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
             Button.Parent = SectionFrame
-            Button.LayoutOrder = Section:_nextOrder() -- sıralama garantisi
             
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
@@ -489,7 +458,6 @@ function OxireunUI:NewWindow(title)
             Toggle.Size = UDim2.new(1, 0, 0, 35)
             Toggle.BackgroundTransparency = 1
             Toggle.Parent = SectionFrame
-            Toggle.LayoutOrder = Section:_nextOrder() -- sıralama garantisi
             
             local ToggleLabel = Instance.new("TextLabel")
             ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
@@ -566,7 +534,6 @@ function OxireunUI:NewWindow(title)
             Slider.Size = UDim2.new(1, 0, 0, 50)
             Slider.BackgroundTransparency = 1
             Slider.Parent = SectionFrame
-            Slider.LayoutOrder = Section:_nextOrder() -- sıralama garantisi
             
             local SliderLabel = Instance.new("TextLabel")
             SliderLabel.Size = UDim2.new(1, 0, 0, 20)
@@ -599,11 +566,10 @@ function OxireunUI:NewWindow(title)
             fillCorner.CornerRadius = UDim.new(1, 0)
             fillCorner.Parent = SliderFill
             
-            -- MODIFIED: Smaller slider handle
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
-            SliderButton.Size = UDim2.new(0, 14, 0, 14)  -- MODIFIED: Reduced from (0, 18, 0, 18)
-            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -7, 0.5, -7)  -- MODIFIED: Adjusted from -9 to -7
+            SliderButton.Size = UDim2.new(0, 18, 0, 18)
+            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -9, 0.5, -9)
             SliderButton.BackgroundColor3 = Colors.Text -- BEYAZ
             SliderButton.Text = ""
             SliderButton.AutoButtonColor = false
@@ -613,14 +579,14 @@ function OxireunUI:NewWindow(title)
             btnCorner.CornerRadius = UDim.new(1, 0)
             btnCorner.Parent = SliderButton
             
-            local draggingSlider = false
+            local dragging = false
             
             local function updateSlider(input)
                 local pos = UDim2.new(
                     math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
-                    -7,  -- MODIFIED: Adjusted from -9 to -7
+                    -9,
                     0.5,
-                    -7   -- MODIFIED: Adjusted from -9 to -7
+                    -9
                 )
                 SliderButton.Position = pos
                 SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
@@ -634,24 +600,24 @@ function OxireunUI:NewWindow(title)
             end
             
             SliderButton.MouseButton1Down:Connect(function()
-                draggingSlider = true
+                dragging = true
             end)
             
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    draggingSlider = true
+                    dragging = true
                     updateSlider(input)
                 end
             end)
             
             game:GetService("UserInputService").InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    draggingSlider = false
+                    dragging = false
                 end
             end)
             
             game:GetService("UserInputService").InputChanged:Connect(function(input)
-                if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                     updateSlider(input)
                 end
             end)
@@ -666,7 +632,6 @@ function OxireunUI:NewWindow(title)
             Dropdown.BackgroundTransparency = 1
             Dropdown.ClipsDescendants = false
             Dropdown.Parent = SectionFrame
-            Dropdown.LayoutOrder = Section:_nextOrder() -- sıralama garantisi
             
             local DropdownButton = Instance.new("TextButton")
             DropdownButton.Name = "DropdownButton"
@@ -789,7 +754,6 @@ function OxireunUI:NewWindow(title)
             Textbox.Size = UDim2.new(1, 0, 0, 35)
             Textbox.BackgroundTransparency = 1
             Textbox.Parent = SectionFrame
-            Textbox.LayoutOrder = Section:_nextOrder() -- sıralama garantisi
             
             local InputBox = Instance.new("TextBox")
             InputBox.Name = "Input"
