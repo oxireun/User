@@ -1,46 +1,46 @@
--- Oxireun UI Library - Neon RGB Border Edition
--- Fight Club font, animated RGB border, smaller control buttons
+-- Oxireun UI Library - Slow RGB Border, Purple Theme
+-- Slow RGB animation, purple theme with white text
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
 
--- İyileştirilmiş renk paleti
+-- Mor temalı renk paleti
 local Colors = {
-    Background = Color3.fromRGB(20, 25, 45),
-    SecondaryBg = Color3.fromRGB(35, 45, 80),
-    SectionBg = Color3.fromRGB(25, 35, 65),
-    Border = Color3.fromRGB(0, 180, 255),
-    Accent = Color3.fromRGB(0, 200, 255),
-    Text = Color3.fromRGB(255, 255, 255),
-    Disabled = Color3.fromRGB(150, 150, 180),
-    Hover = Color3.fromRGB(0, 180, 255, 0.3),
-    Button = Color3.fromRGB(50, 80, 140),
-    Slider = Color3.fromRGB(0, 180, 255),
-    ToggleOn = Color3.fromRGB(0, 180, 255),
-    ToggleOff = Color3.fromRGB(80, 110, 160),
-    TabActive = Color3.fromRGB(0, 180, 255),
-    TabInactive = Color3.fromRGB(50, 80, 140),
-    ControlButton = Color3.fromRGB(60, 90, 150),
-    CloseButton = Color3.fromRGB(200, 70, 70)
+    Background = Color3.fromRGB(30, 20, 50), -- Mor arkaplan
+    SecondaryBg = Color3.fromRGB(40, 30, 70), -- Daha açık mor
+    SectionBg = Color3.fromRGB(35, 25, 65), -- Section için mor
+    Border = Color3.fromRGB(150, 50, 200), -- Mor border
+    Accent = Color3.fromRGB(180, 70, 220), -- Daha parlak mor
+    Text = Color3.fromRGB(255, 255, 255), -- BEYAZ yazılar
+    Disabled = Color3.fromRGB(120, 100, 160),
+    Hover = Color3.fromRGB(150, 50, 200, 0.3),
+    Button = Color3.fromRGB(60, 40, 100), -- Mor butonlar
+    Slider = Color3.fromRGB(150, 50, 200), -- Mor slider
+    ToggleOn = Color3.fromRGB(150, 50, 200), -- Mor toggle açık
+    ToggleOff = Color3.fromRGB(80, 60, 120), -- Mor toggle kapalı
+    TabActive = Color3.fromRGB(150, 50, 200), -- Mor aktif tab
+    TabInactive = Color3.fromRGB(60, 40, 100), -- Mor inaktif tab
+    ControlButton = Color3.fromRGB(70, 50, 110), -- Mor kontrol butonları
+    CloseButton = Color3.fromRGB(180, 60, 60) -- Kırmızı kapatma butonu
 }
 
--- Font ayarları - Fight Club fontu için
+-- RGB renkleri (YAVAŞ animasyon için)
+local RGBColors = {
+    Color3.fromRGB(180, 50, 220),   -- Mor
+    Color3.fromRGB(150, 50, 200),   -- Koyu mor
+    Color3.fromRGB(200, 60, 230),   -- Açık mor
+    Color3.fromRGB(170, 40, 210),   -- Orta mor
+    Color3.fromRGB(190, 70, 240),   -- Pembe-mor
+    Color3.fromRGB(160, 30, 190)    -- Derin mor
+}
+
+-- Font ayarları
 local Fonts = {
     Title = Enum.Font.SciFi, -- Fight Club tarzı font
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
     Bold = Enum.Font.GothamBold
-}
-
--- RGB renkleri (animasyon için)
-local RGBColors = {
-    Color3.fromRGB(255, 0, 255),   -- Magenta
-    Color3.fromRGB(0, 255, 255),   -- Cyan
-    Color3.fromRGB(255, 0, 150),   -- Pink
-    Color3.fromRGB(150, 0, 255),   -- Purple
-    Color3.fromRGB(0, 150, 255),   -- Light Blue
-    Color3.fromRGB(255, 100, 0)    -- Orange
 }
 
 -- UI Boyutları
@@ -85,7 +85,7 @@ function OxireunUI:NewWindow(title)
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
     
-    -- ANİMASYONLU RGB BORDER
+    -- YAVAŞ ANİMASYONLU RGB BORDER
     local rgbBorder = Instance.new("UIStroke")
     rgbBorder.Name = "RGBBorder"
     rgbBorder.Color = RGBColors[1]
@@ -93,11 +93,11 @@ function OxireunUI:NewWindow(title)
     rgbBorder.Transparency = 0
     rgbBorder.Parent = MainFrame
     
-    -- RGB animasyonu
+    -- YAVAŞ RGB animasyonu
     local colorIndex = 1
     local rgbAnimation
     rgbAnimation = game:GetService("RunService").Heartbeat:Connect(function()
-        colorIndex = colorIndex + 0.02
+        colorIndex = colorIndex + 0.008 -- ÇOK DAHA YAVAŞ (0.02 -> 0.008)
         if colorIndex > #RGBColors then
             colorIndex = 1
         end
@@ -128,29 +128,29 @@ function OxireunUI:NewWindow(title)
     TitleLabel.Position = UDim2.new(0, 10, 0, 0)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
-    TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 17 -- Biraz daha büyük
-    TitleLabel.Font = Fonts.Title -- SciFi fontu (Fight Club tarzı)
+    TitleLabel.TextColor3 = Colors.Text -- BEYAZ
+    TitleLabel.TextSize = 17
+    TitleLabel.Font = Fonts.Title
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
-    -- Kontrol butonları - DAHA KÜÇÜK BOYUT
+    -- Kontrol butonları
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 50, 1, 0) -- Daha küçük
+    Controls.Size = UDim2.new(0, 50, 1, 0)
     Controls.Position = UDim2.new(1, -55, 0, 0)
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
-    -- Küçültme butonu - DAHA KÜÇÜK
+    -- Küçültme butonu
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
-    MinimizeButton.Size = UDim2.new(0, 20, 0, 20) -- DAHA KÜÇÜK
+    MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
     MinimizeButton.Position = UDim2.new(0, 0, 0.5, -10)
     MinimizeButton.BackgroundColor3 = Colors.ControlButton
     MinimizeButton.Text = "-"
-    MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 18 -- Yazı boyutu küçültüldü
+    MinimizeButton.TextColor3 = Colors.Text -- BEYAZ
+    MinimizeButton.TextSize = 18
     MinimizeButton.Font = Fonts.Normal
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
@@ -159,15 +159,15 @@ function OxireunUI:NewWindow(title)
     minimizeCorner.CornerRadius = UDim.new(1, 0)
     minimizeCorner.Parent = MinimizeButton
     
-    -- Kapatma butonu - DAHA KÜÇÜK ve ">" simgesi
+    -- Kapatma butonu
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
-    CloseButton.Size = UDim2.new(0, 20, 0, 20) -- DAHA KÜÇÜK
+    CloseButton.Size = UDim2.new(0, 20, 0, 20)
     CloseButton.Position = UDim2.new(0, 25, 0.5, -10)
     CloseButton.BackgroundColor3 = Colors.CloseButton
-    CloseButton.Text = ">" -- YENİ SİMGE
-    CloseButton.TextColor3 = Colors.Text
-    CloseButton.TextSize = 16 -- Yazı boyutu küçültüldü
+    CloseButton.Text = ">" 
+    CloseButton.TextColor3 = Colors.Text -- BEYAZ
+    CloseButton.TextSize = 16
     CloseButton.Font = Fonts.Normal
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
@@ -237,9 +237,9 @@ function OxireunUI:NewWindow(title)
         if isControlButton then 
             button.MouseEnter:Connect(function()
                 if button.Name == "Close" then
-                    button.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+                    button.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
                 else
-                    button.BackgroundColor3 = Color3.fromRGB(80, 110, 170)
+                    button.BackgroundColor3 = Color3.fromRGB(90, 70, 130)
                 end
             end)
             
@@ -346,7 +346,7 @@ function OxireunUI:NewWindow(title)
         TabButton.Size = UDim2.new(0, 70, 0, 25)
         TabButton.BackgroundColor3 = Colors.TabInactive
         TabButton.Text = name
-        TabButton.TextColor3 = Colors.Text
+        TabButton.TextColor3 = Colors.Text -- BEYAZ
         TabButton.TextSize = 12
         TabButton.Font = Fonts.Tab
         TabButton.AutoButtonColor = false
@@ -427,7 +427,7 @@ function OxireunUI:NewWindow(title)
             Button.Size = UDim2.new(1, 0, 0, 35)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
-            Button.TextColor3 = Colors.Text
+            Button.TextColor3 = Colors.Text -- BEYAZ
             Button.TextSize = 14
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
@@ -460,7 +460,7 @@ function OxireunUI:NewWindow(title)
             ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = name
-            ToggleLabel.TextColor3 = Colors.Text
+            ToggleLabel.TextColor3 = Colors.Text -- BEYAZ
             ToggleLabel.TextSize = 14
             ToggleLabel.Font = Fonts.Bold
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -483,7 +483,7 @@ function OxireunUI:NewWindow(title)
             ToggleCircle.Name = "Circle"
             ToggleCircle.Size = UDim2.new(0, 18, 0, 18)
             ToggleCircle.Position = UDim2.new(0, default and 24 or 2, 0.5, -9)
-            ToggleCircle.BackgroundColor3 = Colors.Text
+            ToggleCircle.BackgroundColor3 = Colors.Text -- BEYAZ
             ToggleCircle.Parent = ToggleButton
             
             local circleCorner = Instance.new("UICorner")
@@ -536,7 +536,7 @@ function OxireunUI:NewWindow(title)
             SliderLabel.Size = UDim2.new(1, 0, 0, 20)
             SliderLabel.BackgroundTransparency = 1
             SliderLabel.Text = name .. ": " .. default
-            SliderLabel.TextColor3 = Colors.Text
+            SliderLabel.TextColor3 = Colors.Text -- BEYAZ
             SliderLabel.TextSize = 14
             SliderLabel.Font = Fonts.Bold
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -567,7 +567,7 @@ function OxireunUI:NewWindow(title)
             SliderButton.Name = "SliderButton"
             SliderButton.Size = UDim2.new(0, 18, 0, 18)
             SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -9, 0.5, -9)
-            SliderButton.BackgroundColor3 = Colors.Text
+            SliderButton.BackgroundColor3 = Colors.Text -- BEYAZ
             SliderButton.Text = ""
             SliderButton.AutoButtonColor = false
             SliderButton.Parent = SliderTrack
@@ -635,7 +635,7 @@ function OxireunUI:NewWindow(title)
             DropdownButton.Size = UDim2.new(1, 0, 0, 35)
             DropdownButton.BackgroundColor3 = Colors.Button
             DropdownButton.Text = options[default] or options[1] or "Select"
-            DropdownButton.TextColor3 = Colors.Text
+            DropdownButton.TextColor3 = Colors.Text -- BEYAZ
             DropdownButton.TextSize = 14
             DropdownButton.Font = Fonts.Normal
             DropdownButton.AutoButtonColor = false
@@ -695,7 +695,7 @@ function OxireunUI:NewWindow(title)
                     OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*25 + 5)
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
-                    OptionButton.TextColor3 = Colors.Text
+                    OptionButton.TextColor3 = Colors.Text -- BEYAZ
                     OptionButton.TextSize = 12
                     OptionButton.Font = Fonts.Normal
                     OptionButton.AutoButtonColor = false
@@ -758,8 +758,8 @@ function OxireunUI:NewWindow(title)
             InputBox.BackgroundColor3 = Colors.Button
             InputBox.Text = ""
             InputBox.PlaceholderText = "Enter"
-            InputBox.TextColor3 = Colors.Text
-            InputBox.PlaceholderColor3 = Colors.Text
+            InputBox.TextColor3 = Colors.Text -- BEYAZ
+            InputBox.PlaceholderColor3 = Colors.Text -- BEYAZ
             InputBox.TextSize = 14
             InputBox.Font = Fonts.Normal
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
