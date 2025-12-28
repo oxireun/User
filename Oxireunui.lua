@@ -34,9 +34,9 @@ local RGBColors = {
     Color3.fromRGB(170, 30, 210)    -- Derin mor
 }
 
--- Font ayarları
+-- Font ayarları - DEĞİŞTİRİLDİ: Başlık fontu daha modern
 local Fonts = {
-    Title = Enum.Font.GothamBold, -- DEĞİŞTİRİLDİ: SciFi yerine GothamBold (başlığı beğenmediğini belirtmiştin)
+    Title = Enum.Font.GothamBold, -- Daha modern font
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
@@ -58,10 +58,10 @@ end
 
 -- Yeni pencere oluşturma
 function OxireunUI:NewWindow(title)
-    local selfWindow = {}
-    selfWindow.Title = title or "Oxireun UI"
-    selfWindow.Sections = {}
-    selfWindow.CurrentSection = nil
+    local Window = {}
+    Window.Title = title or "Oxireun UI"
+    Window.Sections = {}
+    Window.CurrentSection = nil
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
@@ -115,22 +115,24 @@ function OxireunUI:NewWindow(title)
     TitleBar.Size = UDim2.new(1, 0, 0, 35)
     TitleBar.BackgroundColor3 = Colors.SecondaryBg
     TitleBar.BorderSizePixel = 0
+    TitleBar.Active = true  -- Sürükleme için gerekli
+    TitleBar.Selectable = true  -- Sürükleme için gerekli
     TitleBar.Parent = MainFrame
     
     local titleCorner = Instance.new("UICorner")
     titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
     titleCorner.Parent = TitleBar
     
-    -- Başlık - FONT DEĞİŞTİRİLDİ (GothamBold)
+    -- Başlık - MODERN FONT - DEĞİŞTİRİLDİ
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
     TitleLabel.Position = UDim2.new(0, 10, 0, 0)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = selfWindow.Title
+    TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text -- BEYAZ
-    TitleLabel.TextSize = 17
-    TitleLabel.Font = Fonts.Title -- DEĞİŞTİRİLDİ
+    TitleLabel.TextSize = 16  -- DEĞİŞTİRİLDİ: Daha uygun boyut
+    TitleLabel.Font = Fonts.Title  -- GothamBold kullanılıyor
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
@@ -269,30 +271,30 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK - Improved & reliable version (sadece TitleBar ile çalışır)
+    -- DÜZGÜN DRAGGABLE FONKSİYONLUK - FIXED
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
-    local dragStart = Vector2.new(0,0)
-    local startPos = MainFrame.Position
+    local dragStart, startPos
     
     TitleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = UserInputService:GetMouseLocation()
+            dragStart = input.Position
             startPos = MainFrame.Position
-            -- input 'end' durumunu dinle, bırakıldığında dragging false olsun
-            input.Changed:Connect(function()
+            
+            local connection
+            connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    connection:Disconnect()
                 end
             end)
         end
     end)
     
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local current = UserInputService:GetMouseLocation()
-            local delta = current - dragStart
+        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+            local delta = input.Position - dragStart
             MainFrame.Position = UDim2.new(
                 startPos.X.Scale,
                 startPos.X.Offset + delta.X,
@@ -328,7 +330,7 @@ function OxireunUI:NewWindow(title)
     end)
     
     -- Yeni section ekleme fonksiyonu
-    function selfWindow:NewSection(name)
+    function Window:NewSection(name)
         local Section = {}
         Section.Name = name
         
@@ -385,10 +387,10 @@ function OxireunUI:NewWindow(title)
         end)
         
         -- İlk section'u aktif yap
-        if #selfWindow.Sections == 0 then
+        if #Window.Sections == 0 then
             TabButton.BackgroundColor3 = Colors.TabActive
             SectionFrame.Visible = true
-            selfWindow.CurrentSection = Section
+            Window.CurrentSection = Section
         end
         
         -- Tab değiştirme
@@ -409,7 +411,7 @@ function OxireunUI:NewWindow(title)
             
             TabButton.BackgroundColor3 = Colors.TabActive
             SectionFrame.Visible = true
-            selfWindow.CurrentSection = Section
+            Window.CurrentSection = Section
         end)
         
         -- Element oluşturma fonksiyonları
@@ -424,7 +426,6 @@ function OxireunUI:NewWindow(title)
             Button.Font = Fonts.Button
             Button.AutoButtonColor = false
             Button.Parent = SectionFrame
-            Button.ZIndex = 10 -- AYARLANDI: button daha alt ZIndex olsun
             
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
@@ -467,7 +468,6 @@ function OxireunUI:NewWindow(title)
             ToggleButton.Text = ""
             ToggleButton.AutoButtonColor = false
             ToggleButton.Parent = Toggle
-            ToggleButton.ZIndex = 50 -- AYARLANDI: Toggle öğesi daha üstte gözüksün
             
             local toggleCorner = Instance.new("UICorner")
             toggleCorner.CornerRadius = UDim.new(1, 0)
@@ -479,7 +479,6 @@ function OxireunUI:NewWindow(title)
             ToggleCircle.Position = UDim2.new(0, default and 24 or 2, 0.5, -9)
             ToggleCircle.BackgroundColor3 = Colors.Text -- BEYAZ
             ToggleCircle.Parent = ToggleButton
-            ToggleCircle.ZIndex = 51 -- AYARLANDI: circle toggle'ın üstünde olsun
             
             local circleCorner = Instance.new("UICorner")
             circleCorner.CornerRadius = UDim.new(1, 0)
@@ -774,15 +773,15 @@ function OxireunUI:NewWindow(title)
             return Textbox
         end
         
-        table.insert(selfWindow.Sections, Section)
+        table.insert(Window.Sections, Section)
         return Section
     end
     
     -- Pencereyi parent'e ekle
     ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
     
-    table.insert(self.Windows, selfWindow)
-    return selfWindow
+    table.insert(self.Windows, Window)
+    return Window
 end
 
 -- Library'yi döndür
