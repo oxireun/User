@@ -656,11 +656,12 @@ SetupButtonHover(DropdownButton, false)
 
 local open = false
 local OptionsContainer
+local OptionsScreenGui
 
 local function CloseOptions()
-if OptionsContainer then
-OptionsContainer:Destroy()
-OptionsContainer = nil
+if OptionsScreenGui then
+OptionsScreenGui:Destroy()
+OptionsScreenGui = nil
 end
 open = false
 end
@@ -673,7 +674,7 @@ return
 end
 
 open = true
-local OptionsScreenGui = Instance.new("ScreenGui")
+OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -692,21 +693,11 @@ local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
 optionsCorner.Parent = OptionsContainer
 
-local optionsList = Instance.new("UIListLayout")
-optionsList.Padding = UDim.new(0, 5)
-optionsList.Parent = OptionsContainer
-
-local optionsPadding = Instance.new("UIPadding")
-optionsPadding.PaddingTop = UDim.new(0, 5)
-optionsPadding.PaddingBottom = UDim.new(0, 5)
-optionsPadding.PaddingLeft = UDim.new(0, 5)
-optionsPadding.PaddingRight = UDim.new(0, 5)
-optionsPadding.Parent = OptionsContainer
-
 for i, option in pairs(options) do
 local OptionButton = Instance.new("TextButton")
 OptionButton.Name = option
-OptionButton.Size = UDim2.new(1, 0, 0, 20)
+OptionButton.Size = UDim2.new(1, -10, 0, 22)
+OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*25 + 5)
 OptionButton.BackgroundColor3 = Colors.Button
 OptionButton.Text = option
 OptionButton.TextColor3 = Colors.Text -- BEYAZ
@@ -735,7 +726,6 @@ if callback then
 callback(option)
 end
 CloseOptions()
-OptionsScreenGui:Destroy()
 end)
 end
 
@@ -748,7 +738,6 @@ local buttonSize = DropdownButton.AbsoluteSize
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
 CloseOptions()
-OptionsScreenGui:Destroy()
 end
 end
 end
