@@ -656,11 +656,16 @@ SetupButtonHover(DropdownButton, false)
 
 local open = false
 local OptionsContainer
+local OptionsScreenGui
 
 local function CloseOptions()
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
+end
+if OptionsScreenGui then
+OptionsScreenGui:Destroy()
+OptionsScreenGui = nil
 end
 open = false
 end
@@ -673,7 +678,7 @@ return
 end
 
 open = true
-local OptionsScreenGui = Instance.new("ScreenGui")
+OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -725,7 +730,6 @@ if callback then
 callback(option)
 end
 CloseOptions()
-OptionsScreenGui:Destroy()
 end)
 end
 
@@ -734,11 +738,19 @@ if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType
 local mousePos = UserInputService:GetMouseLocation()
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
+local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
+local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
 
-if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
+-- Eğer tıklanan yer dropdown butonu veya options container değilse kapat
+local isOnButton = mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
+
+local isOnContainer = containerPos and containerSize and
+mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y
+
+if not isOnButton and not isOnContainer then
 CloseOptions()
-OptionsScreenGui:Destroy()
 end
 end
 end
