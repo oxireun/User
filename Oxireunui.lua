@@ -34,9 +34,9 @@ Color3.fromRGB(190, 70, 240), -- Pembe-mor
 Color3.fromRGB(160, 30, 190) -- Derin mor
 }
 
--- Font ayarları (Başlık için BOLD font)
+-- Font ayarları
 local Fonts = {
-Title = Enum.Font.GothamBold, -- BOLD BAŞLIK
+Title = Enum.Font.SciFi, -- Fight Club tarzı font
 Normal = Enum.Font.Gotham,
 Tab = Enum.Font.Gotham,
 Button = Enum.Font.Gotham,
@@ -119,7 +119,7 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
 titleCorner.Parent = TitleBar
 
--- Başlık - BOLD FONT
+-- Başlık - FIGHT CLUB FONTU (BOLD)
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "Title"
 TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -128,7 +128,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = Window.Title
 TitleLabel.TextColor3 = Colors.Text -- BEYAZ
 TitleLabel.TextSize = 17
-TitleLabel.Font = Fonts.Title -- BOLD FONT
+TitleLabel.Font = Fonts.Title
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
@@ -525,7 +525,6 @@ end)
 return Toggle
 end
 
--- ESKİ SLİDER FONKSİYONU (ORİJİNAL)
 function Section:CreateSlider(name, min, max, default, callback)
 local Slider = Instance.new("Frame")
 Slider.Name = name
@@ -577,8 +576,7 @@ local btnCorner = Instance.new("UICorner")
 btnCorner.CornerRadius = UDim.new(1, 0)
 btnCorner.Parent = SliderButton
 
-local draggingSlider = false
-
+local dragging = false
 local function updateSlider(input)
 local pos = UDim2.new(
 math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
@@ -596,24 +594,24 @@ end
 end
 
 SliderButton.MouseButton1Down:Connect(function()
-draggingSlider = true
+dragging = true
 end)
 
 SliderTrack.InputBegan:Connect(function(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-draggingSlider = true
+dragging = true
 updateSlider(input)
 end
 end)
 
 game:GetService("UserInputService").InputEnded:Connect(function(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-draggingSlider = false
+dragging = false
 end
 end)
 
 game:GetService("UserInputService").InputChanged:Connect(function(input)
-if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 updateSlider(input)
 end
 end)
