@@ -682,7 +682,7 @@ OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = game:GetService("CoreGui")
+OptionsScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
@@ -734,19 +734,18 @@ end)
 end
 
 local function checkClickOutside(input)
-if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and open then
+if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and OptionsContainer then
 local mousePos = UserInputService:GetMouseLocation()
 local containerPos = OptionsContainer.AbsolutePosition
 local containerSize = OptionsContainer.AbsoluteSize
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
 
-local isInContainer = mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-                     mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y
-local isInButton = mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-                  mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
-
-if not isInContainer and not isInButton then
+-- Tıklanan yer ne dropdown butonu ne de options container ise kapat
+if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
+   not (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
 CloseOptions()
 end
 end
