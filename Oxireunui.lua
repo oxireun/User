@@ -1,12 +1,12 @@
--- Oxireun UI Library - Slow RGB Border, Purple Theme
--- Slow RGB animation, purple theme with white text
+-- Oxireun UI Library - Draggable with Slow RGB Border, Purple-Pink LED Effect
+-- Draggable UI with slow RGB animation on borders
 
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
 
--- Mor temalı renk paleti
+-- Mor-Pembe temalı renk paleti
 local Colors = {
-    Background = Color3.fromRGB(30, 20, 50), -- Mor arkaplan
+    Background = Color3.fromRGB(30, 20, 50), -- Koyu mor arkaplan
     SecondaryBg = Color3.fromRGB(40, 30, 70), -- Daha açık mor
     SectionBg = Color3.fromRGB(35, 25, 65), -- Section için mor
     Border = Color3.fromRGB(150, 50, 200), -- Mor border
@@ -24,14 +24,14 @@ local Colors = {
     CloseButton = Color3.fromRGB(180, 60, 60) -- Kırmızı kapatma butonu
 }
 
--- RGB renkleri (YAVAŞ animasyon için)
+-- YAVAŞ RGB renkleri (Mor-Pembe tonları)
 local RGBColors = {
     Color3.fromRGB(180, 50, 220),   -- Mor
-    Color3.fromRGB(150, 50, 200),   -- Koyu mor
     Color3.fromRGB(200, 60, 230),   -- Açık mor
-    Color3.fromRGB(170, 40, 210),   -- Orta mor
-    Color3.fromRGB(190, 70, 240),   -- Pembe-mor
-    Color3.fromRGB(160, 30, 190)    -- Derin mor
+    Color3.fromRGB(220, 70, 240),   -- Pembe-mor
+    Color3.fromRGB(190, 50, 210),   -- Koyu pembe-mor
+    Color3.fromRGB(170, 40, 190),   -- Derin mor
+    Color3.fromRGB(210, 80, 250)    -- Parlak pembe-mor
 }
 
 -- Font ayarları
@@ -85,7 +85,7 @@ function OxireunUI:NewWindow(title)
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = MainFrame
     
-    -- YAVAŞ ANİMASYONLU RGB BORDER
+    -- YAVAŞ ANİMASYONLU RGB BORDER (LED EFEKTİ)
     local rgbBorder = Instance.new("UIStroke")
     rgbBorder.Name = "RGBBorder"
     rgbBorder.Color = RGBColors[1]
@@ -93,20 +93,27 @@ function OxireunUI:NewWindow(title)
     rgbBorder.Transparency = 0
     rgbBorder.Parent = MainFrame
     
-    -- YAVAŞ RGB animasyonu
+    -- YAVAŞ RGB animasyonu (LED efekti)
     local colorIndex = 1
+    local direction = 1
     local rgbAnimation
     rgbAnimation = game:GetService("RunService").Heartbeat:Connect(function()
-        colorIndex = colorIndex + 0.008 -- ÇOK DAHA YAVAŞ (0.02 -> 0.008)
-        if colorIndex > #RGBColors then
-            colorIndex = 1
+        colorIndex = colorIndex + (0.006 * direction) -- ÇOK YAVAŞ animasyon
+        
+        if colorIndex >= #RGBColors then
+            direction = -1
+        elseif colorIndex <= 1 then
+            direction = 1
         end
         
-        local currentColor = RGBColors[math.floor(colorIndex)]
-        local nextColor = RGBColors[math.floor(colorIndex) % #RGBColors + 1]
-        local lerpFactor = colorIndex - math.floor(colorIndex)
+        local index1 = math.floor(colorIndex)
+        local index2 = math.min(index1 + 1, #RGBColors)
+        local lerpFactor = colorIndex - index1
         
-        rgbBorder.Color = currentColor:Lerp(nextColor, lerpFactor)
+        local color1 = RGBColors[index1]
+        local color2 = RGBColors[index2]
+        
+        rgbBorder.Color = color1:Lerp(color2, lerpFactor)
     end)
     
     -- Başlık çubuğu
@@ -269,7 +276,7 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DRAGGABLE FONKSİYONLUK
+    -- DRAGGABLE FONKSİYONLUK (Wizard UI/Orion UI gibi)
     local UserInputService = game:GetService("UserInputService")
     local RunService = game:GetService("RunService")
     local dragging = false
