@@ -656,16 +656,11 @@ SetupButtonHover(DropdownButton, false)
 
 local open = false
 local OptionsContainer
-local OptionsScreenGui
 
 local function CloseOptions()
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
-end
-if OptionsScreenGui then
-OptionsScreenGui:Destroy()
-OptionsScreenGui = nil
 end
 open = false
 end
@@ -678,11 +673,11 @@ return
 end
 
 open = true
-OptionsScreenGui = Instance.new("ScreenGui")
+local OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+OptionsScreenGui.Parent = game:GetService("CoreGui")
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
@@ -730,23 +725,20 @@ if callback then
 callback(option)
 end
 CloseOptions()
+OptionsScreenGui:Destroy()
 end)
 end
 
 local function checkClickOutside(input)
-if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and OptionsContainer then
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
 local mousePos = UserInputService:GetMouseLocation()
-local containerPos = OptionsContainer.AbsolutePosition
-local containerSize = OptionsContainer.AbsoluteSize
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
 
--- Tıklanan yer ne dropdown butonu ne de options container ise kapat
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
-   not (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
 CloseOptions()
+OptionsScreenGui:Destroy()
 end
 end
 end
