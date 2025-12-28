@@ -26,17 +26,17 @@ local Colors = {
 
 -- RGB renkleri (YAVAŞ animasyon için)
 local RGBColors = {
-    Color3.fromRGB(180, 50, 220),   -- Mor
-    Color3.fromRGB(150, 50, 200),   -- Koyu mor
-    Color3.fromRGB(200, 60, 230),   -- Açık mor
-    Color3.fromRGB(170, 40, 210),   -- Orta mor
-    Color3.fromRGB(190, 70, 240),   -- Pembe-mor
-    Color3.fromRGB(160, 30, 190)    -- Derin mor
+    Color3.fromRGB(180, 50, 220), -- Mor
+    Color3.fromRGB(150, 50, 200), -- Koyu mor
+    Color3.fromRGB(200, 60, 230), -- Açık mor
+    Color3.fromRGB(170, 40, 210), -- Orta mor
+    Color3.fromRGB(190, 70, 240), -- Pembe-mor
+    Color3.fromRGB(160, 30, 190) -- Derin mor
 }
 
--- Font ayarları - DÜZELTİLDİ: Çok daha güzel bir font
+-- Font ayarları
 local Fonts = {
-    Title = Enum.Font.FredokaOne, -- Çok daha güzel bir başlık fontu
+    Title = Enum.Font.SciFi, -- Fight Club tarzı font
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
@@ -62,7 +62,7 @@ function OxireunUI:NewWindow(title)
     Window.Title = title or "Oxireun UI"
     Window.Sections = {}
     Window.CurrentSection = nil
-    
+
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "OxireunUI"
@@ -101,11 +101,9 @@ function OxireunUI:NewWindow(title)
         if colorIndex > #RGBColors then
             colorIndex = 1
         end
-        
         local currentColor = RGBColors[math.floor(colorIndex)]
         local nextColor = RGBColors[math.floor(colorIndex) % #RGBColors + 1]
         local lerpFactor = colorIndex - math.floor(colorIndex)
-        
         rgbBorder.Color = currentColor:Lerp(nextColor, lerpFactor)
     end)
     
@@ -121,7 +119,7 @@ function OxireunUI:NewWindow(title)
     titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
     titleCorner.Parent = TitleBar
     
-    -- Başlık - DÜZELTİLDİ: Çok daha güzel font
+    -- Başlık - FIGHT CLUB FONTU
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -129,8 +127,8 @@ function OxireunUI:NewWindow(title)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text -- BEYAZ
-    TitleLabel.TextSize = 19 -- DÜZELTİLDİ: Daha büyük yazı
-    TitleLabel.Font = Fonts.Title -- DÜZELTİLDİ: FredokaOne font - çok daha güzel!
+    TitleLabel.TextSize = 17
+    TitleLabel.Font = Fonts.Title
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
@@ -165,7 +163,7 @@ function OxireunUI:NewWindow(title)
     CloseButton.Size = UDim2.new(0, 20, 0, 20)
     CloseButton.Position = UDim2.new(0, 25, 0.5, -10)
     CloseButton.BackgroundColor3 = Colors.CloseButton
-    CloseButton.Text = ">" 
+    CloseButton.Text = ">"
     CloseButton.TextColor3 = Colors.Text -- BEYAZ
     CloseButton.TextSize = 16
     CloseButton.Font = Fonts.Normal
@@ -223,10 +221,7 @@ function OxireunUI:NewWindow(title)
         effectCorner.CornerRadius = button:FindFirstChildWhichIsA("UICorner") and button:FindFirstChildWhichIsA("UICorner").CornerRadius or UDim.new(0, 6)
         effectCorner.Parent = effect
         
-        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {
-            BackgroundTransparency = 1
-        }):Play()
-        
+        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
         delay(0.3, function()
             effect:Destroy()
         end)
@@ -234,7 +229,7 @@ function OxireunUI:NewWindow(title)
     
     -- BUTON HOVER EFEKTLERİ
     local function SetupButtonHover(button, isControlButton)
-        if isControlButton then 
+        if isControlButton then
             button.MouseEnter:Connect(function()
                 if button.Name == "Close" then
                     button.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
@@ -254,32 +249,32 @@ function OxireunUI:NewWindow(title)
         end
         
         button.MouseEnter:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-                BackgroundColor3 = Colors.Border
-            }):Play()
+            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Border}):Play()
         end)
         
         button.MouseLeave:Connect(function()
-            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-                BackgroundColor3 = Colors.Button
-            }):Play()
+            game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Button}):Play()
         end)
     end
     
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DÜZELTİLDİ: ÇALIŞAN DRAGGABLE SİSTEM
+    -- DRAGGABLE FONKSİYONLUK
     local UserInputService = game:GetService("UserInputService")
-    local dragging = false
-    local dragInput, dragStart, startPos
+    local RunService = game:GetService("RunService")
     
-    local function update(input)
-        local delta = input.Position - dragStart
+    local dragging = false
+    local dragStart, startPos
+    
+    local function updateDrag()
+        if not dragging then return end
+        local mouse = UserInputService:GetMouseLocation()
+        local delta = Vector2.new(mouse.X, mouse.Y) - dragStart
         MainFrame.Position = UDim2.new(
-            startPos.X.Scale, 
+            startPos.X.Scale,
             startPos.X.Offset + delta.X,
-            startPos.Y.Scale, 
+            startPos.Y.Scale,
             startPos.Y.Offset + delta.Y
         )
     end
@@ -287,26 +282,22 @@ function OxireunUI:NewWindow(title)
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = input.Position
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
             startPos = MainFrame.Position
+            
+            local connection
+            connection = RunService.Heartbeat:Connect(function()
+                updateDrag()
+            end)
             
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    if connection then
+                        connection:Disconnect()
+                    end
                 end
             end)
-        end
-    end)
-    
-    TitleBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
         end
     end)
     
@@ -402,7 +393,6 @@ function OxireunUI:NewWindow(title)
         -- Tab değiştirme
         TabButton.MouseButton1Click:Connect(function()
             CreateClickEffect(TabButton)
-            
             for _, tab in pairs(TabsContainer:GetChildren()) do
                 if tab:IsA("TextButton") then
                     tab.BackgroundColor3 = Colors.TabInactive
@@ -494,7 +484,7 @@ function OxireunUI:NewWindow(title)
             
             ToggleButton.MouseEnter:Connect(function()
                 game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
-                    BackgroundColor3 = state and Colors.Accent or Colors.Hover
+                    BackgroundColor3 = state and Colors.Accent or Color3.fromRGB(150, 50, 200)
                 }):Play()
             end)
             
@@ -579,16 +569,14 @@ function OxireunUI:NewWindow(title)
             local dragging = false
             
             local function updateSlider(input)
-                local pos = UDim2.new(
-                    math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
-                    -9,
-                    0.5,
-                    -9
-                )
-                SliderButton.Position = pos
-                SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
+                local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                relativeX = math.clamp(relativeX, 0, 1)
                 
-                local value = math.floor(min + (pos.X.Scale * (max - min)))
+                local pos = UDim2.new(relativeX, -9, 0.5, -9)
+                SliderButton.Position = pos
+                SliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
+                
+                local value = math.floor(min + (relativeX * (max - min)))
                 SliderLabel.Text = name .. ": " .. value
                 
                 if callback then
@@ -667,7 +655,6 @@ function OxireunUI:NewWindow(title)
                 end
                 
                 open = true
-                
                 local OptionsScreenGui = Instance.new("ScreenGui")
                 OptionsScreenGui.Name = "DropdownOptions"
                 OptionsScreenGui.ResetOnSpawn = false
@@ -677,8 +664,10 @@ function OxireunUI:NewWindow(title)
                 OptionsContainer = Instance.new("Frame")
                 OptionsContainer.Name = "OptionsContainer"
                 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-                OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 
-                                                      0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+                OptionsContainer.Position = UDim2.new(
+                    0, DropdownButton.AbsolutePosition.X,
+                    0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
+                )
                 OptionsContainer.BackgroundColor3 = Colors.SectionBg
                 OptionsContainer.BorderSizePixel = 0
                 OptionsContainer.ZIndex = 100
@@ -769,8 +758,8 @@ function OxireunUI:NewWindow(title)
             inputCorner.CornerRadius = UDim.new(0, 6)
             inputCorner.Parent = InputBox
             
-            InputBox.FocusLost:Connect(function()
-                if callback then
+            InputBox.FocusLost:Connect(function(enterPressed)
+                if callback and enterPressed then
                     callback(InputBox.Text)
                 end
             end)
@@ -790,4 +779,4 @@ function OxireunUI:NewWindow(title)
 end
 
 -- Library'yi döndür
-return OxireunUI.new()
+return OxireunUI
