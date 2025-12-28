@@ -34,9 +34,9 @@ local RGBColors = {
     Color3.fromRGB(170, 30, 210)    -- Derin mor
 }
 
--- Font ayarları - DEĞİŞTİRİLDİ: Başlık fontu daha modern
+-- Font ayarları - CHANGED: Removed SciFi font, using Gotham
 local Fonts = {
-    Title = Enum.Font.GothamBold, -- Daha modern font
+    Title = Enum.Font.GothamBold, -- Changed from SciFi to GothamBold
     Normal = Enum.Font.Gotham,
     Tab = Enum.Font.Gotham,
     Button = Enum.Font.Gotham,
@@ -78,6 +78,7 @@ function OxireunUI:NewWindow(title)
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Active = true
+    MainFrame.Selectable = true
     MainFrame.Parent = ScreenGui
     
     -- Köşe yuvarlatma
@@ -115,15 +116,13 @@ function OxireunUI:NewWindow(title)
     TitleBar.Size = UDim2.new(1, 0, 0, 35)
     TitleBar.BackgroundColor3 = Colors.SecondaryBg
     TitleBar.BorderSizePixel = 0
-    TitleBar.Active = true  -- Sürükleme için gerekli
-    TitleBar.Selectable = true  -- Sürükleme için gerekli
     TitleBar.Parent = MainFrame
     
     local titleCorner = Instance.new("UICorner")
     titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
     titleCorner.Parent = TitleBar
     
-    -- Başlık - MODERN FONT - DEĞİŞTİRİLDİ
+    -- Başlık - CHANGED: Using GothamBold instead of SciFi
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -131,8 +130,8 @@ function OxireunUI:NewWindow(title)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text -- BEYAZ
-    TitleLabel.TextSize = 16  -- DEĞİŞTİRİLDİ: Daha uygun boyut
-    TitleLabel.Font = Fonts.Title  -- GothamBold kullanılıyor
+    TitleLabel.TextSize = 17
+    TitleLabel.Font = Fonts.Title  -- CHANGED: Now using GothamBold
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
@@ -271,29 +270,33 @@ function OxireunUI:NewWindow(title)
     SetupButtonHover(CloseButton, true)
     SetupButtonHover(MinimizeButton, true)
     
-    -- DÜZGÜN DRAGGABLE FONKSİYONLUK - FIXED
+    -- FIXED: DRAGGABLE FONKSİYONU - UI'nin herhangi bir yerinden sürüklenebilir
     local UserInputService = game:GetService("UserInputService")
     local dragging = false
     local dragStart, startPos
     
-    TitleBar.InputBegan:Connect(function(input)
+    local function updateInput(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = MainFrame.Position
-            
-            local connection
-            connection = input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                    connection:Disconnect()
-                end
-            end)
+            if not dragging then
+                dragging = true
+                dragStart = input.Position
+                startPos = MainFrame.Position
+                
+                local connection
+                connection = input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                        if connection then
+                            connection:Disconnect()
+                        end
+                    end
+                end)
+            end
         end
-    end)
+    end
     
-    UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+    local function updateDrag(input)
+        if dragging then
             local delta = input.Position - dragStart
             MainFrame.Position = UDim2.new(
                 startPos.X.Scale,
@@ -301,6 +304,20 @@ function OxireunUI:NewWindow(title)
                 startPos.Y.Scale,
                 startPos.Y.Offset + delta.Y
             )
+        end
+    end
+    
+    -- FIXED: Ana pencereyi her yerinden sürüklemek için
+    MainFrame.InputBegan:Connect(function(input)
+        -- Eğer tıklama bir UI elemanı üzerinde değilse veya TitleBar'daysa sürükle
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateInput(input)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateDrag(input)
         end
     end)
     
