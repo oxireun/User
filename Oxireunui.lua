@@ -260,25 +260,11 @@ end
 SetupButtonHover(CloseButton, true)
 SetupButtonHover(MinimizeButton, true)
 
--- DRAGGABLE FONKSİYONLUK VE DROPDOWN İZLEME
+-- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-local dropdownOptionsScreenGui
-
--- Dropdown seçeneklerinin UI ile birlikte hareket etmesini sağlayan fonksiyon
-local function updateDropdownPosition()
-if dropdownOptionsScreenGui and dropdownOptionsScreenGui:FindFirstChild("OptionsContainer") then
-local OptionsContainer = dropdownOptionsScreenGui.OptionsContainer
-local DropdownButton = OptionsContainer:FindFirstChild("DropdownButtonRef")
-if DropdownButton then
-OptionsContainer.Position = UDim2.new(
-0, DropdownButton.AbsolutePosition.X,
-0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
-)
-end
-end
-end
+local updateConnection
 
 local function update(input)
 if not dragging then return end
@@ -296,9 +282,6 @@ startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
-
--- Dropdown seçeneklerini de güncelle
-updateDropdownPosition()
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -312,15 +295,15 @@ if input.UserInputType == Enum.UserInputType.Touch then
 MainFrame.Active = true
 end
 
-local connection
-connection = UserInputService.InputChanged:Connect(update)
+updateConnection = UserInputService.InputChanged:Connect(update)
 
 local function onInputEnded(inputEnded)
 if (inputEnded.UserInputType == Enum.UserInputType.MouseButton1 and input.UserInputType == Enum.UserInputType.MouseButton1) or
    (inputEnded.UserInputType == Enum.UserInputType.Touch and input.UserInputType == Enum.UserInputType.Touch) then
 dragging = false
-if connection then
-connection:Disconnect()
+if updateConnection then
+updateConnection:Disconnect()
+updateConnection = nil
 end
 end
 end
@@ -674,11 +657,35 @@ SetupButtonHover(DropdownButton, false)
 
 local open = false
 local OptionsContainer
+local OptionsScreenGui
+local updateOptionsPositionConnection
+
+local function UpdateOptionsPosition()
+if not open or not OptionsContainer or not DropdownButton then return end
+
+local buttonAbsolutePosition = DropdownButton.AbsolutePosition
+local buttonAbsoluteSize = DropdownButton.AbsoluteSize
+
+OptionsContainer.Position = UDim2.new(
+0, 
+buttonAbsolutePosition.X,
+0, 
+buttonAbsolutePosition.Y + buttonAbsoluteSize.Y + 5
+)
+end
 
 local function CloseOptions()
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
+end
+if OptionsScreenGui then
+OptionsScreenGui:Destroy()
+OptionsScreenGui = nil
+end
+if updateOptionsPositionConnection then
+updateOptionsPositionConnection:Disconnect()
+updateOptionsPositionConnection = nil
 end
 open = false
 end
@@ -691,24 +698,31 @@ return
 end
 
 open = true
+OptionsScreenGui = Instance.new("ScreenGui")
+OptionsScreenGui.Name = "DropdownOptions"
+OptionsScreenGui.ResetOnSpawn = false
+OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+OptionsScreenGui.Parent = ScreenGui -- ANA EKRANA EKLEDİK!
+
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
-OptionsContainer.Parent = ScreenGui -- ANA SCREENGUI'YE EKLENDİ
-
--- Dropdown butonuna referans ekle (UI sürüklenirken pozisyonu güncellemek için)
-local ref = Instance.new("ObjectValue")
-ref.Name = "DropdownButtonRef"
-ref.Value = DropdownButton
-ref.Parent = OptionsContainer
+OptionsContainer.Parent = OptionsScreenGui
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
 optionsCorner.Parent = OptionsContainer
+
+-- Başlangıç pozisyonunu ayarla
+UpdateOptionsPosition()
+
+-- UI sürüklendiğinde dropdown seçeneklerinin pozisyonunu güncelle
+updateOptionsPositionConnection = game:GetService("RunService").Heartbeat:Connect(function()
+UpdateOptionsPosition()
+end)
 
 for i, option in pairs(options) do
 local OptionButton = Instance.new("TextButton")
