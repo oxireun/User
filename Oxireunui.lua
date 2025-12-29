@@ -630,132 +630,140 @@ return Slider
 end
 
 function Section:CreateDropdown(name, options, default, callback)
-local Dropdown = Instance.new("Frame")
-Dropdown.Name = name
-Dropdown.Size = UDim2.new(1, 0, 0, 35)
-Dropdown.BackgroundTransparency = 1
-Dropdown.ClipsDescendants = false
-Dropdown.Parent = SectionFrame
+    local Dropdown = Instance.new("Frame")
+    Dropdown.Name = name
+    Dropdown.Size = UDim2.new(1, 0, 0, 35)
+    Dropdown.BackgroundTransparency = 1
+    Dropdown.ClipsDescendants = false
+    Dropdown.Parent = SectionFrame
 
-local DropdownButton = Instance.new("TextButton")
-DropdownButton.Name = "DropdownButton"
-DropdownButton.Size = UDim2.new(1, 0, 0, 35)
-DropdownButton.BackgroundColor3 = Colors.Button
-DropdownButton.Text = options[default] or options[1] or "Select"
-DropdownButton.TextColor3 = Colors.Text
-DropdownButton.TextSize = 14
-DropdownButton.Font = Fonts.Bold -- BOLD YAPILDI
-DropdownButton.AutoButtonColor = false
-DropdownButton.Parent = Dropdown
+    local DropdownButton = Instance.new("TextButton")
+    DropdownButton.Name = "DropdownButton"
+    DropdownButton.Size = UDim2.new(1, 0, 0, 35)
+    DropdownButton.BackgroundColor3 = Colors.Button
+    DropdownButton.Text = options[default] or options[1] or "Select"
+    DropdownButton.TextColor3 = Colors.Text
+    DropdownButton.TextSize = 14
+    DropdownButton.Font = Fonts.Bold
+    DropdownButton.AutoButtonColor = false
+    DropdownButton.Parent = Dropdown
 
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 6)
-btnCorner.Parent = DropdownButton
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = DropdownButton
 
--- SetupButtonHover fonksiyonu (dropdown için gerekli)
-DropdownButton.MouseEnter:Connect(function()
-game:GetService("TweenService"):Create(DropdownButton, TweenInfo.new(0.2), { 
-BackgroundColor3 = Colors.Border 
-}):Play()
-end)
+    -- SetupButtonHover fonksiyonu (dropdown için gerekli)
+    DropdownButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(DropdownButton, TweenInfo.new(0.2), { 
+            BackgroundColor3 = Colors.Border 
+        }):Play()
+    end)
 
-DropdownButton.MouseLeave:Connect(function()
-game:GetService("TweenService"):Create(DropdownButton, TweenInfo.new(0.2), { 
-BackgroundColor3 = Colors.Button 
-}):Play()
-end)
+    DropdownButton.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(DropdownButton, TweenInfo.new(0.2), { 
+            BackgroundColor3 = Colors.Button 
+        }):Play()
+    end)
 
-local open = false
-local OptionsContainer
+    local open = false
+    local OptionsContainer
 
-local function CloseOptions()
-if OptionsContainer then
-OptionsContainer:Destroy()
-OptionsContainer = nil
-end
-open = false
-end
+    local function CloseOptions()
+        if OptionsContainer then
+            OptionsContainer:Destroy()
+            OptionsContainer = nil
+        end
+        open = false
+    end
 
-DropdownButton.MouseButton1Click:Connect(function()
-CreateClickEffect(DropdownButton)
-if open then
-CloseOptions()
-return
-end
+    DropdownButton.MouseButton1Click:Connect(function()
+        CreateClickEffect(DropdownButton)
+        
+        if open then
+            CloseOptions()
+            return
+        end
 
-open = true
-local UserInputService = game:GetService("UserInputService")
-OptionsContainer = Instance.new("Frame")
-OptionsContainer.Name = "OptionsContainer"
-OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
-OptionsContainer.BackgroundColor3 = Colors.SectionBg
-OptionsContainer.BorderSizePixel = 0
-OptionsContainer.ZIndex = 100
-OptionsContainer.Parent = ScreenGui -- ANA SCREENGUI'YE EKLENDİ
+        open = true
+        local OptionsScreenGui = Instance.new("ScreenGui")
+        OptionsScreenGui.Name = "DropdownOptions"
+        OptionsScreenGui.ResetOnSpawn = false
+        OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        OptionsScreenGui.Parent = ScreenGui -- AYNI SCREENGUI'YE EKLENDİ
 
-local optionsCorner = Instance.new("UICorner")
-optionsCorner.CornerRadius = UDim.new(0, 6)
-optionsCorner.Parent = OptionsContainer
+        OptionsContainer = Instance.new("Frame")
+        OptionsContainer.Name = "OptionsContainer"
+        OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
+        OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+        OptionsContainer.BackgroundColor3 = Colors.SectionBg
+        OptionsContainer.BorderSizePixel = 0
+        OptionsContainer.ZIndex = 100
+        OptionsContainer.Parent = OptionsScreenGui
 
-for i, option in pairs(options) do
-local OptionButton = Instance.new("TextButton")
-OptionButton.Name = option
-OptionButton.Size = UDim2.new(1, -10, 0, 22)
-OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*25 + 5)
-OptionButton.BackgroundColor3 = Colors.Button
-OptionButton.Text = option
-OptionButton.TextColor3 = Colors.Text
-OptionButton.TextSize = 12
-OptionButton.Font = Fonts.Bold -- BOLD YAPILDI
-OptionButton.AutoButtonColor = false
-OptionButton.ZIndex = 101
-OptionButton.Parent = OptionsContainer
+        local optionsCorner = Instance.new("UICorner")
+        optionsCorner.CornerRadius = UDim.new(0, 6)
+        optionsCorner.Parent = OptionsContainer
 
-local optionCorner = Instance.new("UICorner")
-optionCorner.CornerRadius = UDim.new(0, 4)
-optionCorner.Parent = OptionButton
+        for i, option in pairs(options) do
+            local OptionButton = Instance.new("TextButton")
+            OptionButton.Name = option
+            OptionButton.Size = UDim2.new(1, -10, 0, 22)
+            OptionButton.Position = UDim2.new(0, 5, 0, (i-1)*25 + 5)
+            OptionButton.BackgroundColor3 = Colors.Button
+            OptionButton.Text = option
+            OptionButton.TextColor3 = Colors.Text
+            OptionButton.TextSize = 12
+            OptionButton.Font = Fonts.Bold
+            OptionButton.AutoButtonColor = false
+            OptionButton.ZIndex = 101
+            OptionButton.Parent = OptionsContainer
 
-OptionButton.MouseEnter:Connect(function()
-OptionButton.BackgroundColor3 = Colors.Border
-end)
+            local optionCorner = Instance.new("UICorner")
+            optionCorner.CornerRadius = UDim.new(0, 4)
+            optionCorner.Parent = OptionButton
 
-OptionButton.MouseLeave:Connect(function()
-OptionButton.BackgroundColor3 = Colors.Button
-end)
+            OptionButton.MouseEnter:Connect(function()
+                OptionButton.BackgroundColor3 = Colors.Border
+            end)
 
-OptionButton.MouseButton1Click:Connect(function()
-CreateClickEffect(OptionButton)
-DropdownButton.Text = option
-if callback then
-callback(option)
-end
-CloseOptions()
-end)
-end
+            OptionButton.MouseLeave:Connect(function()
+                OptionButton.BackgroundColor3 = Colors.Button
+            end)
 
-local function checkClickOutside(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-local mousePos = UserInputService:GetMouseLocation()
-local buttonPos = DropdownButton.AbsolutePosition
-local buttonSize = DropdownButton.AbsoluteSize
-local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
-local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
+            OptionButton.MouseButton1Click:Connect(function()
+                CreateClickEffect(OptionButton)
+                DropdownButton.Text = option
+                if callback then
+                    callback(option)
+                end
+                CloseOptions()
+                OptionsScreenGui:Destroy()
+            end)
+        end
 
-if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
-not (containerPos and containerSize and 
-mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
-CloseOptions()
-end
-end
-end
+        local function checkClickOutside(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                local mousePos = UserInputService:GetMouseLocation()
+                local buttonPos = DropdownButton.AbsolutePosition
+                local buttonSize = DropdownButton.AbsoluteSize
+                local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
+                local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
 
-UserInputService.InputBegan:Connect(checkClickOutside)
-end)
+                if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
+                   not (containerPos and containerSize and 
+                       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+                       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+                    CloseOptions()
+                    OptionsScreenGui:Destroy()
+                end
+            end
+        end
 
-return Dropdown
+        UserInputService.InputBegan:Connect(checkClickOutside)
+    end)
+
+    return Dropdown
 end
 
 function Section:CreateTextbox(name, callback)
