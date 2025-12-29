@@ -264,7 +264,6 @@ SetupButtonHover(MinimizeButton, true)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-local MainFramePosition = MainFrame.Position
 
 local function update(input)
 if not dragging then return end
@@ -276,28 +275,12 @@ else
 return
 end
 
-MainFramePosition = UDim2.new(
+MainFrame.Position = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
-
-MainFrame.Position = MainFramePosition
-
--- Dropdown options UI'ını da sürükle
-if Window.DropdownOptionsScreenGui and Window.DropdownOptionsScreenGui:FindFirstChild("OptionsContainer") then
-local DropdownButton = Window.DropdownButton
-if DropdownButton then
-local OptionsContainer = Window.DropdownOptionsScreenGui:FindFirstChild("OptionsContainer")
-if OptionsContainer then
-OptionsContainer.Position = UDim2.new(
-0, DropdownButton.AbsolutePosition.X,
-0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
-)
-end
-end
-end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -671,46 +654,66 @@ btnCorner.Parent = DropdownButton
 
 SetupButtonHover(DropdownButton, false)
 
-Window.DropdownButton = DropdownButton -- Ana pencereye kaydet
-
 local open = false
 local OptionsContainer
-Window.DropdownOptionsScreenGui = nil
+local OptionsScreenGui
 
 local function CloseOptions()
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
 end
-if Window.DropdownOptionsScreenGui then
-Window.DropdownOptionsScreenGui:Destroy()
-Window.DropdownOptionsScreenGui = nil
+if OptionsScreenGui then
+OptionsScreenGui:Destroy()
+OptionsScreenGui = nil
 end
 open = false
+end
+
+-- Dropdown seçeneklerinin UI ile birlikte sürüklenmesi için pozisyon güncelleme
+local function updateDropdownPosition()
+if OptionsContainer and OptionsContainer.Parent then
+local buttonPos = DropdownButton.AbsolutePosition
+OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + DropdownButton.AbsoluteSize.Y + 5)
+end
+end
+
+-- MainFrame hareket ettiğinde dropdown pozisyonunu güncelle
+local positionConnection
+local function connectPositionUpdate()
+if positionConnection then
+positionConnection:Disconnect()
+end
+positionConnection = MainFrame:GetPropertyChangedSignal("Position"):Connect(updateDropdownPosition)
 end
 
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 if open then
 CloseOptions()
+if positionConnection then
+positionConnection:Disconnect()
+end
 return
 end
 
 open = true
-Window.DropdownOptionsScreenGui = Instance.new("ScreenGui")
-Window.DropdownOptionsScreenGui.Name = "DropdownOptions"
-Window.DropdownOptionsScreenGui.ResetOnSpawn = false
-Window.DropdownOptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-Window.DropdownOptionsScreenGui.Parent = ScreenGui -- Ana ScreenGui'ye ekle ki birlikte hareket etsin
+OptionsScreenGui = Instance.new("ScreenGui")
+OptionsScreenGui.Name = "DropdownOptions"
+OptionsScreenGui.ResetOnSpawn = false
+OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+OptionsScreenGui.Parent = ScreenGui -- ANA EKRANA BAĞLA (CoreGui yerine)
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
-OptionsContainer.Parent = Window.DropdownOptionsScreenGui
+OptionsContainer.Parent = OptionsScreenGui
+
+-- Dropdown pozisyonunu güncelle
+updateDropdownPosition()
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -749,18 +752,31 @@ if callback then
 callback(option)
 end
 CloseOptions()
+if positionConnection then
+positionConnection:Disconnect()
+end
 end)
 end
+
+-- Pozisyon güncellemeyi başlat
+connectPositionUpdate()
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 local mousePos = UserInputService:GetMouseLocation()
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
+local containerPos = OptionsContainer.AbsolutePosition
+local containerSize = OptionsContainer.AbsoluteSize
 
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
+mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
+not (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
 CloseOptions()
+if positionConnection then
+positionConnection:Disconnect()
+end
 end
 end
 end
