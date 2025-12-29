@@ -676,11 +676,18 @@ end
 open = false
 end
 
+-- Dropdown penceresinin UI ile birlikte sürüklenmesi için
+local dropdownConnection
+
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 
 if open then
 CloseOptions()
+if dropdownConnection then
+dropdownConnection:Disconnect()
+dropdownConnection = nil
+end
 return
 end
 
@@ -737,15 +744,21 @@ if callback then
 callback(option)
 end
 CloseOptions()
+if dropdownConnection then
+dropdownConnection:Disconnect()
+dropdownConnection = nil
+end
 OptionsScreenGui:Destroy()
 end)
 end
 
--- UI sürüklendiğinde dropdown'ın pozisyonunu güncellemek için connection
-local dropdownConnection
+-- Dropdown penceresinin pozisyonunu sürekli güncelle (UI sürüklendiğinde)
 dropdownConnection = game:GetService("RunService").Heartbeat:Connect(function()
-if OptionsContainer and open then
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+if OptionsContainer and DropdownButton and open then
+OptionsContainer.Position = UDim2.new(
+0, DropdownButton.AbsolutePosition.X,
+0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
+)
 end
 end)
 
@@ -758,14 +771,15 @@ local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
 local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
 
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
-not (containerPos and containerSize and 
-mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
+   not (containerPos and containerSize and 
+       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+CloseOptions()
 if dropdownConnection then
 dropdownConnection:Disconnect()
+dropdownConnection = nil
 end
-CloseOptions()
 OptionsScreenGui:Destroy()
 end
 end
