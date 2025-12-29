@@ -260,7 +260,7 @@ end
 SetupButtonHover(CloseButton, true)
 SetupButtonHover(MinimizeButton, true)
 
--- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK - TÜM UI SÜRÜKLENEBİLİR
+-- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
@@ -283,12 +283,16 @@ startPos.Y.Offset + delta.Y
 )
 end
 
--- Tüm UI'yı sürüklenebilir yapmak için hem TitleBar hem de MainFrame'i dinle
-local function startDragging(input)
+TitleBar.InputBegan:Connect(function(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 dragging = true
 dragStart = input.Position
 startPos = MainFrame.Position
+
+-- Mobil için daha iyi dokunma desteği
+if input.UserInputType == Enum.UserInputType.Touch then
+MainFrame.Active = true
+end
 
 local connection
 connection = UserInputService.InputChanged:Connect(update)
@@ -304,21 +308,6 @@ end
 end
 
 UserInputService.InputEnded:Connect(onInputEnded)
-end
-end
-
--- TitleBar'ı dinle
-TitleBar.InputBegan:Connect(startDragging)
-
--- MainFrame'i de dinle (section içeriği sürüklenebilsin diye)
-MainFrame.InputBegan:Connect(function(input)
--- Sadece background'a tıklanırsa sürükle
-if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-local target = input.Target
--- Eğer tıklanan element bir buton veya slider gibi interactive bir element değilse sürüklemeyi başlat
-if not (target:IsA("TextButton") or target:IsA("TextBox") or target.Name == "SliderButton") then
-startDragging(input)
-end
 end
 end)
 
@@ -681,6 +670,17 @@ end
 open = false
 end
 
+-- Dropdown penceresini UI ile birlikte sürükleme
+local function UpdateDropdownPosition()
+if OptionsContainer and OptionsContainer.Parent then
+local dropdownPos = UDim2.new(
+0, DropdownButton.AbsolutePosition.X,
+0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
+)
+OptionsContainer.Position = dropdownPos
+end
+end
+
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 if open then
@@ -693,16 +693,17 @@ OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = game:GetService("CoreGui")
+OptionsScreenGui.Parent = ScreenGui -- ANA EKRANA EKLENDİ
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
+
+UpdateDropdownPosition()
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -744,6 +745,14 @@ CloseOptions()
 end)
 end
 
+-- UI sürüklendiğinde dropdown penceresini de güncelle
+local connection
+connection = game:GetService("RunService").Heartbeat:Connect(function()
+if OptionsContainer and OptionsContainer.Parent then
+UpdateDropdownPosition()
+end
+end)
+
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 local mousePos = UserInputService:GetMouseLocation()
@@ -753,6 +762,9 @@ local buttonSize = DropdownButton.AbsoluteSize
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
 CloseOptions()
+if connection then
+connection:Disconnect()
+end
 end
 end
 end
