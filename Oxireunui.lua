@@ -264,6 +264,7 @@ SetupButtonHover(MinimizeButton, true)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
+local dropdownConnections = {}
 
 local function update(input)
 if not dragging then return end
@@ -281,6 +282,13 @@ startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
+
+-- Dropdown pencerelerini de güncelle
+for _, connection in pairs(dropdownConnections) do
+if connection.updateDropdown then
+connection.updateDropdown(MainFrame.Position, delta)
+end
+end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -317,6 +325,13 @@ CreateClickEffect(CloseButton)
 if rgbAnimation then
 rgbAnimation:Disconnect()
 end
+-- Dropdown bağlantılarını temizle
+for _, connection in pairs(dropdownConnections) do
+if connection.screenGui then
+connection.screenGui:Destroy()
+end
+end
+dropdownConnections = {}
 ScreenGui:Destroy()
 end)
 
@@ -657,6 +672,7 @@ SetupButtonHover(DropdownButton, false)
 local open = false
 local OptionsContainer
 local OptionsScreenGui
+local dropdownId = #dropdownConnections + 1
 
 local function CloseOptions()
 if OptionsContainer then
@@ -668,26 +684,25 @@ OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
 end
 open = false
+dropdownConnections[dropdownId] = nil
 end
 
--- Dropdown konumunu güncelleme fonksiyonu
-local function UpdateDropdownPosition()
-if OptionsContainer and DropdownButton then
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+local function updateDropdownPosition(mainFramePosition, delta)
+if OptionsContainer and OptionsContainer.Parent then
+local currentPos = OptionsContainer.Position
+OptionsContainer.Position = UDim2.new(
+currentPos.X.Scale,
+currentPos.X.Offset + delta.X,
+currentPos.Y.Scale,
+currentPos.Y.Offset + delta.Y
+)
 end
 end
-
--- UI sürüklendiğinde dropdown konumunu güncelle
-local dropdownPositionConnection
-dropdownPositionConnection = MainFrame:GetPropertyChangedSignal("Position"):Connect(UpdateDropdownPosition)
 
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 if open then
 CloseOptions()
-if dropdownPositionConnection then
-dropdownPositionConnection:Disconnect()
-end
 return
 end
 
@@ -744,11 +759,14 @@ if callback then
 callback(option)
 end
 CloseOptions()
-if dropdownPositionConnection then
-dropdownPositionConnection:Disconnect()
-end
 end)
 end
+
+-- Dropdown bağlantısını kaydet
+dropdownConnections[dropdownId] = {
+updateDropdown = updateDropdownPosition,
+screenGui = OptionsScreenGui
+}
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -759,9 +777,6 @@ local buttonSize = DropdownButton.AbsoluteSize
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
 CloseOptions()
-if dropdownPositionConnection then
-dropdownPositionConnection:Disconnect()
-end
 end
 end
 end
