@@ -264,7 +264,6 @@ SetupButtonHover(MinimizeButton, true)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-local updateConnection
 
 local function update(input)
 if not dragging then return end
@@ -295,15 +294,15 @@ if input.UserInputType == Enum.UserInputType.Touch then
 MainFrame.Active = true
 end
 
-updateConnection = UserInputService.InputChanged:Connect(update)
+local connection
+connection = UserInputService.InputChanged:Connect(update)
 
 local function onInputEnded(inputEnded)
 if (inputEnded.UserInputType == Enum.UserInputType.MouseButton1 and input.UserInputType == Enum.UserInputType.MouseButton1) or
    (inputEnded.UserInputType == Enum.UserInputType.Touch and input.UserInputType == Enum.UserInputType.Touch) then
 dragging = false
-if updateConnection then
-updateConnection:Disconnect()
-updateConnection = nil
+if connection then
+connection:Disconnect()
 end
 end
 end
@@ -658,20 +657,16 @@ SetupButtonHover(DropdownButton, false)
 local open = false
 local OptionsContainer
 local OptionsScreenGui
-local updateOptionsPositionConnection
 
-local function UpdateOptionsPosition()
-if not open or not OptionsContainer or not DropdownButton then return end
-
-local buttonAbsolutePosition = DropdownButton.AbsolutePosition
-local buttonAbsoluteSize = DropdownButton.AbsoluteSize
-
+local function UpdateDropdownPosition()
+if OptionsContainer and OptionsContainer.Parent then
 OptionsContainer.Position = UDim2.new(
 0, 
-buttonAbsolutePosition.X,
-0, 
-buttonAbsolutePosition.Y + buttonAbsoluteSize.Y + 5
+DropdownButton.AbsolutePosition.X,
+0,
+DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
 )
+end
 end
 
 local function CloseOptions()
@@ -682,10 +677,6 @@ end
 if OptionsScreenGui then
 OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
-end
-if updateOptionsPositionConnection then
-updateOptionsPositionConnection:Disconnect()
-updateOptionsPositionConnection = nil
 end
 open = false
 end
@@ -702,7 +693,7 @@ OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = ScreenGui -- ANA EKRANA EKLEDİK!
+OptionsScreenGui.Parent = ScreenGui -- DEĞİŞTİ: CoreGui yerine ScreenGui'ye bağla
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
@@ -715,14 +706,6 @@ OptionsContainer.Parent = OptionsScreenGui
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
 optionsCorner.Parent = OptionsContainer
-
--- Başlangıç pozisyonunu ayarla
-UpdateOptionsPosition()
-
--- UI sürüklendiğinde dropdown seçeneklerinin pozisyonunu güncelle
-updateOptionsPositionConnection = game:GetService("RunService").Heartbeat:Connect(function()
-UpdateOptionsPosition()
-end)
 
 for i, option in pairs(options) do
 local OptionButton = Instance.new("TextButton")
@@ -759,6 +742,27 @@ end
 CloseOptions()
 end)
 end
+
+-- Başlangıç pozisyonunu ayarla
+UpdateDropdownPosition()
+
+-- MainFrame hareket ettikçe dropdown pozisyonunu güncelle
+local positionConnection
+positionConnection = RunService.Heartbeat:Connect(function()
+if OptionsContainer and OptionsContainer.Parent then
+UpdateDropdownPosition()
+end
+end)
+
+-- OptionsContainer kapandığında connection'ı kes
+local function cleanup()
+if positionConnection then
+positionConnection:Disconnect()
+positionConnection = nil
+end
+end
+
+OptionsContainer.Destroying:Connect(cleanup)
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
