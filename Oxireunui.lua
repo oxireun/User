@@ -78,6 +78,7 @@ MainFrame.BackgroundColor3 = Colors.Background
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Active = true
+MainFrame.Selectable = true
 MainFrame.Parent = ScreenGui
 
 -- Köşe yuvarlatma
@@ -260,11 +261,10 @@ end
 SetupButtonHover(CloseButton, true)
 SetupButtonHover(MinimizeButton, true)
 
--- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK
+-- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK (SECTION BUTONLARINI ENGELLEMEYECEK ŞEKİLDE)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-local dropdownsToUpdate = {} -- Dropdown'ları güncellemek için
 
 local function update(input)
 if not dragging then return end
@@ -282,11 +282,6 @@ startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
-
--- Açık olan dropdown'ları da güncelle
-for _, updateFunc in pairs(dropdownsToUpdate) do
-updateFunc(delta)
-end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -294,11 +289,6 @@ if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType
 dragging = true
 dragStart = input.Position
 startPos = MainFrame.Position
-
--- Mobil için daha iyi dokunma desteği
-if input.UserInputType == Enum.UserInputType.Touch then
-MainFrame.Active = true
-end
 
 local connection
 connection = UserInputService.InputChanged:Connect(update)
@@ -365,6 +355,35 @@ tabCorner.Parent = TabButton
 
 SetupButtonHover(TabButton, false)
 
+-- Tab butonuna tıklandığında sürüklemeyi engelleme
+TabButton.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then
+-- Tab değiştirme işlemi
+CreateClickEffect(TabButton)
+for _, tab in pairs(TabsContainer:GetChildren()) do
+if tab:IsA("TextButton") then
+tab.BackgroundColor3 = Colors.TabInactive
+end
+end
+
+for _, frame in pairs(ContentArea:GetChildren()) do
+if frame:IsA("ScrollingFrame") then
+frame.Visible = false
+end
+end
+
+TabButton.BackgroundColor3 = Colors.TabActive
+Window.CurrentSection = Section
+if SectionFrame then
+SectionFrame.Visible = true
+end
+end
+end)
+end
+end)
+
 -- Section içeriği için ScrollingFrame
 local SectionFrame = Instance.new("ScrollingFrame")
 SectionFrame.Name = name .. "_Content"
@@ -406,26 +425,6 @@ SectionFrame.Visible = true
 Window.CurrentSection = Section
 end
 
--- Tab değiştirme
-TabButton.MouseButton1Click:Connect(function()
-CreateClickEffect(TabButton)
-for _, tab in pairs(TabsContainer:GetChildren()) do
-if tab:IsA("TextButton") then
-tab.BackgroundColor3 = Colors.TabInactive
-end
-end
-
-for _, frame in pairs(ContentArea:GetChildren()) do
-if frame:IsA("ScrollingFrame") then
-frame.Visible = false
-end
-end
-
-TabButton.BackgroundColor3 = Colors.TabActive
-SectionFrame.Visible = true
-Window.CurrentSection = Section
-end)
-
 -- Element oluşturma fonksiyonları
 function Section:CreateButton(name, callback)
 local Button = Instance.new("TextButton")
@@ -449,6 +448,21 @@ Button.MouseButton1Click:Connect(function()
 CreateClickEffect(Button)
 if callback then
 callback()
+end
+end)
+
+-- Button'a tıklayınca sürüklemeyi durdurma
+Button.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then
+-- Button tıklama işlemi
+CreateClickEffect(Button)
+if callback then
+callback()
+end
+end
+end)
 end
 end)
 
@@ -525,6 +539,32 @@ BackgroundColor3 = state and Colors.ToggleOn or Colors.ToggleOff
 
 if callback then
 callback(state)
+end
+end)
+
+-- Toggle'a tıklayınca sürüklemeyi durdurma
+ToggleButton.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then
+-- Toggle tıklama işlemi
+CreateClickEffect(ToggleButton)
+state = not state
+local targetPos = state and 24 or 2
+
+game:GetService("TweenService"):Create(ToggleCircle, TweenInfo.new(0.2), {
+Position = UDim2.new(0, targetPos, 0.5, -9)
+}):Play()
+
+game:GetService("TweenService"):Create(ToggleButton, TweenInfo.new(0.2), {
+BackgroundColor3 = state and Colors.ToggleOn or Colors.ToggleOff
+}):Play()
+
+if callback then
+callback(state)
+end
+end
+end)
 end
 end)
 
@@ -663,7 +703,6 @@ SetupButtonHover(DropdownButton, false)
 local open = false
 local OptionsContainer
 local OptionsScreenGui
-local dropdownUpdateId = "dropdown_" .. name .. "_" .. math.random(1, 10000)
 
 local function CloseOptions()
 if OptionsContainer then
@@ -675,19 +714,6 @@ OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
 end
 open = false
-dropdownsToUpdate[dropdownUpdateId] = nil
-end
-
-local function UpdateDropdownPosition(delta)
-if OptionsContainer and OptionsScreenGui and OptionsScreenGui.Parent then
-local currentPos = OptionsContainer.Position
-OptionsContainer.Position = UDim2.new(
-currentPos.X.Scale,
-currentPos.X.Offset + delta.X,
-currentPos.Y.Scale,
-currentPos.Y.Offset + delta.Y
-)
-end
 end
 
 DropdownButton.MouseButton1Click:Connect(function()
@@ -752,8 +778,6 @@ end
 CloseOptions()
 end)
 end
-
-dropdownsToUpdate[dropdownUpdateId] = UpdateDropdownPosition
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
