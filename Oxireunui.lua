@@ -34,9 +34,9 @@ Color3.fromRGB(190, 70, 240), -- Pembe-mor
 Color3.fromRGB(160, 30, 190) -- Derin mor
 }
 
--- Font ayarları (BAŞLIK BOLD YAPILDI)
+-- Font ayarları
 local Fonts = {
-Title = Enum.Font.SciFi, -- Fight Club tarzı font (BOLD)
+Title = Enum.Font.SciFi, -- Fight Club tarzı font
 Normal = Enum.Font.Gotham,
 Tab = Enum.Font.Gotham,
 Button = Enum.Font.Gotham,
@@ -119,7 +119,7 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 10, 0, 0)
 titleCorner.Parent = TitleBar
 
--- Başlık - FIGHT CLUB FONTU (BOLD)
+-- Başlık - FIGHT CLUB FONTU
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "Title"
 TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -128,7 +128,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = Window.Title
 TitleLabel.TextColor3 = Colors.Text -- BEYAZ
 TitleLabel.TextSize = 17
-TitleLabel.Font = Fonts.Bold -- BOLD YAPILDI
+TitleLabel.Font = Fonts.Title
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
@@ -149,7 +149,7 @@ MinimizeButton.BackgroundColor3 = Colors.ControlButton
 MinimizeButton.Text = "-"
 MinimizeButton.TextColor3 = Colors.Text -- BEYAZ
 MinimizeButton.TextSize = 18
-MinimizeButton.Font = Fonts.Bold -- BOLD YAPILDI
+MinimizeButton.Font = Fonts.Normal
 MinimizeButton.AutoButtonColor = false
 MinimizeButton.Parent = Controls
 
@@ -166,7 +166,7 @@ CloseButton.BackgroundColor3 = Colors.CloseButton
 CloseButton.Text = ">"
 CloseButton.TextColor3 = Colors.Text -- BEYAZ
 CloseButton.TextSize = 16
-CloseButton.Font = Fonts.Bold -- BOLD YAPILDI
+CloseButton.Font = Fonts.Normal
 CloseButton.AutoButtonColor = false
 CloseButton.Parent = Controls
 
@@ -349,7 +349,7 @@ TabButton.BackgroundColor3 = Colors.TabInactive
 TabButton.Text = name
 TabButton.TextColor3 = Colors.Text -- BEYAZ
 TabButton.TextSize = 12
-TabButton.Font = Fonts.Bold -- BOLD YAPILDI
+TabButton.Font = Fonts.Tab
 TabButton.AutoButtonColor = false
 TabButton.Parent = TabsContainer
 
@@ -429,7 +429,7 @@ Button.BackgroundColor3 = Colors.Button
 Button.Text = name
 Button.TextColor3 = Colors.Text -- BEYAZ
 Button.TextSize = 14
-Button.Font = Fonts.Bold -- BOLD YAPILDI
+Button.Font = Fonts.Button
 Button.AutoButtonColor = false
 Button.Parent = SectionFrame
 
@@ -576,16 +576,9 @@ local btnCorner = Instance.new("UICorner")
 btnCorner.CornerRadius = UDim.new(1, 0)
 btnCorner.Parent = SliderButton
 
-local draggingSlider = false
+local dragging = false
 
--- Mobil ve PC için slider sürükleme desteği
-SliderButton.MouseButton1Down:Connect(function()
-draggingSlider = true
-end)
-
-SliderTrack.InputBegan:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-draggingSlider = true
+local function updateSlider(input)
 local pos = UDim2.new(
 math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
 -9,
@@ -599,30 +592,28 @@ SliderLabel.Text = name .. ": " .. value
 if callback then
 callback(value)
 end
+end
+
+SliderButton.MouseButton1Down:Connect(function()
+dragging = true
+end)
+
+SliderTrack.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+dragging = true
+updateSlider(input)
 end
 end)
 
 game:GetService("UserInputService").InputEnded:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-draggingSlider = false
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+dragging = false
 end
 end)
 
 game:GetService("UserInputService").InputChanged:Connect(function(input)
-if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-local pos = UDim2.new(
-math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
--9,
-0.5,
--9
-)
-SliderButton.Position = pos
-SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
-local value = math.floor(min + (pos.X.Scale * (max - min)))
-SliderLabel.Text = name .. ": " .. value
-if callback then
-callback(value)
-end
+if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+updateSlider(input)
 end
 end)
 
@@ -644,7 +635,7 @@ DropdownButton.BackgroundColor3 = Colors.Button
 DropdownButton.Text = options[default] or options[1] or "Select"
 DropdownButton.TextColor3 = Colors.Text -- BEYAZ
 DropdownButton.TextSize = 14
-DropdownButton.Font = Fonts.Bold -- BOLD YAPILDI
+DropdownButton.Font = Fonts.Normal
 DropdownButton.AutoButtonColor = false
 DropdownButton.Parent = Dropdown
 
@@ -701,7 +692,7 @@ OptionButton.BackgroundColor3 = Colors.Button
 OptionButton.Text = option
 OptionButton.TextColor3 = Colors.Text -- BEYAZ
 OptionButton.TextSize = 12
-OptionButton.Font = Fonts.Bold -- BOLD YAPILDI
+OptionButton.Font = Fonts.Normal
 OptionButton.AutoButtonColor = false
 OptionButton.ZIndex = 101
 OptionButton.Parent = OptionsContainer
@@ -730,7 +721,7 @@ end)
 end
 
 local function checkClickOutside(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
 local mousePos = UserInputService:GetMouseLocation()
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
@@ -765,7 +756,7 @@ InputBox.PlaceholderText = "Enter"
 InputBox.TextColor3 = Colors.Text -- BEYAZ
 InputBox.PlaceholderColor3 = Colors.Text -- BEYAZ
 InputBox.TextSize = 14
-InputBox.Font = Fonts.Bold -- BOLD YAPILDI
+InputBox.Font = Fonts.Normal
 InputBox.TextXAlignment = Enum.TextXAlignment.Center
 InputBox.Parent = Textbox
 
