@@ -655,18 +655,12 @@ btnCorner.Parent = DropdownButton
 SetupButtonHover(DropdownButton, false)
 
 local open = false
-local OptionsScreenGui
 local OptionsContainer
-local dropdownPosition = MainFrame.Position
 
 local function CloseOptions()
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
-end
-if OptionsScreenGui then
-OptionsScreenGui:Destroy()
-OptionsScreenGui = nil
 end
 open = false
 end
@@ -679,22 +673,16 @@ return
 end
 
 open = true
-OptionsScreenGui = Instance.new("ScreenGui")
+local OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = ScreenGui -- Ana ScreenGui'ye eklendi, böylece birlikte sürüklenecek
+OptionsScreenGui.Parent = game:GetService("CoreGui")
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-
--- Dropdown penceresini DropdownButton'a göre konumlandır
-local buttonPos = DropdownButton.AbsolutePosition
-local buttonSize = DropdownButton.AbsoluteSize
-local mainPos = MainFrame.AbsolutePosition
-
-OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
@@ -737,25 +725,9 @@ if callback then
 callback(option)
 end
 CloseOptions()
+OptionsScreenGui:Destroy()
 end)
 end
-
--- UI sürüklendiğinde dropdown'ın pozisyonunu güncelle
-local function updateDropdownPosition()
-if OptionsContainer and DropdownButton then
-local buttonPos = DropdownButton.AbsolutePosition
-local buttonSize = DropdownButton.AbsoluteSize
-OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
-end
-end
-
--- Dropdown pozisyonunu sürekli güncelle
-local dropdownConnection
-dropdownConnection = game:GetService("RunService").Heartbeat:Connect(function()
-if OptionsContainer and open then
-updateDropdownPosition()
-end
-end)
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -765,10 +737,8 @@ local buttonSize = DropdownButton.AbsoluteSize
 
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
-if dropdownConnection then
-dropdownConnection:Disconnect()
-end
 CloseOptions()
+OptionsScreenGui:Destroy()
 end
 end
 end
