@@ -264,7 +264,9 @@ SetupButtonHover(MinimizeButton, true)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-local dropdownConnections = {}
+
+-- Dropdown pencerelerini takip etmek için liste
+local dropdownWindows = {}
 
 local function update(input)
 if not dragging then return end
@@ -276,6 +278,7 @@ else
 return
 end
 
+-- Ana pencereyi sürükle
 MainFrame.Position = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
@@ -283,10 +286,16 @@ startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
 
--- Dropdown pencerelerini de güncelle
-for _, connection in pairs(dropdownConnections) do
-if connection.updateDropdown then
-connection.updateDropdown(MainFrame.Position, delta)
+-- Tüm açık dropdown pencerelerini de sürükle
+for _, dropdownWindow in pairs(dropdownWindows) do
+if dropdownWindow and dropdownWindow.Parent then
+local currentPos = dropdownWindow.Position
+dropdownWindow.Position = UDim2.new(
+currentPos.X.Scale,
+currentPos.X.Offset + delta.X,
+currentPos.Y.Scale,
+currentPos.Y.Offset + delta.Y
+)
 end
 end
 end
@@ -325,13 +334,6 @@ CreateClickEffect(CloseButton)
 if rgbAnimation then
 rgbAnimation:Disconnect()
 end
--- Dropdown bağlantılarını temizle
-for _, connection in pairs(dropdownConnections) do
-if connection.screenGui then
-connection.screenGui:Destroy()
-end
-end
-dropdownConnections = {}
 ScreenGui:Destroy()
 end)
 
@@ -672,7 +674,6 @@ SetupButtonHover(DropdownButton, false)
 local open = false
 local OptionsContainer
 local OptionsScreenGui
-local dropdownId = #dropdownConnections + 1
 
 local function CloseOptions()
 if OptionsContainer then
@@ -683,20 +684,14 @@ if OptionsScreenGui then
 OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
 end
+-- Dropdown penceresini listeden çıkar
+for i, win in pairs(dropdownWindows) do
+if win == OptionsContainer then
+table.remove(dropdownWindows, i)
+break
+end
+end
 open = false
-dropdownConnections[dropdownId] = nil
-end
-
-local function updateDropdownPosition(mainFramePosition, delta)
-if OptionsContainer and OptionsContainer.Parent then
-local currentPos = OptionsContainer.Position
-OptionsContainer.Position = UDim2.new(
-currentPos.X.Scale,
-currentPos.X.Offset + delta.X,
-currentPos.Y.Scale,
-currentPos.Y.Offset + delta.Y
-)
-end
 end
 
 DropdownButton.MouseButton1Click:Connect(function()
@@ -721,6 +716,9 @@ OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
+
+-- Dropdown penceresini listeye ekle
+table.insert(dropdownWindows, OptionsContainer)
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -761,12 +759,6 @@ end
 CloseOptions()
 end)
 end
-
--- Dropdown bağlantısını kaydet
-dropdownConnections[dropdownId] = {
-updateDropdown = updateDropdownPosition,
-screenGui = OptionsScreenGui
-}
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
