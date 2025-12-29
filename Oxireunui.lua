@@ -265,6 +265,7 @@ local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
 
+-- UI ve dropdown'ları sürüklemek için güncelleme fonksiyonu
 local function update(input)
 if not dragging then return end
 
@@ -275,12 +276,38 @@ else
 return
 end
 
+-- Ana pencereyi sürükle
 MainFrame.Position = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
+
+-- Dropdown seçenekleri de sürüklensin
+for _, screenGui in pairs(game:GetService("CoreGui"):GetChildren()) do
+if screenGui.Name == "DropdownOptions" then
+for _, frame in pairs(screenGui:GetDescendants()) do
+if frame.Name == "OptionsContainer" and frame:IsA("Frame") then
+-- Dropdown butonunu bul
+local dropdownButton
+for _, child in pairs(ContentArea:GetDescendants()) do
+if child:IsA("TextButton") and child.Name == "DropdownButton" then
+dropdownButton = child
+break
+end
+end
+
+if dropdownButton then
+-- Dropdown seçeneklerini dropdown butonuna göre konumlandır
+frame.Position = UDim2.new(
+0, dropdownButton.AbsolutePosition.X,
+0, dropdownButton.AbsolutePosition.Y + dropdownButton.AbsoluteSize.Y + 5
+)
+end
+end
+end
+end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -288,11 +315,6 @@ if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType
 dragging = true
 dragStart = input.Position
 startPos = MainFrame.Position
-
--- Mobil için daha iyi dokunma desteği
-if input.UserInputType == Enum.UserInputType.Touch then
-MainFrame.Active = true
-end
 
 local connection
 connection = UserInputService.InputChanged:Connect(update)
@@ -317,6 +339,12 @@ CreateClickEffect(CloseButton)
 if rgbAnimation then
 rgbAnimation:Disconnect()
 end
+-- Dropdown seçeneklerini de temizle
+for _, screenGui in pairs(game:GetService("CoreGui"):GetChildren()) do
+if screenGui.Name == "DropdownOptions" then
+screenGui:Destroy()
+end
+end
 ScreenGui:Destroy()
 end)
 
@@ -327,7 +355,7 @@ if not minimized then
 MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35)
 TabsScrollFrame.Visible = false
 ContentArea.Visible = false
-minized = true
+minimized = true
 else
 MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
 TabsScrollFrame.Visible = true
@@ -670,6 +698,16 @@ end
 open = false
 end
 
+-- Dropdown seçeneklerini UI ile birlikte sürüklemek için
+local function UpdateDropdownPosition()
+if OptionsContainer and DropdownButton then
+OptionsContainer.Position = UDim2.new(
+0, DropdownButton.AbsolutePosition.X,
+0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
+)
+end
+end
+
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 if open then
@@ -687,11 +725,13 @@ OptionsScreenGui.Parent = game:GetService("CoreGui")
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
+
+-- Başlangıç pozisyonunu ayarla
+UpdateDropdownPosition()
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
