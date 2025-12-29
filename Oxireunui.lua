@@ -265,9 +265,6 @@ local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
 
--- Dropdown pencerelerini takip etmek için liste
-local dropdownWindows = {}
-
 local function update(input)
 if not dragging then return end
 
@@ -278,26 +275,12 @@ else
 return
 end
 
--- Ana pencereyi sürükle
 MainFrame.Position = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
-
--- Tüm açık dropdown pencerelerini de sürükle
-for _, dropdownWindow in pairs(dropdownWindows) do
-if dropdownWindow and dropdownWindow.Parent then
-local currentPos = dropdownWindow.Position
-dropdownWindow.Position = UDim2.new(
-currentPos.X.Scale,
-currentPos.X.Offset + delta.X,
-currentPos.Y.Scale,
-currentPos.Y.Offset + delta.Y
-)
-end
-end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -684,15 +667,29 @@ if OptionsScreenGui then
 OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
 end
--- Dropdown penceresini listeden çıkar
-for i, win in pairs(dropdownWindows) do
-if win == OptionsContainer then
-table.remove(dropdownWindows, i)
-break
-end
-end
 open = false
 end
+
+-- Ana pencere sürüklendiğinde dropdown menüsünü güncelleyen fonksiyon
+local function UpdateDropdownPosition()
+if not OptionsContainer or not OptionsContainer.Parent then return end
+
+local relativePos = MainFrame.AbsolutePosition
+local buttonPos = DropdownButton.AbsolutePosition
+local relativeOffset = buttonPos - relativePos
+
+OptionsContainer.Position = UDim2.new(
+0, buttonPos.X,
+0, buttonPos.Y + DropdownButton.AbsoluteSize.Y + 5
+)
+end
+
+-- Ana pencere pozisyonu değiştiğinde dropdown'ı güncelle
+MainFrame:GetPropertyChangedSignal("Position"):Connect(function()
+if open and OptionsContainer then
+UpdateDropdownPosition()
+end
+end)
 
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
@@ -706,23 +703,22 @@ OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = game:GetService("CoreGui")
+OptionsScreenGui.Parent = ScreenGui -- DEĞİŞTİRİLDİ: CoreGui yerine ScreenGui'ye eklendi
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
 
--- Dropdown penceresini listeye ekle
-table.insert(dropdownWindows, OptionsContainer)
-
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
 optionsCorner.Parent = OptionsContainer
+
+-- Başlangıç pozisyonunu ayarla
+UpdateDropdownPosition()
 
 for i, option in pairs(options) do
 local OptionButton = Instance.new("TextButton")
