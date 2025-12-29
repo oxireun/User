@@ -670,29 +670,23 @@ end
 open = false
 end
 
--- Dropdown seçeneklerinin UI ile birlikte sürüklenmesi için pozisyon güncelleme
-local function updateDropdownPosition()
-if OptionsContainer and OptionsContainer.Parent then
-local buttonPos = DropdownButton.AbsolutePosition
-OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + DropdownButton.AbsoluteSize.Y + 5)
+-- Dropdown konumunu güncelleme fonksiyonu
+local function UpdateDropdownPosition()
+if OptionsContainer and DropdownButton then
+OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 end
 end
 
--- MainFrame hareket ettiğinde dropdown pozisyonunu güncelle
-local positionConnection
-local function connectPositionUpdate()
-if positionConnection then
-positionConnection:Disconnect()
-end
-positionConnection = MainFrame:GetPropertyChangedSignal("Position"):Connect(updateDropdownPosition)
-end
+-- UI sürüklendiğinde dropdown konumunu güncelle
+local dropdownPositionConnection
+dropdownPositionConnection = MainFrame:GetPropertyChangedSignal("Position"):Connect(UpdateDropdownPosition)
 
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 if open then
 CloseOptions()
-if positionConnection then
-positionConnection:Disconnect()
+if dropdownPositionConnection then
+dropdownPositionConnection:Disconnect()
 end
 return
 end
@@ -702,18 +696,16 @@ OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = ScreenGui -- ANA EKRANA BAĞLA (CoreGui yerine)
+OptionsScreenGui.Parent = game:GetService("CoreGui")
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
+OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
-
--- Dropdown pozisyonunu güncelle
-updateDropdownPosition()
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -752,30 +744,23 @@ if callback then
 callback(option)
 end
 CloseOptions()
-if positionConnection then
-positionConnection:Disconnect()
+if dropdownPositionConnection then
+dropdownPositionConnection:Disconnect()
 end
 end)
 end
-
--- Pozisyon güncellemeyi başlat
-connectPositionUpdate()
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 local mousePos = UserInputService:GetMouseLocation()
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
-local containerPos = OptionsContainer.AbsolutePosition
-local containerSize = OptionsContainer.AbsoluteSize
 
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
-not (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
 CloseOptions()
-if positionConnection then
-positionConnection:Disconnect()
+if dropdownPositionConnection then
+dropdownPositionConnection:Disconnect()
 end
 end
 end
