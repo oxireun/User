@@ -260,10 +260,25 @@ end
 SetupButtonHover(CloseButton, true)
 SetupButtonHover(MinimizeButton, true)
 
--- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK
+-- DRAGGABLE FONKSİYONLUK VE DROPDOWN İZLEME
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
+local dropdownOptionsScreenGui
+
+-- Dropdown seçeneklerinin UI ile birlikte hareket etmesini sağlayan fonksiyon
+local function updateDropdownPosition()
+if dropdownOptionsScreenGui and dropdownOptionsScreenGui:FindFirstChild("OptionsContainer") then
+local OptionsContainer = dropdownOptionsScreenGui.OptionsContainer
+local DropdownButton = OptionsContainer:FindFirstChild("DropdownButtonRef")
+if DropdownButton then
+OptionsContainer.Position = UDim2.new(
+0, DropdownButton.AbsolutePosition.X,
+0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
+)
+end
+end
+end
 
 local function update(input)
 if not dragging then return end
@@ -281,6 +296,9 @@ startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
+
+-- Dropdown seçeneklerini de güncelle
+updateDropdownPosition()
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -656,34 +674,13 @@ SetupButtonHover(DropdownButton, false)
 
 local open = false
 local OptionsContainer
-local OptionsScreenGui
-local connection
-
-local function UpdateOptionsPosition()
-if OptionsContainer and open then
-OptionsContainer.Position = UDim2.new(
-0,
-DropdownButton.AbsolutePosition.X,
-0,
-DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
-)
-end
-end
 
 local function CloseOptions()
-open = false
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
 end
-if OptionsScreenGui then
-OptionsScreenGui:Destroy()
-OptionsScreenGui = nil
-end
-if connection then
-connection:Disconnect()
-connection = nil
-end
+open = false
 end
 
 DropdownButton.MouseButton1Click:Connect(function()
@@ -694,20 +691,20 @@ return
 end
 
 open = true
-OptionsScreenGui = Instance.new("ScreenGui")
-OptionsScreenGui.Name = "DropdownOptions"
-OptionsScreenGui.ResetOnSpawn = false
-OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = ScreenGui -- ANA SCREENGUİ'YE EKLENDİ
-
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-UpdateOptionsPosition()
+OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
-OptionsContainer.Parent = OptionsScreenGui
+OptionsContainer.Parent = ScreenGui -- ANA SCREENGUI'YE EKLENDİ
+
+-- Dropdown butonuna referans ekle (UI sürüklenirken pozisyonu güncellemek için)
+local ref = Instance.new("ObjectValue")
+ref.Name = "DropdownButtonRef"
+ref.Value = DropdownButton
+ref.Parent = OptionsContainer
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -749,28 +746,15 @@ CloseOptions()
 end)
 end
 
--- Pencere sürüklendiğinde seçeneklerin konumunu güncelle
-connection = game:GetService("RunService").Heartbeat:Connect(function()
-if open and OptionsContainer then
-UpdateOptionsPosition()
-end
-end)
-
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-if open and OptionsContainer then
 local mousePos = UserInputService:GetMouseLocation()
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
-local containerPos = OptionsContainer.AbsolutePosition
-local containerSize = OptionsContainer.AbsoluteSize
 
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
-   not (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
 CloseOptions()
-end
 end
 end
 end
