@@ -656,13 +656,34 @@ SetupButtonHover(DropdownButton, false)
 
 local open = false
 local OptionsContainer
+local OptionsScreenGui
+local connection
+
+local function UpdateOptionsPosition()
+if OptionsContainer and open then
+OptionsContainer.Position = UDim2.new(
+0,
+DropdownButton.AbsolutePosition.X,
+0,
+DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
+)
+end
+end
 
 local function CloseOptions()
+open = false
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
 end
-open = false
+if OptionsScreenGui then
+OptionsScreenGui:Destroy()
+OptionsScreenGui = nil
+end
+if connection then
+connection:Disconnect()
+connection = nil
+end
 end
 
 DropdownButton.MouseButton1Click:Connect(function()
@@ -673,16 +694,16 @@ return
 end
 
 open = true
-local OptionsScreenGui = Instance.new("ScreenGui")
+OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = game:GetService("CoreGui")
+OptionsScreenGui.Parent = ScreenGui -- ANA SCREENGUİ'YE EKLENDİ
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+UpdateOptionsPosition()
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
@@ -725,20 +746,31 @@ if callback then
 callback(option)
 end
 CloseOptions()
-OptionsScreenGui:Destroy()
 end)
 end
 
+-- Pencere sürüklendiğinde seçeneklerin konumunu güncelle
+connection = game:GetService("RunService").Heartbeat:Connect(function()
+if open and OptionsContainer then
+UpdateOptionsPosition()
+end
+end)
+
 local function checkClickOutside(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+if open and OptionsContainer then
 local mousePos = UserInputService:GetMouseLocation()
 local buttonPos = DropdownButton.AbsolutePosition
 local buttonSize = DropdownButton.AbsoluteSize
+local containerPos = OptionsContainer.AbsolutePosition
+local containerSize = OptionsContainer.AbsoluteSize
 
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
+       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
+   not (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
 CloseOptions()
-OptionsScreenGui:Destroy()
+end
 end
 end
 end
