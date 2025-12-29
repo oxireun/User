@@ -264,9 +264,7 @@ SetupButtonHover(MinimizeButton, true)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-
--- Dropdown seçeneklerini güncellemek için referans
-local activeDropdownOptions = nil
+local MainFramePosition = MainFrame.Position
 
 local function update(input)
 if not dragging then return end
@@ -278,22 +276,27 @@ else
 return
 end
 
--- Ana pencereyi hareket ettir
-MainFrame.Position = UDim2.new(
+MainFramePosition = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
 
--- Dropdown seçenekleri varsa onları da hareket ettir
-if activeDropdownOptions then
-activeDropdownOptions.Position = UDim2.new(
-0,
-activeDropdownOptions.OriginalPosition.X + delta.X,
-0,
-activeDropdownOptions.OriginalPosition.Y + delta.Y
+MainFrame.Position = MainFramePosition
+
+-- Dropdown options UI'ını da sürükle
+if Window.DropdownOptionsScreenGui and Window.DropdownOptionsScreenGui:FindFirstChild("OptionsContainer") then
+local DropdownButton = Window.DropdownButton
+if DropdownButton then
+local OptionsContainer = Window.DropdownOptionsScreenGui:FindFirstChild("OptionsContainer")
+if OptionsContainer then
+OptionsContainer.Position = UDim2.new(
+0, DropdownButton.AbsolutePosition.X,
+0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
 )
+end
+end
 end
 end
 
@@ -302,11 +305,6 @@ if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType
 dragging = true
 dragStart = input.Position
 startPos = MainFrame.Position
-
--- Dropdown seçeneklerinin orijinal pozisyonunu kaydet
-if activeDropdownOptions then
-activeDropdownOptions.OriginalPosition = activeDropdownOptions.Position
-end
 
 -- Mobil için daha iyi dokunma desteği
 if input.UserInputType == Enum.UserInputType.Touch then
@@ -673,20 +671,21 @@ btnCorner.Parent = DropdownButton
 
 SetupButtonHover(DropdownButton, false)
 
+Window.DropdownButton = DropdownButton -- Ana pencereye kaydet
+
 local open = false
 local OptionsContainer
-local OptionsScreenGui
+Window.DropdownOptionsScreenGui = nil
 
 local function CloseOptions()
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
 end
-if OptionsScreenGui then
-OptionsScreenGui:Destroy()
-OptionsScreenGui = nil
+if Window.DropdownOptionsScreenGui then
+Window.DropdownOptionsScreenGui:Destroy()
+Window.DropdownOptionsScreenGui = nil
 end
-activeDropdownOptions = nil
 open = false
 end
 
@@ -698,26 +697,20 @@ return
 end
 
 open = true
-OptionsScreenGui = Instance.new("ScreenGui")
-OptionsScreenGui.Name = "DropdownOptions"
-OptionsScreenGui.ResetOnSpawn = false
-OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = game:GetService("CoreGui")
+Window.DropdownOptionsScreenGui = Instance.new("ScreenGui")
+Window.DropdownOptionsScreenGui.Name = "DropdownOptions"
+Window.DropdownOptionsScreenGui.ResetOnSpawn = false
+Window.DropdownOptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Window.DropdownOptionsScreenGui.Parent = ScreenGui -- Ana ScreenGui'ye ekle ki birlikte hareket etsin
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-local buttonAbsPos = DropdownButton.AbsolutePosition
-local buttonAbsSize = DropdownButton.AbsoluteSize
-OptionsContainer.Position = UDim2.new(0, buttonAbsPos.X, 0, buttonAbsPos.Y + buttonAbsSize.Y + 5)
+OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
-OptionsContainer.Parent = OptionsScreenGui
-
--- Orijinal pozisyonu kaydet
-activeDropdownOptions = OptionsContainer
-activeDropdownOptions.OriginalPosition = Vector2.new(buttonAbsPos.X, buttonAbsPos.Y + buttonAbsSize.Y + 5)
+OptionsContainer.Parent = Window.DropdownOptionsScreenGui
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
