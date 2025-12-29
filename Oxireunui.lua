@@ -264,6 +264,7 @@ SetupButtonHover(MinimizeButton, true)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
+local activeDropdowns = {} -- Dropdown'ları takip etmek için
 
 local function update(input)
 if not dragging then return end
@@ -275,12 +276,24 @@ else
 return
 end
 
+local newX = startPos.X.Offset + delta.X
+local newY = startPos.Y.Offset + delta.Y
+
+-- Ana pencereyi hareket ettir
 MainFrame.Position = UDim2.new(
 startPos.X.Scale,
-startPos.X.Offset + delta.X,
+newX,
 startPos.Y.Scale,
-startPos.Y.Offset + delta.Y
+newY
 )
+
+-- AÇIK DROPDOWN'LARI DA HAREKET ETTİR
+for _, dropdownInfo in pairs(activeDropdowns) do
+if dropdownInfo.Container and dropdownInfo.Container.Parent then
+local dropdownPos = UDim2.new(0, newX + dropdownInfo.RelativeX, 0, newY + dropdownInfo.RelativeY)
+dropdownInfo.Container.Position = dropdownPos
+end
+end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -657,8 +670,12 @@ SetupButtonHover(DropdownButton, false)
 local open = false
 local OptionsContainer
 local OptionsScreenGui
+local dropdownId = tostring(math.random(1, 1000000))
 
 local function CloseOptions()
+if activeDropdowns[dropdownId] then
+activeDropdowns[dropdownId] = nil
+end
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
@@ -670,27 +687,6 @@ end
 open = false
 end
 
--- Ana pencere sürüklendiğinde dropdown menüsünü güncelleyen fonksiyon
-local function UpdateDropdownPosition()
-if not OptionsContainer or not OptionsContainer.Parent then return end
-
-local relativePos = MainFrame.AbsolutePosition
-local buttonPos = DropdownButton.AbsolutePosition
-local relativeOffset = buttonPos - relativePos
-
-OptionsContainer.Position = UDim2.new(
-0, buttonPos.X,
-0, buttonPos.Y + DropdownButton.AbsoluteSize.Y + 5
-)
-end
-
--- Ana pencere pozisyonu değiştiğinde dropdown'ı güncelle
-MainFrame:GetPropertyChangedSignal("Position"):Connect(function()
-if open and OptionsContainer then
-UpdateDropdownPosition()
-end
-end)
-
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 if open then
@@ -700,25 +696,37 @@ end
 
 open = true
 OptionsScreenGui = Instance.new("ScreenGui")
-OptionsScreenGui.Name = "DropdownOptions"
+OptionsScreenGui.Name = "DropdownOptions_" .. dropdownId
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = ScreenGui -- DEĞİŞTİRİLDİ: CoreGui yerine ScreenGui'ye eklendi
+OptionsScreenGui.Parent = game:GetService("CoreGui")
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
+
+-- Ana pencerenin konumuna göre pozisyon hesapla
+local mainFramePos = MainFrame.AbsolutePosition
+local dropdownButtonPos = DropdownButton.AbsolutePosition
+local relativeX = dropdownButtonPos.X - mainFramePos.X
+local relativeY = dropdownButtonPos.Y - mainFramePos.Y + DropdownButton.AbsoluteSize.Y + 5
+
+OptionsContainer.Position = UDim2.new(0, dropdownButtonPos.X, 0, dropdownButtonPos.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
 
+-- Dropdown bilgisini kaydet
+activeDropdowns[dropdownId] = {
+Container = OptionsContainer,
+RelativeX = relativeX,
+RelativeY = relativeY
+}
+
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
 optionsCorner.Parent = OptionsContainer
-
--- Başlangıç pozisyonunu ayarla
-UpdateDropdownPosition()
 
 for i, option in pairs(options) do
 local OptionButton = Instance.new("TextButton")
