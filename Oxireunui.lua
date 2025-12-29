@@ -265,6 +265,9 @@ local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
 
+-- Dropdown seçeneklerini güncellemek için referans
+local activeDropdownOptions = nil
+
 local function update(input)
 if not dragging then return end
 
@@ -275,12 +278,23 @@ else
 return
 end
 
+-- Ana pencereyi hareket ettir
 MainFrame.Position = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
+
+-- Dropdown seçenekleri varsa onları da hareket ettir
+if activeDropdownOptions then
+activeDropdownOptions.Position = UDim2.new(
+0,
+activeDropdownOptions.OriginalPosition.X + delta.X,
+0,
+activeDropdownOptions.OriginalPosition.Y + delta.Y
+)
+end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -288,6 +302,11 @@ if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType
 dragging = true
 dragStart = input.Position
 startPos = MainFrame.Position
+
+-- Dropdown seçeneklerinin orijinal pozisyonunu kaydet
+if activeDropdownOptions then
+activeDropdownOptions.OriginalPosition = activeDropdownOptions.Position
+end
 
 -- Mobil için daha iyi dokunma desteği
 if input.UserInputType == Enum.UserInputType.Touch then
@@ -658,17 +677,6 @@ local open = false
 local OptionsContainer
 local OptionsScreenGui
 
-local function UpdateDropdownPosition()
-if OptionsContainer and OptionsContainer.Parent then
-OptionsContainer.Position = UDim2.new(
-0, 
-DropdownButton.AbsolutePosition.X,
-0,
-DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
-)
-end
-end
-
 local function CloseOptions()
 if OptionsContainer then
 OptionsContainer:Destroy()
@@ -678,6 +686,7 @@ if OptionsScreenGui then
 OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
 end
+activeDropdownOptions = nil
 open = false
 end
 
@@ -693,15 +702,22 @@ OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = ScreenGui -- DEĞİŞTİ: CoreGui yerine ScreenGui'ye bağla
+OptionsScreenGui.Parent = game:GetService("CoreGui")
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
+local buttonAbsPos = DropdownButton.AbsolutePosition
+local buttonAbsSize = DropdownButton.AbsoluteSize
+OptionsContainer.Position = UDim2.new(0, buttonAbsPos.X, 0, buttonAbsPos.Y + buttonAbsSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
+
+-- Orijinal pozisyonu kaydet
+activeDropdownOptions = OptionsContainer
+activeDropdownOptions.OriginalPosition = Vector2.new(buttonAbsPos.X, buttonAbsPos.Y + buttonAbsSize.Y + 5)
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -742,27 +758,6 @@ end
 CloseOptions()
 end)
 end
-
--- Başlangıç pozisyonunu ayarla
-UpdateDropdownPosition()
-
--- MainFrame hareket ettikçe dropdown pozisyonunu güncelle
-local positionConnection
-positionConnection = RunService.Heartbeat:Connect(function()
-if OptionsContainer and OptionsContainer.Parent then
-UpdateDropdownPosition()
-end
-end)
-
--- OptionsContainer kapandığında connection'ı kes
-local function cleanup()
-if positionConnection then
-positionConnection:Disconnect()
-positionConnection = nil
-end
-end
-
-OptionsContainer.Destroying:Connect(cleanup)
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
