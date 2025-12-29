@@ -327,7 +327,7 @@ if not minimized then
 MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, 35)
 TabsScrollFrame.Visible = false
 ContentArea.Visible = false
-minimized = true
+minized = true
 else
 MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
 TabsScrollFrame.Visible = true
@@ -670,17 +670,6 @@ end
 open = false
 end
 
--- Dropdown penceresini UI ile birlikte sürükleme
-local function UpdateDropdownPosition()
-if OptionsContainer and OptionsContainer.Parent then
-local dropdownPos = UDim2.new(
-0, DropdownButton.AbsolutePosition.X,
-0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
-)
-OptionsContainer.Position = dropdownPos
-end
-end
-
 DropdownButton.MouseButton1Click:Connect(function()
 CreateClickEffect(DropdownButton)
 if open then
@@ -693,17 +682,16 @@ OptionsScreenGui = Instance.new("ScreenGui")
 OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-OptionsScreenGui.Parent = ScreenGui -- ANA EKRANA EKLENDİ
+OptionsScreenGui.Parent = game:GetService("CoreGui")
 
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
+OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
-
-UpdateDropdownPosition()
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -745,14 +733,6 @@ CloseOptions()
 end)
 end
 
--- UI sürüklendiğinde dropdown penceresini de güncelle
-local connection
-connection = game:GetService("RunService").Heartbeat:Connect(function()
-if OptionsContainer and OptionsContainer.Parent then
-UpdateDropdownPosition()
-end
-end)
-
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 local mousePos = UserInputService:GetMouseLocation()
@@ -762,9 +742,6 @@ local buttonSize = DropdownButton.AbsoluteSize
 if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) then
 CloseOptions()
-if connection then
-connection:Disconnect()
-end
 end
 end
 end
