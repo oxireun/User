@@ -264,7 +264,7 @@ SetupButtonHover(MinimizeButton, true)
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-local activeDropdowns = {} -- Dropdown'ları takip etmek için
+local dropdownsToUpdate = {} -- Dropdown'ları güncellemek için
 
 local function update(input)
 if not dragging then return end
@@ -276,23 +276,16 @@ else
 return
 end
 
-local newX = startPos.X.Offset + delta.X
-local newY = startPos.Y.Offset + delta.Y
-
--- Ana pencereyi hareket ettir
 MainFrame.Position = UDim2.new(
 startPos.X.Scale,
-newX,
+startPos.X.Offset + delta.X,
 startPos.Y.Scale,
-newY
+startPos.Y.Offset + delta.Y
 )
 
--- AÇIK DROPDOWN'LARI DA HAREKET ETTİR
-for _, dropdownInfo in pairs(activeDropdowns) do
-if dropdownInfo.Container and dropdownInfo.Container.Parent then
-local dropdownPos = UDim2.new(0, newX + dropdownInfo.RelativeX, 0, newY + dropdownInfo.RelativeY)
-dropdownInfo.Container.Position = dropdownPos
-end
+-- Açık olan dropdown'ları da güncelle
+for _, updateFunc in pairs(dropdownsToUpdate) do
+updateFunc(delta)
 end
 end
 
@@ -670,12 +663,9 @@ SetupButtonHover(DropdownButton, false)
 local open = false
 local OptionsContainer
 local OptionsScreenGui
-local dropdownId = tostring(math.random(1, 1000000))
+local dropdownUpdateId = "dropdown_" .. name .. "_" .. math.random(1, 10000)
 
 local function CloseOptions()
-if activeDropdowns[dropdownId] then
-activeDropdowns[dropdownId] = nil
-end
 if OptionsContainer then
 OptionsContainer:Destroy()
 OptionsContainer = nil
@@ -685,6 +675,19 @@ OptionsScreenGui:Destroy()
 OptionsScreenGui = nil
 end
 open = false
+dropdownsToUpdate[dropdownUpdateId] = nil
+end
+
+local function UpdateDropdownPosition(delta)
+if OptionsContainer and OptionsScreenGui and OptionsScreenGui.Parent then
+local currentPos = OptionsContainer.Position
+OptionsContainer.Position = UDim2.new(
+currentPos.X.Scale,
+currentPos.X.Offset + delta.X,
+currentPos.Y.Scale,
+currentPos.Y.Offset + delta.Y
+)
+end
 end
 
 DropdownButton.MouseButton1Click:Connect(function()
@@ -696,7 +699,7 @@ end
 
 open = true
 OptionsScreenGui = Instance.new("ScreenGui")
-OptionsScreenGui.Name = "DropdownOptions_" .. dropdownId
+OptionsScreenGui.Name = "DropdownOptions"
 OptionsScreenGui.ResetOnSpawn = false
 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 OptionsScreenGui.Parent = game:GetService("CoreGui")
@@ -704,25 +707,11 @@ OptionsScreenGui.Parent = game:GetService("CoreGui")
 OptionsContainer = Instance.new("Frame")
 OptionsContainer.Name = "OptionsContainer"
 OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-
--- Ana pencerenin konumuna göre pozisyon hesapla
-local mainFramePos = MainFrame.AbsolutePosition
-local dropdownButtonPos = DropdownButton.AbsolutePosition
-local relativeX = dropdownButtonPos.X - mainFramePos.X
-local relativeY = dropdownButtonPos.Y - mainFramePos.Y + DropdownButton.AbsoluteSize.Y + 5
-
-OptionsContainer.Position = UDim2.new(0, dropdownButtonPos.X, 0, dropdownButtonPos.Y + DropdownButton.AbsoluteSize.Y + 5)
+OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
 OptionsContainer.BackgroundColor3 = Colors.SectionBg
 OptionsContainer.BorderSizePixel = 0
 OptionsContainer.ZIndex = 100
 OptionsContainer.Parent = OptionsScreenGui
-
--- Dropdown bilgisini kaydet
-activeDropdowns[dropdownId] = {
-Container = OptionsContainer,
-RelativeX = relativeX,
-RelativeY = relativeY
-}
 
 local optionsCorner = Instance.new("UICorner")
 optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -763,6 +752,8 @@ end
 CloseOptions()
 end)
 end
+
+dropdownsToUpdate[dropdownUpdateId] = UpdateDropdownPosition
 
 local function checkClickOutside(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
