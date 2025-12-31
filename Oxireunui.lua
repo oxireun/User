@@ -260,21 +260,10 @@ end
 SetupButtonHover(CloseButton, true)
 SetupButtonHover(MinimizeButton, true)
 
--- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK ve DROPDOWN KONTROLÜ
+-- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
-local activeDropdowns = {} -- Açık dropdown'ları takip etmek için
-
--- UI sürüklendiğinde açık dropdown'ları kapat
-local function CloseAllDropdowns()
-    for dropdown, _ in pairs(activeDropdowns) do
-        if dropdown and dropdown.CloseOptions then
-            dropdown:CloseOptions()
-        end
-    end
-    activeDropdowns = {}
-end
 
 local function update(input)
 if not dragging then return end
@@ -296,12 +285,9 @@ end
 
 TitleBar.InputBegan:Connect(function(input)
 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-    -- UI sürüklemeye başladığında dropdown'ları kapat
-    CloseAllDropdowns()
-    
-    dragging = true
-    dragStart = input.Position
-    startPos = MainFrame.Position
+dragging = true
+dragStart = input.Position
+startPos = MainFrame.Position
 
 -- Mobil için daha iyi dokunma desteği
 if input.UserInputType == Enum.UserInputType.Touch then
@@ -416,25 +402,22 @@ end
 
 -- Tab değiştirme
 TabButton.MouseButton1Click:Connect(function()
-    -- Tab değiştirirken dropdown'ları kapat
-    CloseAllDropdowns()
-    
-    CreateClickEffect(TabButton)
-    for _, tab in pairs(TabsContainer:GetChildren()) do
-        if tab:IsA("TextButton") then
-            tab.BackgroundColor3 = Colors.TabInactive
-        end
-    end
+CreateClickEffect(TabButton)
+for _, tab in pairs(TabsContainer:GetChildren()) do
+if tab:IsA("TextButton") then
+tab.BackgroundColor3 = Colors.TabInactive
+end
+end
 
-    for _, frame in pairs(ContentArea:GetChildren()) do
-        if frame:IsA("ScrollingFrame") then
-            frame.Visible = false
-        end
-    end
+for _, frame in pairs(ContentArea:GetChildren()) do
+if frame:IsA("ScrollingFrame") then
+frame.Visible = false
+end
+end
 
-    TabButton.BackgroundColor3 = Colors.TabActive
-    SectionFrame.Visible = true
-    Window.CurrentSection = Section
+TabButton.BackgroundColor3 = Colors.TabActive
+SectionFrame.Visible = true
+Window.CurrentSection = Section
 end)
 
 -- Element oluşturma fonksiyonları
@@ -647,19 +630,12 @@ return Slider
 end
 
 function Section:CreateDropdown(name, options, default, callback)
-    local Dropdown = {}
+    local Dropdown = Instance.new("Frame")
     Dropdown.Name = name
-    Dropdown.Open = false
-    Dropdown.OptionsScreenGui = nil
-    Dropdown.OptionsContainer = nil
-
-    -- Dropdown frame'i
-    local DropdownFrame = Instance.new("Frame")
-    DropdownFrame.Name = name
-    DropdownFrame.Size = UDim2.new(1, 0, 0, 35)
-    DropdownFrame.BackgroundTransparency = 1
-    DropdownFrame.ClipsDescendants = false
-    DropdownFrame.Parent = SectionFrame
+    Dropdown.Size = UDim2.new(1, 0, 0, 35)
+    Dropdown.BackgroundTransparency = 1
+    Dropdown.ClipsDescendants = false
+    Dropdown.Parent = SectionFrame
 
     local DropdownButton = Instance.new("TextButton")
     DropdownButton.Name = "DropdownButton"
@@ -670,7 +646,7 @@ function Section:CreateDropdown(name, options, default, callback)
     DropdownButton.TextSize = 14
     DropdownButton.Font = Fonts.Bold
     DropdownButton.AutoButtonColor = false
-    DropdownButton.Parent = DropdownFrame
+    DropdownButton.Parent = Dropdown
 
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 6)
@@ -689,49 +665,63 @@ function Section:CreateDropdown(name, options, default, callback)
         }):Play()
     end)
 
-    -- Dropdown'ı kapatma fonksiyonu
-    function Dropdown:CloseOptions()
-        if self.OptionsContainer then
-            self.OptionsContainer:Destroy()
-            self.OptionsContainer = nil
+    local open = false
+    local OptionsContainer
+    local OptionsScreenGui
+    local dropdownConnection
+
+    local function CloseOptions()
+        if OptionsContainer then
+            OptionsContainer:Destroy()
+            OptionsContainer = nil
         end
-        if self.OptionsScreenGui then
-            self.OptionsScreenGui:Destroy()
-            self.OptionsScreenGui = nil
+        if OptionsScreenGui then
+            OptionsScreenGui:Destroy()
+            OptionsScreenGui = nil
         end
-        self.Open = false
-        activeDropdowns[self] = nil
+        if dropdownConnection then
+            dropdownConnection:Disconnect()
+            dropdownConnection = nil
+        end
+        open = false
+    end
+
+    local function updateDropdownPosition()
+        if OptionsContainer and DropdownButton and open then
+            local buttonPos = DropdownButton.AbsolutePosition
+            local buttonSize = DropdownButton.AbsoluteSize
+            OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+        end
     end
 
     DropdownButton.MouseButton1Click:Connect(function()
         CreateClickEffect(DropdownButton)
         
-        if Dropdown.Open then
-            Dropdown:CloseOptions()
+        if open then
+            CloseOptions()
             return
         end
 
-        Dropdown.Open = true
-        activeDropdowns[Dropdown] = true
-        
-        local OptionsScreenGui = Instance.new("ScreenGui")
+        open = true
+        OptionsScreenGui = Instance.new("ScreenGui")
         OptionsScreenGui.Name = "DropdownOptions"
         OptionsScreenGui.ResetOnSpawn = false
         OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        OptionsScreenGui.Parent = ScreenGui
+        OptionsScreenGui.Parent = ScreenGui -- ANA DEĞİŞİKLİK: CoreGui yerine ScreenGui'ye eklendi
 
-        Dropdown.OptionsScreenGui = OptionsScreenGui
-
-        local OptionsContainer = Instance.new("Frame")
+        OptionsContainer = Instance.new("Frame")
         OptionsContainer.Name = "OptionsContainer"
         OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-        OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+        
+        -- İlk pozisyonu ayarla
+        local buttonPos = DropdownButton.AbsolutePosition
+        local buttonSize = DropdownButton.AbsoluteSize
+        OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+        
         OptionsContainer.BackgroundColor3 = Colors.SectionBg
         OptionsContainer.BorderSizePixel = 0
         OptionsContainer.ZIndex = 100
         OptionsContainer.Parent = OptionsScreenGui
-
-        Dropdown.OptionsContainer = OptionsContainer
 
         local optionsCorner = Instance.new("UICorner")
         optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -769,9 +759,16 @@ function Section:CreateDropdown(name, options, default, callback)
                 if callback then
                     callback(option)
                 end
-                Dropdown:CloseOptions()
+                CloseOptions()
             end)
         end
+
+        -- Dropdown pozisyonunu sürekli güncelle
+        dropdownConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            if OptionsContainer and open then
+                updateDropdownPosition()
+            end
+        end)
 
         local function checkClickOutside(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -781,12 +778,15 @@ function Section:CreateDropdown(name, options, default, callback)
                 local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
                 local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
 
-                if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-                       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
-                   not (containerPos and containerSize and 
-                       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-                       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
-                    Dropdown:CloseOptions()
+                local isOverButton = (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                                     mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y)
+                
+                local isOverContainer = (containerPos and containerSize and 
+                                       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+                                       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y)
+
+                if not isOverButton and not isOverContainer then
+                    CloseOptions()
                 end
             end
         end
@@ -794,7 +794,7 @@ function Section:CreateDropdown(name, options, default, callback)
         UserInputService.InputBegan:Connect(checkClickOutside)
     end)
 
-    return DropdownFrame
+    return Dropdown
 end
 
 function Section:CreateTextbox(name, callback)
