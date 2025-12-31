@@ -689,7 +689,7 @@ function Section:CreateDropdown(name, options, default, callback)
         OptionsScreenGui.Name = "DropdownOptions"
         OptionsScreenGui.ResetOnSpawn = false
         OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        OptionsScreenGui.Parent = ScreenGui -- AYNI SCREENGUI'YE EKLENDİ
+        OptionsScreenGui.Parent = ScreenGui -- ANA DEĞİŞİKLİK: CoreGui yerine ScreenGui'ye eklendi
 
         OptionsContainer = Instance.new("Frame")
         OptionsContainer.Name = "OptionsContainer"
@@ -742,7 +742,7 @@ function Section:CreateDropdown(name, options, default, callback)
         end
 
         local function checkClickOutside(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 local mousePos = UserInputService:GetMouseLocation()
                 local buttonPos = DropdownButton.AbsolutePosition
                 local buttonSize = DropdownButton.AbsoluteSize
