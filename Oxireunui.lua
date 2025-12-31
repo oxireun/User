@@ -754,7 +754,6 @@ function Section:CreateDropdown(name, options, default, callback)
             end)
 
             OptionButton.MouseButton1Click:Connect(function()
-                -- BUTONA TIKLANINCA ÇALIŞACAK KOD
                 CreateClickEffect(OptionButton)
                 DropdownButton.Text = option
                 if callback then
@@ -792,24 +791,7 @@ function Section:CreateDropdown(name, options, default, callback)
             end
         end
 
-        local clickOutsideConnection
-        clickOutsideConnection = UserInputService.InputBegan:Connect(checkClickOutside)
-        
-        -- Bağlantıyı kaydet, dropdown kapandığında temizle
-        local function cleanup()
-            if clickOutsideConnection then
-                clickOutsideConnection:Disconnect()
-                clickOutsideConnection = nil
-            end
-        end
-        
-        -- Dropdown kapandığında temizlik yap
-        OptionsScreenGui.Destroying:Connect(cleanup)
-        DropdownButton:GetPropertyChangedSignal("Text"):Connect(function()
-            if not open then
-                cleanup()
-            end
-        end)
+        UserInputService.InputBegan:Connect(checkClickOutside)
     end)
 
     return Dropdown
