@@ -694,6 +694,26 @@ function Section:CreateDropdown(name, options, default, callback)
         end
     end
 
+    -- SEÇENEK BUTONLARI İÇİN AYRI TIKLAMA EFEKTİ FONKSİYONU
+    local function CreateOptionClickEffect(button)
+        local effect = Instance.new("Frame")
+        effect.Name = "OptionClickEffect"
+        effect.Size = UDim2.new(1, 0, 1, 0)
+        effect.BackgroundColor3 = Colors.Accent
+        effect.BackgroundTransparency = 0.7
+        effect.ZIndex = -1
+        effect.Parent = button
+
+        local effectCorner = Instance.new("UICorner")
+        effectCorner.CornerRadius = UDim.new(0, 4)
+        effectCorner.Parent = effect
+
+        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+        delay(0.3, function()
+            effect:Destroy()
+        end)
+    end
+
     DropdownButton.MouseButton1Click:Connect(function()
         CreateClickEffect(DropdownButton)
         
@@ -754,7 +774,7 @@ function Section:CreateDropdown(name, options, default, callback)
             end)
 
             OptionButton.MouseButton1Click:Connect(function()
-                CreateClickEffect(OptionButton)
+                CreateOptionClickEffect(OptionButton) -- BU SATIR DÜZELTİLDİ
                 DropdownButton.Text = option
                 if callback then
                     callback(option)
