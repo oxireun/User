@@ -262,6 +262,7 @@ SetupButtonHover(MinimizeButton, true)
 
 -- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local dragging = false
 local dragStart, startPos
 
@@ -275,12 +276,13 @@ else
 return
 end
 
-MainFrame.Position = UDim2.new(
+local newPos = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
+MainFrame.Position = newPos
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -689,7 +691,7 @@ function Section:CreateDropdown(name, options, default, callback)
         OptionsScreenGui.Name = "DropdownOptions"
         OptionsScreenGui.ResetOnSpawn = false
         OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        OptionsScreenGui.Parent = ScreenGui -- ANA DEĞİŞİKLİK: CoreGui yerine ScreenGui'ye eklendi
+        OptionsScreenGui.Parent = game:GetService("CoreGui") -- CoreGui'ye eklendi
 
         OptionsContainer = Instance.new("Frame")
         OptionsContainer.Name = "OptionsContainer"
@@ -741,8 +743,26 @@ function Section:CreateDropdown(name, options, default, callback)
             end)
         end
 
+        -- Dropdown penceresini UI ile birlikte sürüklemek için
+        local function updateDropdownPosition()
+            if OptionsContainer and open then
+                OptionsContainer.Position = UDim2.new(
+                    0, DropdownButton.AbsolutePosition.X,
+                    0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5
+                )
+            end
+        end
+
+        -- Dropdown pozisyonunu sürekli güncelle
+        local dropdownPositionConnection
+        dropdownPositionConnection = RunService.Heartbeat:Connect(function()
+            if OptionsContainer and open then
+                updateDropdownPosition()
+            end
+        end)
+
         local function checkClickOutside(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 local mousePos = UserInputService:GetMouseLocation()
                 local buttonPos = DropdownButton.AbsolutePosition
                 local buttonSize = DropdownButton.AbsoluteSize
@@ -755,6 +775,9 @@ function Section:CreateDropdown(name, options, default, callback)
                        mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
                        mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
                     CloseOptions()
+                    if dropdownPositionConnection then
+                        dropdownPositionConnection:Disconnect()
+                    end
                     OptionsScreenGui:Destroy()
                 end
             end
