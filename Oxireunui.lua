@@ -49,6 +49,15 @@ Width = 310,
 Height = 320
 }
 
+-- NOTIFICATION SİSTEMİ
+function OxireunUI:SendNotification(title, text, duration)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = title or "Oxireun UI";
+        Text = text or "Notification";
+        Duration = duration or 3;
+    })
+end
+
 -- Ana Library fonksiyonu
 function OxireunUI.new()
 local self = setmetatable({}, OxireunUI)
