@@ -843,37 +843,37 @@ function Section:CreateDropdown(name, options, default, callback)
 end
 
 function Section:CreateTextbox(name, placeholder, callback)
-    local Textbox = Instance.new("Frame")
-    Textbox.Name = name
-    Textbox.Size = UDim2.new(1, 0, 0, 35)
-    Textbox.BackgroundTransparency = 1
-    Textbox.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
-    Textbox.Parent = SectionFrame
+local Textbox = Instance.new("Frame")
+Textbox.Name = name
+Textbox.Size = UDim2.new(1, 0, 0, 35)
+Textbox.BackgroundTransparency = 1
+Textbox.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
+Textbox.Parent = SectionFrame
 
-    local InputBox = Instance.new("TextBox")
-    InputBox.Name = "Input"
-    InputBox.Size = UDim2.new(1, 0, 1, 0)
-    InputBox.BackgroundColor3 = Colors.Button
-    InputBox.Text = ""
-    InputBox.PlaceholderText = placeholder or "Enter"
-    InputBox.TextColor3 = Colors.Text -- BEYAZ
-    InputBox.PlaceholderColor3 = Colors.Text -- BEYAZ
-    InputBox.TextSize = 14
-    InputBox.Font = Fonts.Bold -- BOLD YAPILDI
-    InputBox.TextXAlignment = Enum.TextXAlignment.Center
-    InputBox.Parent = Textbox
+local InputBox = Instance.new("TextBox")
+InputBox.Name = "Input"
+InputBox.Size = UDim2.new(1, 0, 1, 0)
+InputBox.BackgroundColor3 = Colors.Button
+InputBox.Text = ""
+InputBox.PlaceholderText = placeholder or name -- DEĞİŞTİRİLDİ: "Enter" yerine name veya custom placeholder
+InputBox.TextColor3 = Colors.Text -- BEYAZ
+InputBox.PlaceholderColor3 = Colors.Text -- BEYAZ
+InputBox.TextSize = 14
+InputBox.Font = Fonts.Bold -- BOLD YAPILDI
+InputBox.TextXAlignment = Enum.TextXAlignment.Center
+InputBox.Parent = Textbox
 
-    local inputCorner = Instance.new("UICorner")
-    inputCorner.CornerRadius = UDim.new(0, 6)
-    inputCorner.Parent = InputBox
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 6)
+inputCorner.Parent = InputBox
 
-    InputBox.FocusLost:Connect(function()
-        if callback then
-            callback(InputBox.Text)
-        end
-    end)
+InputBox.FocusLost:Connect(function()
+if callback then
+callback(InputBox.Text)
+end
+end)
 
-    return Textbox
+return Textbox
 end
 
 table.insert(Window.Sections, Section)
