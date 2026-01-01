@@ -667,31 +667,13 @@ function Section:CreateDropdown(name, options, default, callback)
 
     local open = false
     local OptionsContainer
-    local OptionsScreenGui
-    local dropdownConnection
 
     local function CloseOptions()
         if OptionsContainer then
             OptionsContainer:Destroy()
             OptionsContainer = nil
         end
-        if OptionsScreenGui then
-            OptionsScreenGui:Destroy()
-            OptionsScreenGui = nil
-        end
-        if dropdownConnection then
-            dropdownConnection:Disconnect()
-            dropdownConnection = nil
-        end
         open = false
-    end
-
-    local function updateDropdownPosition()
-        if OptionsContainer and DropdownButton and open then
-            local buttonPos = DropdownButton.AbsolutePosition
-            local buttonSize = DropdownButton.AbsoluteSize
-            OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
-        end
     end
 
     DropdownButton.MouseButton1Click:Connect(function()
@@ -703,7 +685,7 @@ function Section:CreateDropdown(name, options, default, callback)
         end
 
         open = true
-        OptionsScreenGui = Instance.new("ScreenGui")
+        local OptionsScreenGui = Instance.new("ScreenGui")
         OptionsScreenGui.Name = "DropdownOptions"
         OptionsScreenGui.ResetOnSpawn = false
         OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -712,12 +694,7 @@ function Section:CreateDropdown(name, options, default, callback)
         OptionsContainer = Instance.new("Frame")
         OptionsContainer.Name = "OptionsContainer"
         OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 25 + 10)
-        
-        -- İlk pozisyonu ayarla
-        local buttonPos = DropdownButton.AbsolutePosition
-        local buttonSize = DropdownButton.AbsoluteSize
-        OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
-        
+        OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
         OptionsContainer.BackgroundColor3 = Colors.SectionBg
         OptionsContainer.BorderSizePixel = 0
         OptionsContainer.ZIndex = 100
@@ -760,33 +737,25 @@ function Section:CreateDropdown(name, options, default, callback)
                     callback(option)
                 end
                 CloseOptions()
+                OptionsScreenGui:Destroy()
             end)
         end
 
-        -- Dropdown pozisyonunu sürekli güncelle
-        dropdownConnection = game:GetService("RunService").Heartbeat:Connect(function()
-            if OptionsContainer and open then
-                updateDropdownPosition()
-            end
-        end)
-
         local function checkClickOutside(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 local mousePos = UserInputService:GetMouseLocation()
                 local buttonPos = DropdownButton.AbsolutePosition
                 local buttonSize = DropdownButton.AbsoluteSize
                 local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
                 local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
 
-                local isOverButton = (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-                                     mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y)
-                
-                local isOverContainer = (containerPos and containerSize and 
-                                       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-                                       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y)
-
-                if not isOverButton and not isOverContainer then
+                if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                       mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
+                   not (containerPos and containerSize and 
+                       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+                       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
                     CloseOptions()
+                    OptionsScreenGui:Destroy()
                 end
             end
         end
