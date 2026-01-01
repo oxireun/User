@@ -265,6 +265,9 @@ local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStart, startPos
 
+-- Dropdown pencerelerini takip etmek için
+local activeDropdowns = {}
+
 local function update(input)
 if not dragging then return end
 
@@ -275,12 +278,23 @@ else
 return
 end
 
-MainFrame.Position = UDim2.new(
+local newPos = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
+
+MainFrame.Position = newPos
+
+-- Açık olan dropdown pencerelerini de sürükle
+for _, dropdownFrame in pairs(activeDropdowns) do
+if dropdownFrame and dropdownFrame.Parent then
+local buttonPos = dropdownFrame.DropdownButton.AbsolutePosition
+local buttonSize = dropdownFrame.DropdownButton.AbsoluteSize
+dropdownFrame.OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+end
+end
 end
 
 TitleBar.InputBegan:Connect(function(input)
@@ -666,14 +680,27 @@ function Section:CreateDropdown(name, options, default, callback)
     end)
 
     local open = false
+    local OptionsScreenGui
     local OptionsContainer
+    local dropdownFrame = {DropdownButton = DropdownButton}
 
     local function CloseOptions()
         if OptionsContainer then
             OptionsContainer:Destroy()
             OptionsContainer = nil
         end
+        if OptionsScreenGui then
+            OptionsScreenGui:Destroy()
+            OptionsScreenGui = nil
+        end
         open = false
+        -- Active dropdown listesinden çıkar
+        for i, df in pairs(activeDropdowns) do
+            if df == dropdownFrame then
+                table.remove(activeDropdowns, i)
+                break
+            end
+        end
     end
 
     DropdownButton.MouseButton1Click:Connect(function()
@@ -685,11 +712,11 @@ function Section:CreateDropdown(name, options, default, callback)
         end
 
         open = true
-        local OptionsScreenGui = Instance.new("ScreenGui")
+        OptionsScreenGui = Instance.new("ScreenGui")
         OptionsScreenGui.Name = "DropdownOptions"
         OptionsScreenGui.ResetOnSpawn = false
         OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        OptionsScreenGui.Parent = ScreenGui -- ANA DEĞİŞİKLİK: CoreGui yerine ScreenGui'ye eklendi
+        OptionsScreenGui.Parent = game:GetService("CoreGui")
 
         OptionsContainer = Instance.new("Frame")
         OptionsContainer.Name = "OptionsContainer"
@@ -699,6 +726,8 @@ function Section:CreateDropdown(name, options, default, callback)
         OptionsContainer.BorderSizePixel = 0
         OptionsContainer.ZIndex = 100
         OptionsContainer.Parent = OptionsScreenGui
+        
+        dropdownFrame.OptionsContainer = OptionsContainer
 
         local optionsCorner = Instance.new("UICorner")
         optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -737,9 +766,11 @@ function Section:CreateDropdown(name, options, default, callback)
                     callback(option)
                 end
                 CloseOptions()
-                OptionsScreenGui:Destroy()
             end)
         end
+
+        -- Active dropdown listesine ekle
+        table.insert(activeDropdowns, dropdownFrame)
 
         local function checkClickOutside(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -755,7 +786,6 @@ function Section:CreateDropdown(name, options, default, callback)
                        mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
                        mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
                     CloseOptions()
-                    OptionsScreenGui:Destroy()
                 end
             end
         end
