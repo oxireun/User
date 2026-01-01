@@ -669,7 +669,6 @@ function Section:CreateDropdown(name, options, default, callback)
     local OptionsContainer
     local OptionsScreenGui
     local dropdownConnection
-    local clickOutsideConnection
 
     local function CloseOptions()
         if OptionsContainer then
@@ -683,10 +682,6 @@ function Section:CreateDropdown(name, options, default, callback)
         if dropdownConnection then
             dropdownConnection:Disconnect()
             dropdownConnection = nil
-        end
-        if clickOutsideConnection then
-            clickOutsideConnection:Disconnect()
-            clickOutsideConnection = nil
         end
         open = false
     end
@@ -775,26 +770,28 @@ function Section:CreateDropdown(name, options, default, callback)
             end
         end)
 
-        -- TIKLAMA DIŞARISI KONTROLÜ DÜZELTİLDİ
         local function checkClickOutside(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 local mousePos = UserInputService:GetMouseLocation()
+                local buttonPos = DropdownButton.AbsolutePosition
+                local buttonSize = DropdownButton.AbsoluteSize
                 local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
                 local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
+
+                local isOverButton = (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                                     mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y)
                 
-                -- Sadece dropdown penceresinin dışına tıklanırsa kapat
-                if containerPos and containerSize then
-                    local isOverContainer = (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-                                           mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y)
-                    
-                    if not isOverContainer then
-                        CloseOptions()
-                    end
+                local isOverContainer = (containerPos and containerSize and 
+                                       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+                                       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y)
+
+                if not isOverButton and not isOverContainer then
+                    CloseOptions()
                 end
             end
         end
 
-        clickOutsideConnection = UserInputService.InputBegan:Connect(checkClickOutside)
+        UserInputService.InputBegan:Connect(checkClickOutside)
     end)
 
     return Dropdown
