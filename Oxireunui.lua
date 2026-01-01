@@ -214,6 +214,7 @@ TabsContainer.Parent = TabsScrollFrame
 local TabsList = Instance.new("UIListLayout")
 TabsList.FillDirection = Enum.FillDirection.Horizontal
 TabsList.Padding = UDim.new(0, 5)
+TabsList.SortOrder = Enum.SortOrder.LayoutOrder -- SOLTAN SAĞA SIRALAMA
 TabsList.Parent = TabsContainer
 
 -- İçerik alanı
@@ -387,6 +388,7 @@ TabButton.TextColor3 = Colors.Text -- BEYAZ
 TabButton.TextSize = 12
 TabButton.Font = Fonts.Bold -- BOLD YAPILDI
 TabButton.AutoButtonColor = false
+TabButton.LayoutOrder = #Window.Sections + 1 -- EKLENME SIRASINA GÖRE SOLDAN SAĞA
 TabButton.Parent = TabsContainer
 
 local tabCorner = Instance.new("UICorner")
