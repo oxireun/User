@@ -570,25 +570,26 @@ end
 function Section:CreateSlider(name, min, max, default, callback)
 local Slider = Instance.new("Frame")
 Slider.Name = name
-Slider.Size = UDim2.new(1, 0, 0, 45) -- KÜÇÜLTÜLDÜ: 50 -> 45
+Slider.Size = UDim2.new(1, 0, 0, 50)
 Slider.BackgroundTransparency = 1
 Slider.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
 Slider.Parent = SectionFrame
 
 local SliderLabel = Instance.new("TextLabel")
-SliderLabel.Size = UDim2.new(1, 0, 0, 18) -- KÜÇÜLTÜLDÜ: 20 -> 18
+SliderLabel.Size = UDim2.new(1, 0, 0, 20)
 SliderLabel.BackgroundTransparency = 1
 SliderLabel.Text = name .. ": " .. default
 SliderLabel.TextColor3 = Colors.Text -- BEYAZ
-SliderLabel.TextSize = 13 -- KÜÇÜLTÜLDÜ: 14 -> 13
+SliderLabel.TextSize = 14
 SliderLabel.Font = Fonts.Bold
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
 SliderLabel.Parent = Slider
 
 local SliderTrack = Instance.new("Frame")
+-- DÜZELTİLDİ: Slider uzunluğu kısaltıldı (290 yerine 270)
 SliderTrack.Name = "Track"
-SliderTrack.Size = UDim2.new(1, 0, 0, 4) -- KÜÇÜLTÜLDÜ: 5 -> 4
-SliderTrack.Position = UDim2.new(0, 0, 0, 22) -- AYARLANDI: 25 -> 22
+SliderTrack.Size = UDim2.new(0, 270, 0, 5) -- UZUNLUK KISALTILDI
+SliderTrack.Position = UDim2.new(0, 0, 0, 25)
 SliderTrack.BackgroundColor3 = Colors.ToggleOff
 SliderTrack.Parent = Slider
 
@@ -608,8 +609,8 @@ fillCorner.Parent = SliderFill
 
 local SliderButton = Instance.new("TextButton")
 SliderButton.Name = "SliderButton"
-SliderButton.Size = UDim2.new(0, 14, 0, 14) -- KÜÇÜLTÜLDÜ: 18 -> 14
-SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -7, 0.5, -7) -- AYARLANDI: -9 -> -7
+SliderButton.Size = UDim2.new(0, 18, 0, 18)
+SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -9, 0.5, -9)
 SliderButton.BackgroundColor3 = Colors.Text -- BEYAZ
 SliderButton.Text = ""
 SliderButton.AutoButtonColor = false
@@ -631,9 +632,9 @@ if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType
 draggingSlider = true
 local pos = UDim2.new(
 math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
--7, -- AYARLANDI: -9 -> -7
+-9,
 0.5,
--7  -- AYARLANDI: -9 -> -7
+-9
 )
 SliderButton.Position = pos
 SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
@@ -655,9 +656,9 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
 if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 local pos = UDim2.new(
 math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
--7, -- AYARLANDI: -9 -> -7
+-9,
 0.5,
--7  -- AYARLANDI: -9 -> -7
+-9
 )
 SliderButton.Position = pos
 SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
