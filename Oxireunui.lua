@@ -370,9 +370,10 @@ minimized = true
 for dropdownFrame, _ in pairs(activeDropdowns) do
 if dropdownFrame and dropdownFrame.Parent then
 dropdownFrame.Parent:Destroy()
-activeDropdowns[dropdownFrame] = nil
 end
 end
+-- Dropdown listesini tamamen temizle
+activeDropdowns = {}
 else
 MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
 TabsScrollFrame.Visible = true
@@ -720,13 +721,18 @@ function Section:CreateDropdown(name, options, default, callback)
 
     local open = false
     local OptionsContainer
+    local dropdownConnection
 
     local function CloseOptions()
-        if OptionsContainer then
-            OptionsContainer:Destroy()
-            OptionsContainer = nil
-        end
         open = false
+        if OptionsContainer and OptionsContainer.Parent then
+            OptionsContainer.Parent:Destroy()
+        end
+        OptionsContainer = nil
+        if dropdownConnection then
+            dropdownConnection:Disconnect()
+            dropdownConnection = nil
+        end
         activeDropdowns[OptionsContainer] = nil
     end
 
@@ -743,7 +749,7 @@ function Section:CreateDropdown(name, options, default, callback)
         OptionsScreenGui.Name = "DropdownOptions"
         OptionsScreenGui.ResetOnSpawn = false
         OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        OptionsScreenGui.Parent = ScreenGui -- ANA DEĞİŞİKLİK: Aynı ScreenGui'ye eklendi
+        OptionsScreenGui.Parent = ScreenGui
 
         OptionsContainer = Instance.new("Frame")
         OptionsContainer.Name = "OptionsContainer"
@@ -807,9 +813,8 @@ function Section:CreateDropdown(name, options, default, callback)
         end
 
         -- Dropdown pozisyonunu sürekli güncelle
-        local dropdownConnection
         dropdownConnection = RunService.Heartbeat:Connect(function()
-            if OptionsContainer and open then
+            if OptionsContainer and open and OptionsContainer.Parent then
                 updateDropdownPosition()
             end
         end)
@@ -827,11 +832,7 @@ function Section:CreateDropdown(name, options, default, callback)
                    not (containerPos and containerSize and 
                        mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
                        mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
-                    if dropdownConnection then
-                        dropdownConnection:Disconnect()
-                    end
                     CloseOptions()
-                    OptionsScreenGui:Destroy()
                 end
             end
         end
