@@ -67,6 +67,15 @@ end
 
 -- Yeni pencere oluşturma
 function OxireunUI:NewWindow(title)
+    -- Önce eski UI'ı temizle
+    if game.CoreGui:FindFirstChild("OxireunUI") then
+        game.CoreGui:FindFirstChild("OxireunUI"):Destroy()
+    end
+    
+    if game.Players.LocalPlayer.PlayerGui:FindFirstChild("OxireunUI") then
+        game.Players.LocalPlayer.PlayerGui:FindFirstChild("OxireunUI"):Destroy()
+    end
+
 local Window = {}
 Window.Title = title or "Oxireun UI"
 Window.Sections = {}
