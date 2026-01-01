@@ -842,7 +842,7 @@ function Section:CreateDropdown(name, options, default, callback)
     return Dropdown
 end
 
-function Section:CreateTextbox(name, placeholder, callback)
+function Section:CreateTextbox(name, callback)
 local Textbox = Instance.new("Frame")
 Textbox.Name = name
 Textbox.Size = UDim2.new(1, 0, 0, 35)
@@ -855,7 +855,7 @@ InputBox.Name = "Input"
 InputBox.Size = UDim2.new(1, 0, 1, 0)
 InputBox.BackgroundColor3 = Colors.Button
 InputBox.Text = ""
-InputBox.PlaceholderText = placeholder or name -- DEĞİŞTİRİLDİ: "Enter" yerine name veya custom placeholder
+InputBox.PlaceholderText = name -- DEĞİŞTİRİLDİ: "Enter" yerine name yazılıyor
 InputBox.TextColor3 = Colors.Text -- BEYAZ
 InputBox.PlaceholderColor3 = Colors.Text -- BEYAZ
 InputBox.TextSize = 14
