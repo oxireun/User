@@ -262,10 +262,11 @@ SetupButtonHover(MinimizeButton, true)
 
 -- DÜZELTİLMİŞ DRAGGABLE FONKSİYONLUK
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local dragging = false
 local dragStart, startPos
 
--- Dropdown pencerelerini takip etmek için
+-- Dropdown pozisyonlarını takip etmek için
 local activeDropdowns = {}
 
 local function update(input)
@@ -278,21 +279,22 @@ else
 return
 end
 
-local newPos = UDim2.new(
+MainFrame.Position = UDim2.new(
 startPos.X.Scale,
 startPos.X.Offset + delta.X,
 startPos.Y.Scale,
 startPos.Y.Offset + delta.Y
 )
 
-MainFrame.Position = newPos
-
--- Açık olan dropdown pencerelerini de sürükle
-for _, dropdownFrame in pairs(activeDropdowns) do
+-- Tüm açık dropdown'ların pozisyonunu güncelle
+for dropdownFrame, _ in pairs(activeDropdowns) do
 if dropdownFrame and dropdownFrame.Parent then
-local buttonPos = dropdownFrame.DropdownButton.AbsolutePosition
-local buttonSize = dropdownFrame.DropdownButton.AbsoluteSize
-dropdownFrame.OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+local dropdownButton = dropdownFrame.Parent:FindFirstChild("DropdownButton")
+if dropdownButton then
+local buttonPos = dropdownButton.AbsolutePosition
+local buttonSize = dropdownButton.AbsoluteSize
+dropdownFrame.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+end
 end
 end
 end
@@ -309,7 +311,9 @@ MainFrame.Active = true
 end
 
 local connection
-connection = UserInputService.InputChanged:Connect(update)
+connection = RunService.Heartbeat:Connect(function()
+update(input)
+end)
 
 local function onInputEnded(inputEnded)
 if (inputEnded.UserInputType == Enum.UserInputType.MouseButton1 and input.UserInputType == Enum.UserInputType.MouseButton1) or
@@ -680,27 +684,15 @@ function Section:CreateDropdown(name, options, default, callback)
     end)
 
     local open = false
-    local OptionsScreenGui
     local OptionsContainer
-    local dropdownFrame = {DropdownButton = DropdownButton}
 
     local function CloseOptions()
         if OptionsContainer then
             OptionsContainer:Destroy()
             OptionsContainer = nil
         end
-        if OptionsScreenGui then
-            OptionsScreenGui:Destroy()
-            OptionsScreenGui = nil
-        end
         open = false
-        -- Active dropdown listesinden çıkar
-        for i, df in pairs(activeDropdowns) do
-            if df == dropdownFrame then
-                table.remove(activeDropdowns, i)
-                break
-            end
-        end
+        activeDropdowns[OptionsContainer] = nil
     end
 
     DropdownButton.MouseButton1Click:Connect(function()
@@ -712,11 +704,11 @@ function Section:CreateDropdown(name, options, default, callback)
         end
 
         open = true
-        OptionsScreenGui = Instance.new("ScreenGui")
+        local OptionsScreenGui = Instance.new("ScreenGui")
         OptionsScreenGui.Name = "DropdownOptions"
         OptionsScreenGui.ResetOnSpawn = false
         OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        OptionsScreenGui.Parent = game:GetService("CoreGui")
+        OptionsScreenGui.Parent = ScreenGui -- ANA DEĞİŞİKLİK: Aynı ScreenGui'ye eklendi
 
         OptionsContainer = Instance.new("Frame")
         OptionsContainer.Name = "OptionsContainer"
@@ -726,8 +718,6 @@ function Section:CreateDropdown(name, options, default, callback)
         OptionsContainer.BorderSizePixel = 0
         OptionsContainer.ZIndex = 100
         OptionsContainer.Parent = OptionsScreenGui
-        
-        dropdownFrame.OptionsContainer = OptionsContainer
 
         local optionsCorner = Instance.new("UICorner")
         optionsCorner.CornerRadius = UDim.new(0, 6)
@@ -766,11 +756,28 @@ function Section:CreateDropdown(name, options, default, callback)
                     callback(option)
                 end
                 CloseOptions()
+                OptionsScreenGui:Destroy()
             end)
         end
 
-        -- Active dropdown listesine ekle
-        table.insert(activeDropdowns, dropdownFrame)
+        -- Dropdown'ı aktif listeye ekle
+        activeDropdowns[OptionsContainer] = true
+
+        local function updateDropdownPosition()
+            if OptionsContainer and DropdownButton then
+                local buttonPos = DropdownButton.AbsolutePosition
+                local buttonSize = DropdownButton.AbsoluteSize
+                OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+            end
+        end
+
+        -- Dropdown pozisyonunu sürekli güncelle
+        local dropdownConnection
+        dropdownConnection = RunService.Heartbeat:Connect(function()
+            if OptionsContainer and open then
+                updateDropdownPosition()
+            end
+        end)
 
         local function checkClickOutside(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -785,7 +792,11 @@ function Section:CreateDropdown(name, options, default, callback)
                    not (containerPos and containerSize and 
                        mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
                        mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+                    if dropdownConnection then
+                        dropdownConnection:Disconnect()
+                    end
                     CloseOptions()
+                    OptionsScreenGui:Destroy()
                 end
             end
         end
