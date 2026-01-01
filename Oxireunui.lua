@@ -404,8 +404,10 @@ local sectionCorner = Instance.new("UICorner")
 sectionCorner.CornerRadius = UDim.new(0, 8)
 sectionCorner.Parent = SectionFrame
 
+-- DÜZELTİLDİ: UIListLayout SADECE CONTENTFRAME İÇİNDE
 local sectionList = Instance.new("UIListLayout")
 sectionList.Padding = UDim.new(0, 8)
+sectionList.SortOrder = Enum.SortOrder.LayoutOrder -- Eklenen sıraya göre sırala
 sectionList.Parent = SectionFrame
 
 local sectionPadding = Instance.new("UIPadding")
@@ -458,6 +460,7 @@ Button.TextColor3 = Colors.Text -- BEYAZ
 Button.TextSize = 14
 Button.Font = Fonts.Bold -- BOLD YAPILDI
 Button.AutoButtonColor = false
+Button.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
 Button.Parent = SectionFrame
 
 local btnCorner = Instance.new("UICorner")
@@ -481,6 +484,7 @@ local Toggle = Instance.new("Frame")
 Toggle.Name = name
 Toggle.Size = UDim2.new(1, 0, 0, 35)
 Toggle.BackgroundTransparency = 1
+Toggle.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
 Toggle.Parent = SectionFrame
 
 local ToggleLabel = Instance.new("TextLabel")
@@ -557,6 +561,7 @@ local Slider = Instance.new("Frame")
 Slider.Name = name
 Slider.Size = UDim2.new(1, 0, 0, 50)
 Slider.BackgroundTransparency = 1
+Slider.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
 Slider.Parent = SectionFrame
 
 local SliderLabel = Instance.new("TextLabel")
@@ -662,6 +667,7 @@ function Section:CreateDropdown(name, options, default, callback)
     Dropdown.Size = UDim2.new(1, 0, 0, 35)
     Dropdown.BackgroundTransparency = 1
     Dropdown.ClipsDescendants = false
+    Dropdown.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
     Dropdown.Parent = SectionFrame
 
     local DropdownButton = Instance.new("TextButton")
@@ -821,6 +827,7 @@ local Textbox = Instance.new("Frame")
 Textbox.Name = name
 Textbox.Size = UDim2.new(1, 0, 0, 35)
 Textbox.BackgroundTransparency = 1
+Textbox.LayoutOrder = #SectionFrame:GetChildren() -- Eklenme sırasına göre
 Textbox.Parent = SectionFrame
 
 local InputBox = Instance.new("TextBox")
