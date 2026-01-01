@@ -669,6 +669,7 @@ function Section:CreateDropdown(name, options, default, callback)
     local OptionsContainer
     local OptionsScreenGui
     local dropdownConnection
+    local clickOutsideConnection
 
     local function CloseOptions()
         if OptionsContainer then
@@ -683,6 +684,10 @@ function Section:CreateDropdown(name, options, default, callback)
             dropdownConnection:Disconnect()
             dropdownConnection = nil
         end
+        if clickOutsideConnection then
+            clickOutsideConnection:Disconnect()
+            clickOutsideConnection = nil
+        end
         open = false
     end
 
@@ -692,26 +697,6 @@ function Section:CreateDropdown(name, options, default, callback)
             local buttonSize = DropdownButton.AbsoluteSize
             OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
         end
-    end
-
-    -- SEÇENEK BUTONLARI İÇİN AYRI TIKLAMA EFEKTİ FONKSİYONU
-    local function CreateOptionClickEffect(button)
-        local effect = Instance.new("Frame")
-        effect.Name = "OptionClickEffect"
-        effect.Size = UDim2.new(1, 0, 1, 0)
-        effect.BackgroundColor3 = Colors.Accent
-        effect.BackgroundTransparency = 0.7
-        effect.ZIndex = -1
-        effect.Parent = button
-
-        local effectCorner = Instance.new("UICorner")
-        effectCorner.CornerRadius = UDim.new(0, 4)
-        effectCorner.Parent = effect
-
-        game:GetService("TweenService"):Create(effect, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
-        delay(0.3, function()
-            effect:Destroy()
-        end)
     end
 
     DropdownButton.MouseButton1Click:Connect(function()
@@ -774,7 +759,7 @@ function Section:CreateDropdown(name, options, default, callback)
             end)
 
             OptionButton.MouseButton1Click:Connect(function()
-                CreateOptionClickEffect(OptionButton) -- BU SATIR DÜZELTİLDİ
+                CreateClickEffect(OptionButton)
                 DropdownButton.Text = option
                 if callback then
                     callback(option)
@@ -790,28 +775,26 @@ function Section:CreateDropdown(name, options, default, callback)
             end
         end)
 
+        -- TIKLAMA DIŞARISI KONTROLÜ DÜZELTİLDİ
         local function checkClickOutside(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 local mousePos = UserInputService:GetMouseLocation()
-                local buttonPos = DropdownButton.AbsolutePosition
-                local buttonSize = DropdownButton.AbsoluteSize
                 local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
                 local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
-
-                local isOverButton = (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-                                     mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y)
                 
-                local isOverContainer = (containerPos and containerSize and 
-                                       mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-                                       mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y)
-
-                if not isOverButton and not isOverContainer then
-                    CloseOptions()
+                -- Sadece dropdown penceresinin dışına tıklanırsa kapat
+                if containerPos and containerSize then
+                    local isOverContainer = (mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+                                           mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y)
+                    
+                    if not isOverContainer then
+                        CloseOptions()
+                    end
                 end
             end
         end
 
-        UserInputService.InputBegan:Connect(checkClickOutside)
+        clickOutsideConnection = UserInputService.InputBegan:Connect(checkClickOutside)
     end)
 
     return Dropdown
