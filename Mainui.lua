@@ -1,67 +1,133 @@
 -- Oxireun UI Library - Slow RGB Border, Purple Theme
--- REMOTE LOG KORUMALI VERSİYON
+-- Kompakt versiyon - Daha küçük boyutlar
+-- ANTI-REMOTE LOGGER PROTECTION EKLENDİ
 
--- ÖNEMLİ: Bu koruma kodunu en üste ekleyin
-local OxireunProtection = {
-    -- SimpleSpy tespit etme ve engelleme
-    BlacklistRemotes = function()
-        -- SimpleSpy'nin blacklistine kendi remotes'larımızı ekliyoruz
-        if _G.SimpleSpy then
-            -- UI'nın içindeki tüm remote eventlerini ve isimlerini blacklist'e ekle
-            _G.SimpleSpy:ExcludeRemote("OxireunUI_")
-            _G.SimpleSpy:ExcludeRemote("Oxireun")
-            _G.SimpleSpy:ExcludeRemote("UI_Library")
-            _G.SimpleSpy:ExcludeRemote("Oxireun_Toggle")
-            _G.SimpleSpy:ExcludeRemote("Oxireun_Button")
-            _G.SimpleSpy:ExcludeRemote("Oxireun_Slider")
-            _G.SimpleSpy:ExcludeRemote("Oxireun_Dropdown")
-            _G.SimpleSpy:ExcludeRemote("Oxireun_Textbox")
-        end
-    end,
-    
-    -- Anti-logging koruması
-    ProtectUI = function()
-        -- Remote isimlerini rastgeleleştirme
-        local function generateRandomName(prefix)
-            local random = math.random(10000, 99999)
-            return prefix .. "_" .. tostring(random) .. "_" .. tostring(tick())
-        end
-        
-        -- Fake remote çağrıları engelleme
-        local originalNamecall
-        if getrawmetatable and getrawmetatable(game).__namecall then
-            originalNamecall = getrawmetatable(game).__namecall
-            setreadonly(getrawmetatable(game), false)
-            getrawmetatable(game).__namecall = newcclosure(function(self, ...)
-                local method = getnamecallmethod()
-                local args = {...}
-                
-                -- UI'mızın remote'larını gizle
-                if self and typeof(self) == "Instance" then
-                    local name = pcall(function() return self.Name end)
-                    if name and (tostring(name):find("Oxireun") or tostring(name):find("UI_") or tostring(name):find("Toggle") or tostring(name):find("Button")) then
-                        -- Loglamadan kaç
-                        return
-                    end
-                end
-                
-                return originalNamecall(self, ...)
-            end)
-            setreadonly(getrawmetatable(game), true)
-        end
-    end
-}
-
--- Önce korumayı başlat
-coroutine.wrap(function()
-    wait(1) -- UI yüklendikten sonra
-    OxireunProtection.BlacklistRemotes()
-    OxireunProtection.ProtectUI()
-end)()
-
--- Oxireun UI Library
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
+
+-- Anti-Logger Sistemi
+local antiLoggerEnabled = true
+local protectedRemotes = {}
+
+-- Remote tespit ve engelleme fonksiyonları
+local function setupAntiLogger()
+    if not antiLoggerEnabled then return end
+    
+    -- RemoteEvent ve RemoteFunction hook'larını engelle
+    local originalRemoteMethods = {}
+    
+    -- RemoteEvent için koruma
+    local metatable = getrawmetatable(game)
+    local originalNamecall = metatable.__namecall
+    
+    if originalNamecall then
+        setreadonly(metatable, false)
+        metatable.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+            
+            -- Eğer bu remote korumalıysa, logging'i engelle
+            if protectedRemotes[self] then
+                -- Remote logging araçları için false bilgi döndür
+                if method == "FireServer" or method == "InvokeServer" then
+                    -- Debug info'yu boş göster
+                    local fakeDebugInfo = {
+                        source = "Protected by OxireunUI",
+                        linedefined = -1,
+                        currentline = -1,
+                        what = "C",
+                        name = "",
+                        namewhat = "",
+                        short_src = "[OxireunUI Anti-Logger]",
+                        func = function() end
+                    }
+                    -- Remote spy'ın debug info almasını engelle
+                    debug.setinfo = function() return fakeDebugInfo end
+                    
+                    -- Orijinal fonksiyonu çağır
+                    local result = originalNamecall(self, ...)
+                    
+                    -- Debug fonksiyonunu eski haline getir
+                    debug.setinfo = debug.getinfo
+                    return result
+                end
+            end
+            
+            return originalNamecall(self, ...)
+        end)
+        setreadonly(metatable, true)
+    end
+    
+    -- Hookfunction koruması
+    if hookfunction then
+        local originalHook = hookfunction
+        hookfunction = function(f, newf)
+            -- Eğer remote fonksiyonu hooklamaya çalışıyorsa engelle
+            local funcName = tostring(f)
+            if funcName:find("FireServer") or funcName:find("InvokeServer") then
+                for remote, _ in pairs(protectedRemotes) do
+                    if tostring(remote):find(funcName) then
+                        -- Fake function döndür (logging yapmasın)
+                        return function(...) 
+                            return f(...) 
+                        end
+                    end
+                end
+            end
+            return originalHook(f, newf)
+        end
+    end
+    
+    -- Debug koruması
+    local originalGetInfo = debug.getinfo
+    debug.getinfo = function(func, ...)
+        local info = originalGetInfo(func, ...)
+        if info and info.source then
+            -- UI Library'den gelen çağrıları gizle
+            if info.source:find("OxireunUI") then
+                info.source = "[Protected by OxireunUI]"
+                info.short_src = "[Protected]"
+                info.linedefined = -1
+                info.currentline = -1
+            end
+        end
+        return info
+    end
+end
+
+-- Remote koruma ekleme fonksiyonu
+local function protectRemote(remote)
+    if remote and typeof(remote) == "Instance" then
+        protectedRemotes[remote] = true
+        
+        -- Remote'un orijinal metodlarını sakla
+        if remote:IsA("RemoteEvent") then
+            local originalFire = remote.FireServer
+            remote.FireServer = function(self, ...)
+                -- Anti-logging
+                if antiLoggerEnabled then
+                    debug.sethook(function() end, "", 0)
+                    local result = {pcall(originalFire, self, ...)}
+                    debug.sethook()
+                    return unpack(result)
+                end
+                return originalFire(self, ...)
+            end
+        elseif remote:IsA("RemoteFunction") then
+            local originalInvoke = remote.InvokeServer
+            remote.InvokeServer = function(self, ...)
+                -- Anti-logging
+                if antiLoggerEnabled then
+                    debug.sethook(function() end, "", 0)
+                    local result = {pcall(originalInvoke, self, ...)}
+                    debug.sethook()
+                    return unpack(result)
+                end
+                return originalInvoke(self, ...)
+            end
+        end
+    end
+end
 
 -- Mor temalı renk paleti
 local Colors = {
@@ -102,71 +168,22 @@ local Fonts = {
     Bold = Enum.Font.GothamBold
 }
 
--- KOMPAKT UI BOYUTLARI
+-- KOMPAKT UI BOYUTLARI (Daha küçük)
 local UI_SIZE = {
-    Width = 260,
-    Height = 280
+    Width = 260,  -- 310'dan 260'a düşürüldü
+    Height = 280  -- 320'den 280'e düşürüldü
 }
 
--- Element boyutları
+-- Element boyutları (küçültülmüş)
 local ELEMENT_SIZES = {
-    TitleBar = 30,
-    TabHeight = 25,
-    ButtonHeight = 32,
-    SliderHeight = 45,
-    ToggleHeight = 32,
-    TextboxHeight = 32,
-    DropdownHeight = 32,
-    SectionSpacing = 6
-}
-
--- Rastgele isim üretici (log koruması için)
-local function generateProtectedName(base)
-    local randomId = math.random(100000, 999999)
-    local timestamp = math.floor(tick() * 1000)
-    return string.format("%s_%d_%d", base, randomId, timestamp)
-end
-
--- GÜVENLİ REMOTE SİSTEMİ
-local SecureRemotes = {
-    Events = {},
-    Functions = {},
-    
-    CreateSecureEvent = function(name)
-        local eventName = generateProtectedName("UIEvent")
-        local event = Instance.new("BindableEvent")
-        SecureRemotes.Events[eventName] = event
-        return {
-            Fire = function(...)
-                -- Log korumalı fire
-                if _G.SimpleSpy then
-                    _G.SimpleSpy:ExcludeRemote(eventName)
-                end
-                event:Fire(...)
-            end,
-            Connect = function(callback)
-                return event.Event:Connect(callback)
-            end
-        }
-    end,
-    
-    CreateSecureFunction = function(name)
-        local functionName = generateProtectedName("UIFunc")
-        local func = Instance.new("BindableFunction")
-        SecureRemotes.Functions[functionName] = func
-        return {
-            Invoke = function(...)
-                -- Log korumalı invoke
-                if _G.SimpleSpy then
-                    _G.SimpleSpy:ExcludeRemote(functionName)
-                end
-                return func:Invoke(...)
-            end,
-            OnInvoke = function(callback)
-                func.OnInvoke = callback
-            end
-        }
-    end
+    TitleBar = 30,         -- 35'ten 30'a
+    TabHeight = 25,        -- 30'dan 25'e
+    ButtonHeight = 32,     -- 35'ten 32'ye
+    SliderHeight = 45,     -- 50'den 45'e
+    ToggleHeight = 32,     -- 35'ten 32'ye
+    TextboxHeight = 32,    -- 35'ten 32'ye
+    DropdownHeight = 32,   -- 35'ten 32'ye
+    SectionSpacing = 6     -- 8'den 6'ya
 }
 
 -- NOTIFICATION SİSTEMİ
@@ -178,109 +195,34 @@ function OxireunUI:SendNotification(title, text, duration)
     })
 end
 
+-- Anti-Logger Toggle fonksiyonu
+function OxireunUI:ToggleAntiLogger(state)
+    antiLoggerEnabled = state
+    if state then
+        setupAntiLogger()
+        self:SendNotification("Anti-Logger", "Remote logging protection ENABLED", 3)
+    else
+        self:SendNotification("Anti-Logger", "Remote logging protection DISABLED", 3)
+    end
+end
+
+-- Remote koruma ekleme
+function OxireunUI:ProtectRemote(remote)
+    protectRemote(remote)
+end
+
 -- Ana Library fonksiyonu
 function OxireunUI.new()
     local self = setmetatable({}, OxireunUI)
     self.Windows = {}
-    self.SecureRemotes = SecureRemotes
     
-    -- SimpleSpy korumasını aktif et
-    self:InitializeProtection()
+    -- Anti-logger'ı başlat
+    setupAntiLogger()
     
     return self
 end
 
--- KORUMA BAŞLATMA
-function OxireunUI:InitializeProtection()
-    -- SimpleSpy'nin blacklistine ekle
-    if _G.SimpleSpy then
-        -- Geniş blacklist
-        local blacklist = {
-            "Oxireun",
-            "UI_Library",
-            "Toggle_",
-            "Button_",
-            "Slider_",
-            "Dropdown_",
-            "Textbox_",
-            "SecureEvent_",
-            "UIFunc_"
-        }
-        
-        for _, pattern in ipairs(blacklist) do
-            pcall(function()
-                _G.SimpleSpy:ExcludeRemote(pattern)
-            end)
-        end
-    end
-    
-    -- Metamethod koruması
-    if getrawmetatable then
-        local mt = getrawmetatable(game)
-        if mt and mt.__namecall then
-            local original = mt.__namecall
-            setreadonly(mt, false)
-            mt.__namecall = newcclosure(function(self, ...)
-                local method = getnamecallmethod()
-                if method and (method:lower() == "fireserver" or method:lower() == "invokeserver") then
-                    -- UI remote'larını gizle
-                    local success, name = pcall(function()
-                        return self.Name
-                    end)
-                    if success and name then
-                        local lowerName = name:lower()
-                        if lowerName:find("oxireun") or 
-                           lowerName:find("ui_") or 
-                           lowerName:find("toggle") or 
-                           lowerName:find("button") or
-                           lowerName:find("secure") then
-                            -- Loglamadan kaçın
-                            if method:lower() == "invokeserver" then
-                                return nil
-                            end
-                            return
-                        end
-                    end
-                end
-                return original(self, ...)
-            end)
-            setreadonly(mt, true)
-        end
-    end
-end
-
--- GÜVENLİ BUTON OLUŞTURMA
-function OxireunUI:CreateProtectedButton(name, callback)
-    -- Rastgele isim oluştur (log koruması için)
-    local protectedName = generateProtectedName("Btn")
-    
-    -- Secure remote oluştur
-    local secureEvent = SecureRemotes.CreateSecureEvent(protectedName)
-    
-    local button = {
-        Name = protectedName,
-        OriginalName = name,
-        Event = secureEvent,
-        
-        Fire = function(...)
-            secureEvent.Fire(...)
-        end,
-        
-        Connect = function(callback)
-            return secureEvent.Connect(callback)
-        end
-    }
-    
-    -- SimpleSpy blacklist'e ekle
-    if _G.SimpleSpy then
-        _G.SimpleSpy:ExcludeRemote(protectedName)
-        _G.SimpleSpy:BlockRemote(protectedName)
-    end
-    
-    return button
-end
-
--- Yeni pencere oluşturma (orijinal kodunuz - korumalı versiyon)
+-- Yeni pencere oluşturma
 function OxireunUI:NewWindow(title)
     -- Önce eski UI'ı temizle
     if game.CoreGui:FindFirstChild("OxireunUI") then
@@ -295,19 +237,18 @@ function OxireunUI:NewWindow(title)
     Window.Title = title or "Oxireun UI"
     Window.Sections = {}
     Window.CurrentSection = nil
-    Window.ProtectedRemotes = {} -- Korunan remote'ları sakla
     
     -- Ana ekran
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "OxireunUI_Protected_" .. generateProtectedName("")
+    ScreenGui.Name = "OxireunUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     -- Ana pencere
     local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainWindow_Protected"
+    MainFrame.Name = "MainWindow"
     MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
-    MainFrame.Position = UDim2.new(0, 10, 0.5, -UI_SIZE.Height/2)
+    MainFrame.Position = UDim2.new(0, 10, 0.5, -UI_SIZE.Height/2)  -- Daha sola
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -316,14 +257,14 @@ function OxireunUI:NewWindow(title)
     
     -- Köşe yuvarlatma
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
+    corner.CornerRadius = UDim.new(0, 8)  -- Daha küçük köşe
     corner.Parent = MainFrame
     
     -- YAVAŞ ANİMASYONLU RGB BORDER
     local rgbBorder = Instance.new("UIStroke")
     rgbBorder.Name = "RGBBorder"
     rgbBorder.Color = RGBColors[1]
-    rgbBorder.Thickness = 2
+    rgbBorder.Thickness = 2  -- 3'ten 2'ye düşürüldü
     rgbBorder.Transparency = 0
     rgbBorder.Parent = MainFrame
     
@@ -343,7 +284,7 @@ function OxireunUI:NewWindow(title)
     
     -- Başlık çubuğu
     local TitleBar = Instance.new("Frame")
-    TitleBar.Name = "TitleBar_Protected"
+    TitleBar.Name = "TitleBar"
     TitleBar.Size = UDim2.new(1, 0, 0, ELEMENT_SIZES.TitleBar)
     TitleBar.BackgroundColor3 = Colors.SecondaryBg
     TitleBar.BorderSizePixel = 0
@@ -357,11 +298,11 @@ function OxireunUI:NewWindow(title)
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 8, 0, 0)
+    TitleLabel.Position = UDim2.new(0, 8, 0, 0)  -- Padding azaltıldı
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 14
+    TitleLabel.TextSize = 14  -- 17'den 14'e düşürüldü
     TitleLabel.Font = Fonts.Bold
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
@@ -369,20 +310,20 @@ function OxireunUI:NewWindow(title)
     -- Kontrol butonları
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 40, 1, 0)
-    Controls.Position = UDim2.new(1, -45, 0, 0)
+    Controls.Size = UDim2.new(0, 40, 1, 0)  -- 50'den 40'a düşürüldü
+    Controls.Position = UDim2.new(1, -45, 0, 0)  -- -55'ten -45'e
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
     -- Küçültme butonu
     local MinimizeButton = Instance.new("TextButton")
-    MinimizeButton.Name = "Minimize_Protected"
-    MinimizeButton.Size = UDim2.new(0, 18, 0, 18)
+    MinimizeButton.Name = "Minimize"
+    MinimizeButton.Size = UDim2.new(0, 18, 0, 18)  -- 20'den 18'e düşürüldü
     MinimizeButton.Position = UDim2.new(0, 0, 0.5, -9)
     MinimizeButton.BackgroundColor3 = Colors.ControlButton
     MinimizeButton.Text = "-"
     MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 16
+    MinimizeButton.TextSize = 16  -- 18'den 16'ya düşürüldü
     MinimizeButton.Font = Fonts.Bold
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
@@ -393,13 +334,13 @@ function OxireunUI:NewWindow(title)
     
     -- Kapatma butonu
     local CloseButton = Instance.new("TextButton")
-    CloseButton.Name = "Close_Protected"
-    CloseButton.Size = UDim2.new(0, 18, 0, 18)
-    CloseButton.Position = UDim2.new(0, 22, 0.5, -9)
+    CloseButton.Name = "Close"
+    CloseButton.Size = UDim2.new(0, 18, 0, 18)  -- 20'den 18'e düşürüldü
+    CloseButton.Position = UDim2.new(0, 22, 0.5, -9)  -- 25'ten 22'ye
     CloseButton.BackgroundColor3 = Colors.CloseButton
     CloseButton.Text = ">"
     CloseButton.TextColor3 = Colors.Text
-    CloseButton.TextSize = 14
+    CloseButton.TextSize = 14  -- 16'dan 14'e düşürüldü
     CloseButton.Font = Fonts.Bold
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
@@ -410,32 +351,32 @@ function OxireunUI:NewWindow(title)
     
     -- Tab'ler için yatay scrolling frame
     local TabsScrollFrame = Instance.new("ScrollingFrame")
-    TabsScrollFrame.Name = "TabsScroll_Protected"
-    TabsScrollFrame.Size = UDim2.new(1, -16, 0, ELEMENT_SIZES.TabHeight)
-    TabsScrollFrame.Position = UDim2.new(0, 8, 0, ELEMENT_SIZES.TitleBar + 5)
+    TabsScrollFrame.Name = "TabsScroll"
+    TabsScrollFrame.Size = UDim2.new(1, -16, 0, ELEMENT_SIZES.TabHeight)  -- -20'den -16'ya
+    TabsScrollFrame.Position = UDim2.new(0, 8, 0, ELEMENT_SIZES.TitleBar + 5)  -- 40'tan 35'e
     TabsScrollFrame.BackgroundTransparency = 1
     TabsScrollFrame.BorderSizePixel = 0
-    TabsScrollFrame.ScrollBarThickness = 3
+    TabsScrollFrame.ScrollBarThickness = 3  -- 4'ten 3'e düşürüldü
     TabsScrollFrame.ScrollBarImageColor3 = Colors.Border
     TabsScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.X
     TabsScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
     TabsScrollFrame.Parent = MainFrame
     
     local TabsContainer = Instance.new("Frame")
-    TabsContainer.Name = "TabsContainer_Protected"
+    TabsContainer.Name = "TabsContainer"
     TabsContainer.Size = UDim2.new(0, 0, 1, 0)
     TabsContainer.BackgroundTransparency = 1
     TabsContainer.Parent = TabsScrollFrame
     
     local TabsList = Instance.new("UIListLayout")
     TabsList.FillDirection = Enum.FillDirection.Horizontal
-    TabsList.Padding = UDim.new(0, 4)
+    TabsList.Padding = UDim.new(0, 4)  -- 5'ten 4'e düşürüldü
     TabsList.SortOrder = Enum.SortOrder.LayoutOrder
     TabsList.Parent = TabsContainer
     
     -- İçerik alanı
     local ContentArea = Instance.new("Frame")
-    ContentArea.Name = "ContentArea_Protected"
+    ContentArea.Name = "ContentArea"
     ContentArea.Size = UDim2.new(1, -16, 1, - (ELEMENT_SIZES.TitleBar + ELEMENT_SIZES.TabHeight + 15))
     ContentArea.Position = UDim2.new(0, 8, 0, ELEMENT_SIZES.TitleBar + ELEMENT_SIZES.TabHeight + 10)
     ContentArea.BackgroundTransparency = 1
@@ -445,7 +386,7 @@ function OxireunUI:NewWindow(title)
     -- TIKLAMA EFEKTİ
     local function CreateClickEffect(button)
         local effect = Instance.new("Frame")
-        effect.Name = "ClickEffect_Protected"
+        effect.Name = "ClickEffect"
         effect.Size = UDim2.new(1, 0, 1, 0)
         effect.BackgroundColor3 = Colors.Accent
         effect.BackgroundTransparency = 0.7
@@ -466,14 +407,14 @@ function OxireunUI:NewWindow(title)
     local function SetupButtonHover(button, isControlButton)
         if isControlButton then
             button.MouseEnter:Connect(function()
-                if button.Name:find("Close") then
+                if button.Name == "Close" then
                     button.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
                 else
                     button.BackgroundColor3 = Color3.fromRGB(90, 70, 130)
                 end
             end)
             button.MouseLeave:Connect(function()
-                if button.Name:find("Close") then
+                if button.Name == "Close" then
                     button.BackgroundColor3 = Colors.CloseButton
                 else
                     button.BackgroundColor3 = Colors.ControlButton
@@ -560,30 +501,18 @@ function OxireunUI:NewWindow(title)
         end
     end)
     
-    -- Buton event'leri (LOG KORUMALI)
+    -- Buton event'leri
     CloseButton.MouseButton1Click:Connect(function()
         CreateClickEffect(CloseButton)
         if rgbAnimation then
             rgbAnimation:Disconnect()
         end
-        
-        -- Korumalı kapatma
-        if _G.SimpleSpy then
-            _G.SimpleSpy:ExcludeRemote("OxireunUI_Close")
-        end
-        
         ScreenGui:Destroy()
     end)
     
     local minimized = false
     MinimizeButton.MouseButton1Click:Connect(function()
         CreateClickEffect(MinimizeButton)
-        
-        -- Korumalı minimize
-        if _G.SimpleSpy then
-            _G.SimpleSpy:ExcludeRemote("OxireunUI_Minimize")
-        end
-        
         if not minimized then
             MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, ELEMENT_SIZES.TitleBar)
             TabsScrollFrame.Visible = false
@@ -605,38 +534,38 @@ function OxireunUI:NewWindow(title)
         end
     end)
     
-    -- Yeni section ekleme fonksiyonu (KORUMALI)
+    -- Yeni section ekleme fonksiyonu
     function Window:NewSection(name)
         local Section = {}
         Section.Name = name
         
-        -- Tab butonu oluştur (koruma ile)
+        -- Tab butonu oluştur
         local TabButton = Instance.new("TextButton")
-        TabButton.Name = generateProtectedName("Tab")
-        TabButton.Size = UDim2.new(0, 65, 0, 22)
+        TabButton.Name = name .. "_Tab"
+        TabButton.Size = UDim2.new(0, 65, 0, 22)  -- 70x25'ten 65x22'ye
         TabButton.BackgroundColor3 = Colors.TabInactive
         TabButton.Text = name
         TabButton.TextColor3 = Colors.Text
-        TabButton.TextSize = 11
+        TabButton.TextSize = 11  -- 12'den 11'e düşürüldü
         TabButton.Font = Fonts.Bold
         TabButton.AutoButtonColor = false
         TabButton.LayoutOrder = #Window.Sections + 1
         TabButton.Parent = TabsContainer
         
         local tabCorner = Instance.new("UICorner")
-        tabCorner.CornerRadius = UDim.new(0, 5)
+        tabCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
         tabCorner.Parent = TabButton
         
         SetupButtonHover(TabButton, false)
         
         -- Section içeriği için ScrollingFrame
         local SectionFrame = Instance.new("ScrollingFrame")
-        SectionFrame.Name = generateProtectedName("Section")
+        SectionFrame.Name = name .. "_Content"
         SectionFrame.Size = UDim2.new(1, 0, 1, 0)
         SectionFrame.BackgroundColor3 = Colors.SectionBg
         SectionFrame.BackgroundTransparency = 0
         SectionFrame.BorderSizePixel = 0
-        SectionFrame.ScrollBarThickness = 3
+        SectionFrame.ScrollBarThickness = 3  -- 4'ten 3'e
         SectionFrame.ScrollBarImageColor3 = Colors.Border
         SectionFrame.Visible = false
         SectionFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -644,7 +573,7 @@ function OxireunUI:NewWindow(title)
         SectionFrame.Parent = ContentArea
         
         local sectionCorner = Instance.new("UICorner")
-        sectionCorner.CornerRadius = UDim.new(0, 6)
+        sectionCorner.CornerRadius = UDim.new(0, 6)  -- 8'den 6'ya
         sectionCorner.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
@@ -653,10 +582,10 @@ function OxireunUI:NewWindow(title)
         sectionList.Parent = SectionFrame
         
         local sectionPadding = Instance.new("UIPadding")
-        sectionPadding.PaddingTop = UDim.new(0, 6)
-        sectionPadding.PaddingBottom = UDim.new(0, 6)
-        sectionPadding.PaddingLeft = UDim.new(0, 6)
-        sectionPadding.PaddingRight = UDim.new(0, 6)
+        sectionPadding.PaddingTop = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingBottom = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingLeft = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingRight = UDim.new(0, 6)  -- 8'den 6'ya
         sectionPadding.Parent = SectionFrame
         
         -- Canvas size güncelleme
@@ -671,15 +600,9 @@ function OxireunUI:NewWindow(title)
             Window.CurrentSection = Section
         end
         
-        -- Tab değiştirme (LOG KORUMALI)
+        -- Tab değiştirme
         TabButton.MouseButton1Click:Connect(function()
             CreateClickEffect(TabButton)
-            
-            -- SimpleSpy koruması
-            if _G.SimpleSpy then
-                _G.SimpleSpy:ExcludeRemote("OxireunUI_TabSwitch")
-            end
-            
             for _, tab in pairs(TabsContainer:GetChildren()) do
                 if tab:IsA("TextButton") then
                     tab.BackgroundColor3 = Colors.TabInactive
@@ -697,24 +620,22 @@ function OxireunUI:NewWindow(title)
             Window.CurrentSection = Section
         end)
         
-        -- GÜVENLİ BUTON OLUŞTURMA FONKSİYONU
+        -- Element oluşturma fonksiyonları
         function Section:CreateButton(name, callback)
-            local protectedButton = self:CreateProtectedButton(name)
-            
             local Button = Instance.new("TextButton")
-            Button.Name = protectedButton.Name
+            Button.Name = name
             Button.Size = UDim2.new(1, 0, 0, ELEMENT_SIZES.ButtonHeight)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
             Button.TextColor3 = Colors.Text
-            Button.TextSize = 13
+            Button.TextSize = 13  -- 14'ten 13'e
             Button.Font = Fonts.Bold
             Button.AutoButtonColor = false
             Button.LayoutOrder = #SectionFrame:GetChildren()
             Button.Parent = SectionFrame
             
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             btnCorner.Parent = Button
             
             SetupButtonHover(Button, false)
@@ -722,29 +643,36 @@ function OxireunUI:NewWindow(title)
             Button.MouseButton1Click:Connect(function()
                 CreateClickEffect(Button)
                 
-                -- SimpleSpy'ı atlat
-                if _G.SimpleSpy then
-                    _G.SimpleSpy:ExcludeRemote(protectedButton.Name)
-                    _G.SimpleSpy:BlockRemote(protectedButton.Name)
+                -- ANTI-LOGGER: Buton tıklamasını koru
+                if antiLoggerEnabled then
+                    -- Debug hook'larını devre dışı bırak
+                    local originalDebug = debug
+                    local oldHook = debug.sethook
+                    debug.sethook = function() end
+                    
+                    -- Çağrıyı yap
+                    if callback then
+                        local success, result = pcall(callback)
+                        if not success then
+                            warn("Button callback error:", result)
+                        end
+                    end
+                    
+                    -- Debug hook'larını geri yükle
+                    debug.sethook = oldHook
+                else
+                    if callback then
+                        callback()
+                    end
                 end
-                
-                if callback then
-                    callback()
-                end
-                
-                -- Secure event tetikle
-                protectedButton.Fire()
             end)
             
             return Button
         end
         
-        -- GÜVENLİ TOGGLE OLUŞTURMA
         function Section:CreateToggle(name, default, callback)
-            local protectedName = generateProtectedName("Toggle")
-            
             local Toggle = Instance.new("Frame")
-            Toggle.Name = protectedName
+            Toggle.Name = name
             Toggle.Size = UDim2.new(1, 0, 0, ELEMENT_SIZES.ToggleHeight)
             Toggle.BackgroundTransparency = 1
             Toggle.LayoutOrder = #SectionFrame:GetChildren()
@@ -755,15 +683,15 @@ function OxireunUI:NewWindow(title)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
-            ToggleLabel.TextSize = 13
+            ToggleLabel.TextSize = 13  -- 14'ten 13'e
             ToggleLabel.Font = Fonts.Bold
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
             
             local ToggleButton = Instance.new("TextButton")
-            ToggleButton.Name = "Toggle_Protected"
-            ToggleButton.Size = UDim2.new(0, 40, 0, 20)
-            ToggleButton.Position = UDim2.new(1, -42, 0.5, -10)
+            ToggleButton.Name = "Toggle"
+            ToggleButton.Size = UDim2.new(0, 40, 0, 20)  -- 45x22'den 40x20'ye
+            ToggleButton.Position = UDim2.new(1, -42, 0.5, -10)  -- -50'den -42'ye
             ToggleButton.BackgroundColor3 = default and Colors.ToggleOn or Colors.ToggleOff
             ToggleButton.Text = ""
             ToggleButton.AutoButtonColor = false
@@ -775,8 +703,8 @@ function OxireunUI:NewWindow(title)
             
             local ToggleCircle = Instance.new("Frame")
             ToggleCircle.Name = "Circle"
-            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)
-            ToggleCircle.Position = UDim2.new(0, default and 21 or 2, 0.5, -8)
+            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)  -- 18'den 16'ya
+            ToggleCircle.Position = UDim2.new(0, default and 21 or 2, 0.5, -8)  -- 24'ten 21'e
             ToggleCircle.BackgroundColor3 = Colors.Text
             ToggleCircle.Parent = ToggleButton
             
@@ -801,9 +729,9 @@ function OxireunUI:NewWindow(title)
             ToggleButton.MouseButton1Click:Connect(function()
                 CreateClickEffect(ToggleButton)
                 
-                -- SimpleSpy koruması
-                if _G.SimpleSpy then
-                    _G.SimpleSpy:ExcludeRemote(protectedName)
+                -- ANTI-LOGGER: Toggle tıklamasını koru
+                if antiLoggerEnabled then
+                    debug.sethook(function() end, "", 0)
                 end
                 
                 state = not state
@@ -818,13 +746,334 @@ function OxireunUI:NewWindow(title)
                 if callback then
                     callback(state)
                 end
+                
+                if antiLoggerEnabled then
+                    debug.sethook()
+                end
             end)
             
             return Toggle
         end
         
-        -- Diğer element fonksiyonları (Slider, Dropdown, Textbox) aynı şekilde korumalı hale getirilebilir...
-        -- Kısaltma için sadece temel fonksiyonları gösterdim
+        function Section:CreateSlider(name, min, max, default, callback)
+            local Slider = Instance.new("Frame")
+            Slider.Name = name
+            Slider.Size = UDim2.new(1, 0, 0, ELEMENT_SIZES.SliderHeight)
+            Slider.BackgroundTransparency = 1
+            Slider.LayoutOrder = #SectionFrame:GetChildren()
+            Slider.Parent = SectionFrame
+            
+            local SliderLabel = Instance.new("TextLabel")
+            SliderLabel.Size = UDim2.new(1, 0, 0, 18)  -- 20'den 18'e
+            SliderLabel.BackgroundTransparency = 1
+            SliderLabel.Text = name .. ": " .. default
+            SliderLabel.TextColor3 = Colors.Text
+            SliderLabel.TextSize = 13  -- 14'ten 13'e
+            SliderLabel.Font = Fonts.Bold
+            SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+            SliderLabel.Parent = Slider
+            
+            local SliderTrack = Instance.new("Frame")
+            SliderTrack.Name = "Track"
+            SliderTrack.Size = UDim2.new(0, 230, 0, 4)  -- 270x5'ten 230x4'e
+            SliderTrack.Position = UDim2.new(0, 0, 0, 22)  -- 25'ten 22'ye
+            SliderTrack.BackgroundColor3 = Colors.ToggleOff
+            SliderTrack.Parent = Slider
+            
+            local trackCorner = Instance.new("UICorner")
+            trackCorner.CornerRadius = UDim.new(1, 0)
+            trackCorner.Parent = SliderTrack
+            
+            local SliderFill = Instance.new("Frame")
+            SliderFill.Name = "Fill"
+            SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+            SliderFill.BackgroundColor3 = Colors.Slider
+            SliderFill.Parent = SliderTrack
+            
+            local fillCorner = Instance.new("UICorner")
+            fillCorner.CornerRadius = UDim.new(1, 0)
+            fillCorner.Parent = SliderFill
+            
+            local SliderButton = Instance.new("TextButton")
+            SliderButton.Name = "SliderButton"
+            SliderButton.Size = UDim2.new(0, 16, 0, 16)  -- 18'den 16'ya
+            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8)  -- -9'dan -8'e
+            SliderButton.BackgroundColor3 = Colors.Text
+            SliderButton.Text = ""
+            SliderButton.AutoButtonColor = false
+            SliderButton.Parent = SliderTrack
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(1, 0)
+            btnCorner.Parent = SliderButton
+            
+            local draggingSlider = false
+            
+            SliderButton.MouseButton1Down:Connect(function()
+                draggingSlider = true
+                if antiLoggerEnabled then
+                    debug.sethook(function() end, "", 0)
+                end
+            end)
+            
+            SliderTrack.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    draggingSlider = true
+                    if antiLoggerEnabled then
+                        debug.sethook(function() end, "", 0)
+                    end
+                    
+                    local pos = UDim2.new(
+                        math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
+                        -8,
+                        0.5,
+                        -8
+                    )
+                    SliderButton.Position = pos
+                    SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
+                    local value = math.floor(min + (pos.X.Scale * (max - min)))
+                    SliderLabel.Text = name .. ": " .. value
+                    if callback then
+                        callback(value)
+                    end
+                end
+            end)
+            
+            game:GetService("UserInputService").InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    draggingSlider = false
+                    if antiLoggerEnabled then
+                        debug.sethook()
+                    end
+                end
+            end)
+            
+            game:GetService("UserInputService").InputChanged:Connect(function(input)
+                if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    local pos = UDim2.new(
+                        math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
+                        -8,
+                        0.5,
+                        -8
+                    )
+                    SliderButton.Position = pos
+                    SliderFill.Size = UDim2.new(pos.X.Scale, 0, 1, 0)
+                    local value = math.floor(min + (pos.X.Scale * (max - min)))
+                    SliderLabel.Text = name .. ": " .. value
+                    if callback then
+                        callback(value)
+                    end
+                end
+            end)
+            
+            return Slider
+        end
+        
+        function Section:CreateDropdown(name, options, default, callback)
+            local Dropdown = Instance.new("Frame")
+            Dropdown.Name = name
+            Dropdown.Size = UDim2.new(1, 0, 0, ELEMENT_SIZES.DropdownHeight)
+            Dropdown.BackgroundTransparency = 1
+            Dropdown.ClipsDescendants = false
+            Dropdown.LayoutOrder = #SectionFrame:GetChildren()
+            Dropdown.Parent = SectionFrame
+            
+            local DropdownButton = Instance.new("TextButton")
+            DropdownButton.Name = "DropdownButton"
+            DropdownButton.Size = UDim2.new(1, 0, 0, ELEMENT_SIZES.DropdownHeight)
+            DropdownButton.BackgroundColor3 = Colors.Button
+            DropdownButton.Text = options[default] or options[1] or "Select"
+            DropdownButton.TextColor3 = Colors.Text
+            DropdownButton.TextSize = 13  -- 14'ten 13'e
+            DropdownButton.Font = Fonts.Bold
+            DropdownButton.AutoButtonColor = false
+            DropdownButton.Parent = Dropdown
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
+            btnCorner.Parent = DropdownButton
+            
+            DropdownButton.MouseEnter:Connect(function()
+                game:GetService("TweenService"):Create(DropdownButton, TweenInfo.new(0.2), { 
+                    BackgroundColor3 = Colors.Border 
+                }):Play()
+            end)
+            
+            DropdownButton.MouseLeave:Connect(function()
+                game:GetService("TweenService"):Create(DropdownButton, TweenInfo.new(0.2), { 
+                    BackgroundColor3 = Colors.Button 
+                }):Play()
+            end)
+            
+            local open = false
+            local OptionsContainer
+            
+            local function CloseOptions()
+                if OptionsContainer then
+                    OptionsContainer:Destroy()
+                    OptionsContainer = nil
+                end
+                open = false
+                activeDropdowns[OptionsContainer] = nil
+            end
+            
+            DropdownButton.MouseButton1Click:Connect(function()
+                CreateClickEffect(DropdownButton)
+                
+                -- ANTI-LOGGER: Dropdown tıklamasını koru
+                if antiLoggerEnabled then
+                    debug.sethook(function() end, "", 0)
+                end
+                
+                if open then
+                    CloseOptions()
+                    if antiLoggerEnabled then
+                        debug.sethook()
+                    end
+                    return
+                end
+                
+                open = true
+                local OptionsScreenGui = Instance.new("ScreenGui")
+                OptionsScreenGui.Name = "DropdownOptions"
+                OptionsScreenGui.ResetOnSpawn = false
+                OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+                OptionsScreenGui.Parent = ScreenGui
+                
+                OptionsContainer = Instance.new("Frame")
+                OptionsContainer.Name = "OptionsContainer"
+                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 8)  -- 25'ten 22'ye
+                OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+                OptionsContainer.BackgroundColor3 = Colors.SectionBg
+                OptionsContainer.BorderSizePixel = 0
+                OptionsContainer.ZIndex = 100
+                OptionsContainer.Parent = OptionsScreenGui
+                
+                local optionsCorner = Instance.new("UICorner")
+                optionsCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
+                optionsCorner.Parent = OptionsContainer
+                
+                for i, option in pairs(options) do
+                    local OptionButton = Instance.new("TextButton")
+                    OptionButton.Name = option
+                    OptionButton.Size = UDim2.new(1, -8, 0, 20)  -- -10 ve 22'den -8 ve 20'ye
+                    OptionButton.Position = UDim2.new(0, 4, 0, (i-1)*22 + 4)  -- 5'ten 4'e
+                    OptionButton.BackgroundColor3 = Colors.Button
+                    OptionButton.Text = option
+                    OptionButton.TextColor3 = Colors.Text
+                    OptionButton.TextSize = 11  -- 12'den 11'e
+                    OptionButton.Font = Fonts.Bold
+                    OptionButton.AutoButtonColor = false
+                    OptionButton.ZIndex = 101
+                    OptionButton.Parent = OptionsContainer
+                    
+                    local optionCorner = Instance.new("UICorner")
+                    optionCorner.CornerRadius = UDim.new(0, 3)  -- 4'ten 3'e
+                    optionCorner.Parent = OptionButton
+                    
+                    OptionButton.MouseEnter:Connect(function()
+                        OptionButton.BackgroundColor3 = Colors.Border
+                    end)
+                    
+                    OptionButton.MouseLeave:Connect(function()
+                        OptionButton.BackgroundColor3 = Colors.Button
+                    end)
+                    
+                    OptionButton.MouseButton1Click:Connect(function()
+                        CreateClickEffect(OptionButton)
+                        DropdownButton.Text = option
+                        if callback then
+                            callback(option)
+                        end
+                        CloseOptions()
+                        OptionsScreenGui:Destroy()
+                        if antiLoggerEnabled then
+                            debug.sethook()
+                        end
+                    end)
+                end
+                
+                activeDropdowns[OptionsContainer] = true
+                
+                local function updateDropdownPosition()
+                    if OptionsContainer and DropdownButton then
+                        local buttonPos = DropdownButton.AbsolutePosition
+                        local buttonSize = DropdownButton.AbsoluteSize
+                        OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+                    end
+                end
+                
+                local dropdownConnection
+                dropdownConnection = RunService.Heartbeat:Connect(function()
+                    if OptionsContainer and open then
+                        updateDropdownPosition()
+                    end
+                end)
+                
+                local function checkClickOutside(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        local mousePos = UserInputService:GetMouseLocation()
+                        local buttonPos = DropdownButton.AbsolutePosition
+                        local buttonSize = DropdownButton.AbsoluteSize
+                        local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
+                        local containerSize = OptionsContainer and OptionsContainer.AbsoluteSize
+                        
+                        if not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                               mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
+                           not (containerPos and containerSize and 
+                               mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
+                               mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+                            if dropdownConnection then
+                                dropdownConnection:Disconnect()
+                            end
+                            CloseOptions()
+                            OptionsScreenGui:Destroy()
+                            if antiLoggerEnabled then
+                                debug.sethook()
+                            end
+                        end
+                    end
+                end
+                
+                UserInputService.InputBegan:Connect(checkClickOutside)
+            end)
+            
+            return Dropdown
+        end
+        
+        function Section:CreateTextbox(name, callback)
+            local Textbox = Instance.new("Frame")
+            Textbox.Name = name
+            Textbox.Size = UDim2.new(1, 0, 0, ELEMENT_SIZES.TextboxHeight)
+            Textbox.BackgroundTransparency = 1
+            Textbox.LayoutOrder = #SectionFrame:GetChildren()
+            Textbox.Parent = SectionFrame
+            
+            local InputBox = Instance.new("TextBox")
+            InputBox.Name = "Input"
+            InputBox.Size = UDim2.new(1, 0, 1, 0)
+            InputBox.BackgroundColor3 = Colors.Button
+            InputBox.Text = ""
+            InputBox.PlaceholderText = name
+            InputBox.TextColor3 = Colors.Text
+            InputBox.PlaceholderColor3 = Colors.Text
+            InputBox.TextSize = 13  -- 14'ten 13'e
+            InputBox.Font = Fonts.Bold
+            InputBox.TextXAlignment = Enum.TextXAlignment.Center
+            InputBox.Parent = Textbox
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
+            inputCorner.Parent = InputBox
+            
+            InputBox.FocusLost:Connect(function()
+                if callback then
+                    callback(InputBox.Text)
+                end
+            end)
+            
+            return Textbox
+        end
         
         table.insert(Window.Sections, Section)
         return Section
@@ -833,49 +1082,7 @@ function OxireunUI:NewWindow(title)
     -- Pencereyi parent'e ekle
     ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
     table.insert(self.Windows, Window)
-    
-    -- Final koruma
-    coroutine.wrap(function()
-        wait(2)
-        if _G.SimpleSpy then
-            -- Tüm UI remote'larını blacklist'e ekle
-            local patterns = {
-                "OxireunUI",
-                "Protected_",
-                "UIEvent_",
-                "UIFunc_",
-                "Btn_",
-                "Toggle_",
-                "Tab_",
-                "Section_"
-            }
-            
-            for _, pattern in ipairs(patterns) do
-                pcall(function()
-                    _G.SimpleSpy:ExcludeRemote(pattern)
-                    _G.SimpleSpy:BlockRemote(pattern)
-                end)
-            end
-        end
-    end)()
-    
     return Window
-end
-
--- Korumalı buton oluşturma yardımcı fonksiyonu
-function Window:CreateProtectedButton(name)
-    local protectedName = generateProtectedName("Btn")
-    
-    -- SimpleSpy blacklist'e ekle
-    if _G.SimpleSpy then
-        _G.SimpleSpy:ExcludeRemote(protectedName)
-        _G.SimpleSpy:BlockRemote(protectedName)
-    end
-    
-    return {
-        Name = protectedName,
-        OriginalName = name
-    }
 end
 
 -- Library'yi döndür
