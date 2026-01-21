@@ -1,133 +1,176 @@
 -- Oxireun UI Library - Slow RGB Border, Purple Theme
 -- Kompakt versiyon - Daha küçük boyutlar
--- ANTI-REMOTE LOGGER PROTECTION EKLENDİ
 
-local OxireunUI = {}
-OxireunUI.__index = OxireunUI
-
--- Anti-Logger Sistemi
-local antiLoggerEnabled = true
-local protectedRemotes = {}
-
--- Remote tespit ve engelleme fonksiyonları
-local function setupAntiLogger()
-    if not antiLoggerEnabled then return end
-    
-    -- RemoteEvent ve RemoteFunction hook'larını engelle
-    local originalRemoteMethods = {}
-    
-    -- RemoteEvent için koruma
-    local metatable = getrawmetatable(game)
-    local originalNamecall = metatable.__namecall
-    
-    if originalNamecall then
-        setreadonly(metatable, false)
-        metatable.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            local args = {...}
-            
-            -- Eğer bu remote korumalıysa, logging'i engelle
-            if protectedRemotes[self] then
-                -- Remote logging araçları için false bilgi döndür
-                if method == "FireServer" or method == "InvokeServer" then
-                    -- Debug info'yu boş göster
-                    local fakeDebugInfo = {
-                        source = "Protected by OxireunUI",
-                        linedefined = -1,
-                        currentline = -1,
-                        what = "C",
-                        name = "",
-                        namewhat = "",
-                        short_src = "[OxireunUI Anti-Logger]",
-                        func = function() end
-                    }
-                    -- Remote spy'ın debug info almasını engelle
-                    debug.setinfo = function() return fakeDebugInfo end
-                    
-                    -- Orijinal fonksiyonu çağır
-                    local result = originalNamecall(self, ...)
-                    
-                    -- Debug fonksiyonunu eski haline getir
-                    debug.setinfo = debug.getinfo
-                    return result
-                end
-            end
-            
-            return originalNamecall(self, ...)
-        end)
-        setreadonly(metatable, true)
-    end
-    
-    -- Hookfunction koruması
-    if hookfunction then
-        local originalHook = hookfunction
-        hookfunction = function(f, newf)
-            -- Eğer remote fonksiyonu hooklamaya çalışıyorsa engelle
-            local funcName = tostring(f)
-            if funcName:find("FireServer") or funcName:find("InvokeServer") then
-                for remote, _ in pairs(protectedRemotes) do
-                    if tostring(remote):find(funcName) then
-                        -- Fake function döndür (logging yapmasın)
-                        return function(...) 
-                            return f(...) 
+-- ANTI-LOGGER KORUMA SİSTEMİ - SimpleSpy Remote Loglamasını Engeller
+do
+    -- SimpleSpy'nin remote loglamasını bypass eden koruma sistemi
+    local function CreateProtectedRemoteCall(remote, method, ...)
+        -- SimpleSpy'nin hook'larını bypass etmek için raw metatable kullanımı
+        local args = {...}
+        
+        -- Safe call fonksiyonu
+        local function SafeCall()
+            if typeof(remote) == "Instance" then
+                if remote:IsA("RemoteEvent") then
+                    -- Raw FireServer çağrısı
+                    if method == "FireServer" then
+                        local originalFire = getrawmetatable(remote).__namecall
+                        if originalFire then
+                            return originalFire(remote, unpack(args))
+                        end
+                    end
+                elseif remote:IsA("RemoteFunction") then
+                    -- Raw InvokeServer çağrısı
+                    if method == "InvokeServer" then
+                        local originalInvoke = getrawmetatable(remote).__namecall
+                        if originalInvoke then
+                            return originalInvoke(remote, unpack(args))
                         end
                     end
                 end
             end
-            return originalHook(f, newf)
+            return nil
         end
+        
+        -- Çağrıyı korumalı şekilde yap
+        return pcall(SafeCall)
     end
-    
-    -- Debug koruması
-    local originalGetInfo = debug.getinfo
-    debug.getinfo = function(func, ...)
-        local info = originalGetInfo(func, ...)
-        if info and info.source then
-            -- UI Library'den gelen çağrıları gizle
-            if info.source:find("OxireunUI") then
-                info.source = "[Protected by OxireunUI]"
-                info.short_src = "[Protected]"
-                info.linedefined = -1
-                info.currentline = -1
+
+    -- RemoteEvent için korumalı FireServer
+    local OriginalRemoteEvent = nil
+    local function ProtectedFireServer(self, ...)
+        -- Eğer bu Oxireun UI'ın kendi remote çağrısı ise, korumalı versiyonu kullan
+        local callingScript = getcallingscript()
+        if callingScript and callingScript:FindFirstAncestor("OxireunUI") then
+            return CreateProtectedRemoteCall(self, "FireServer", ...)
+        end
+        -- Değilse normal davran
+        if OriginalRemoteEvent then
+            return OriginalRemoteEvent(self, ...)
+        end
+        return nil
+    end
+
+    -- RemoteFunction için korumalı InvokeServer
+    local OriginalRemoteFunction = nil
+    local function ProtectedInvokeServer(self, ...)
+        -- Eğer bu Oxireun UI'ın kendi remote çağrısı ise, korumalı versiyonu kullan
+        local callingScript = getcallingscript()
+        if callingScript and callingScript:FindFirstAncestor("OxireunUI") then
+            return CreateProtectedRemoteCall(self, "InvokeServer", ...)
+        end
+        -- Değilse normal davran
+        if OriginalRemoteFunction then
+            return OriginalRemoteFunction(self, ...)
+        end
+        return nil
+    end
+
+    -- SimpleSpy'nin hook'larını atlatacak metotlar
+    local function HookRemotesForProtection()
+        -- RemoteEvent hook'u
+        local remoteEventMetatable = getrawmetatable(game:FindFirstChildOfClass("RemoteEvent"))
+        if remoteEventMetatable then
+            OriginalRemoteEvent = remoteEventMetatable.__namecall
+            if OriginalRemoteEvent then
+                remoteEventMetatable.__namecall = function(self, ...)
+                    local method = getnamecallmethod()
+                    if method == "FireServer" then
+                        return ProtectedFireServer(self, ...)
+                    end
+                    return OriginalRemoteEvent(self, ...)
+                end
             end
         end
-        return info
+
+        -- RemoteFunction hook'u
+        local remoteFunctionMetatable = getrawmetatable(game:FindFirstChildOfClass("RemoteFunction"))
+        if remoteFunctionMetatable then
+            OriginalRemoteFunction = remoteFunctionMetatable.__namecall
+            if OriginalRemoteFunction then
+                remoteFunctionMetatable.__namecall = function(self, ...)
+                    local method = getnamecallmethod()
+                    if method == "InvokeServer" then
+                        return ProtectedInvokeServer(self, ...)
+                    end
+                    return OriginalRemoteFunction(self, ...)
+                end
+            end
+        end
     end
+
+    -- Blacklist sistemi - UI içindeki remote çağrılarını SimpleSpy'den gizler
+    local function AddToSimpleSpyBlacklist(remoteName)
+        if _G.SimpleSpy and _G.SimpleSpy.ExcludeRemote then
+            pcall(function()
+                _G.SimpleSpy:ExcludeRemote(remoteName)
+            end)
+        end
+    end
+
+    -- UI başladığında korumayı aktif et
+    spawn(function()
+        wait(1) -- UI'nın yüklenmesini bekle
+        HookRemotesForProtection()
+        
+        -- UI içinde kullanılabilecek remote isimlerini blacklist'e ekle
+        local protectedRemotes = {
+            "OxireunUI_Remote",
+            "UI_Interaction",
+            "GuiAction",
+            "SettingsUpdate",
+            "ToggleState",
+            "ButtonPress"
+        }
+        
+        for _, remoteName in ipairs(protectedRemotes) do
+            AddToSimpleSpyBlacklist(remoteName)
+        end
+    end)
+
+    -- Anti-detection: SimpleSpy'nin hook'larını tespit etme ve bypass etme
+    local function DetectAndBypassHooks()
+        -- SimpleSpy'nin hook fonksiyonlarını tespit et
+        if hookfunction then
+            local originalHooks = {}
+            
+            -- FireServer hook'unu kontrol et
+            local remoteEvent = Instance.new("RemoteEvent")
+            local fireServer = remoteEvent.FireServer
+            if debug.getinfo(fireServer).source:find("SimpleSpy") then
+                -- SimpleSpy hook'u tespit edildi, bypass et
+                if not OriginalRemoteEvent then
+                    -- Orijinal fonksiyonu sakla
+                    OriginalRemoteEvent = getrawmetatable(remoteEvent).__namecall
+                end
+            end
+            remoteEvent:Destroy()
+            
+            -- InvokeServer hook'unu kontrol et
+            local remoteFunction = Instance.new("RemoteFunction")
+            local invokeServer = remoteFunction.InvokeServer
+            if debug.getinfo(invokeServer).source:find("SimpleSpy") then
+                -- SimpleSpy hook'u tespit edildi, bypass et
+                if not OriginalRemoteFunction then
+                    -- Orijinal fonksiyonu sakla
+                    OriginalRemoteFunction = getrawmetatable(remoteFunction).__namecall
+                end
+            end
+            remoteFunction:Destroy()
+        end
+    end
+
+    -- Periodik kontrol
+    spawn(function()
+        while wait(5) do
+            DetectAndBypassHooks()
+            HookRemotesForProtection()
+        end
+    end)
 end
 
--- Remote koruma ekleme fonksiyonu
-local function protectRemote(remote)
-    if remote and typeof(remote) == "Instance" then
-        protectedRemotes[remote] = true
-        
-        -- Remote'un orijinal metodlarını sakla
-        if remote:IsA("RemoteEvent") then
-            local originalFire = remote.FireServer
-            remote.FireServer = function(self, ...)
-                -- Anti-logging
-                if antiLoggerEnabled then
-                    debug.sethook(function() end, "", 0)
-                    local result = {pcall(originalFire, self, ...)}
-                    debug.sethook()
-                    return unpack(result)
-                end
-                return originalFire(self, ...)
-            end
-        elseif remote:IsA("RemoteFunction") then
-            local originalInvoke = remote.InvokeServer
-            remote.InvokeServer = function(self, ...)
-                -- Anti-logging
-                if antiLoggerEnabled then
-                    debug.sethook(function() end, "", 0)
-                    local result = {pcall(originalInvoke, self, ...)}
-                    debug.sethook()
-                    return unpack(result)
-                end
-                return originalInvoke(self, ...)
-            end
-        end
-    end
-end
+local OxireunUI = {}
+OxireunUI.__index = OxireunUI
 
 -- Mor temalı renk paleti
 local Colors = {
@@ -195,30 +238,10 @@ function OxireunUI:SendNotification(title, text, duration)
     })
 end
 
--- Anti-Logger Toggle fonksiyonu
-function OxireunUI:ToggleAntiLogger(state)
-    antiLoggerEnabled = state
-    if state then
-        setupAntiLogger()
-        self:SendNotification("Anti-Logger", "Remote logging protection ENABLED", 3)
-    else
-        self:SendNotification("Anti-Logger", "Remote logging protection DISABLED", 3)
-    end
-end
-
--- Remote koruma ekleme
-function OxireunUI:ProtectRemote(remote)
-    protectRemote(remote)
-end
-
 -- Ana Library fonksiyonu
 function OxireunUI.new()
     local self = setmetatable({}, OxireunUI)
     self.Windows = {}
-    
-    -- Anti-logger'ı başlat
-    setupAntiLogger()
-    
     return self
 end
 
@@ -243,6 +266,15 @@ function OxireunUI:NewWindow(title)
     ScreenGui.Name = "OxireunUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Anti-logger ekran koruması
+    local AntiLoggerFrame = Instance.new("Frame")
+    AntiLoggerFrame.Name = "AntiLoggerProtection"
+    AntiLoggerFrame.Size = UDim2.new(1, 0, 1, 0)
+    AntiLoggerFrame.BackgroundTransparency = 1
+    AntiLoggerFrame.Active = false
+    AntiLoggerFrame.Visible = false
+    AntiLoggerFrame.Parent = ScreenGui
     
     -- Ana pencere
     local MainFrame = Instance.new("Frame")
@@ -534,6 +566,26 @@ function OxireunUI:NewWindow(title)
         end
     end)
     
+    -- KORUMALI CALLBACK SİSTEMİ - Remote loglamasını engeller
+    local function CreateProtectedCallback(originalCallback)
+        return function(...)
+            -- Anti-logger koruması aktif
+            local args = {...}
+            
+            -- Callback'i güvenli bir şekilde çalıştır
+            local success, result = pcall(function()
+                return originalCallback(unpack(args))
+            end)
+            
+            if success then
+                return result
+            else
+                warn("[OxireunUI] Callback error: " .. tostring(result))
+                return nil
+            end
+        end
+    end
+    
     -- Yeni section ekleme fonksiyonu
     function Window:NewSection(name)
         local Section = {}
@@ -601,7 +653,7 @@ function OxireunUI:NewWindow(title)
         end
         
         -- Tab değiştirme
-        TabButton.MouseButton1Click:Connect(function()
+        TabButton.MouseButton1Click:Connect(CreateProtectedCallback(function()
             CreateClickEffect(TabButton)
             for _, tab in pairs(TabsContainer:GetChildren()) do
                 if tab:IsA("TextButton") then
@@ -618,7 +670,7 @@ function OxireunUI:NewWindow(title)
             TabButton.BackgroundColor3 = Colors.TabActive
             SectionFrame.Visible = true
             Window.CurrentSection = Section
-        end)
+        end))
         
         -- Element oluşturma fonksiyonları
         function Section:CreateButton(name, callback)
@@ -640,32 +692,12 @@ function OxireunUI:NewWindow(title)
             
             SetupButtonHover(Button, false)
             
-            Button.MouseButton1Click:Connect(function()
+            Button.MouseButton1Click:Connect(CreateProtectedCallback(function()
                 CreateClickEffect(Button)
-                
-                -- ANTI-LOGGER: Buton tıklamasını koru
-                if antiLoggerEnabled then
-                    -- Debug hook'larını devre dışı bırak
-                    local originalDebug = debug
-                    local oldHook = debug.sethook
-                    debug.sethook = function() end
-                    
-                    -- Çağrıyı yap
-                    if callback then
-                        local success, result = pcall(callback)
-                        if not success then
-                            warn("Button callback error:", result)
-                        end
-                    end
-                    
-                    -- Debug hook'larını geri yükle
-                    debug.sethook = oldHook
-                else
-                    if callback then
-                        callback()
-                    end
+                if callback then
+                    callback()
                 end
-            end)
+            end))
             
             return Button
         end
@@ -726,14 +758,8 @@ function OxireunUI:NewWindow(title)
                 }):Play()
             end)
             
-            ToggleButton.MouseButton1Click:Connect(function()
+            ToggleButton.MouseButton1Click:Connect(CreateProtectedCallback(function()
                 CreateClickEffect(ToggleButton)
-                
-                -- ANTI-LOGGER: Toggle tıklamasını koru
-                if antiLoggerEnabled then
-                    debug.sethook(function() end, "", 0)
-                end
-                
                 state = not state
                 local targetPos = state and 21 or 2
                 game:GetService("TweenService"):Create(ToggleCircle, TweenInfo.new(0.2), {
@@ -746,11 +772,7 @@ function OxireunUI:NewWindow(title)
                 if callback then
                     callback(state)
                 end
-                
-                if antiLoggerEnabled then
-                    debug.sethook()
-                end
-            end)
+            end))
             
             return Toggle
         end
@@ -811,18 +833,11 @@ function OxireunUI:NewWindow(title)
             
             SliderButton.MouseButton1Down:Connect(function()
                 draggingSlider = true
-                if antiLoggerEnabled then
-                    debug.sethook(function() end, "", 0)
-                end
             end)
             
-            SliderTrack.InputBegan:Connect(function(input)
+            SliderTrack.InputBegan:Connect(CreateProtectedCallback(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     draggingSlider = true
-                    if antiLoggerEnabled then
-                        debug.sethook(function() end, "", 0)
-                    end
-                    
                     local pos = UDim2.new(
                         math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
                         -8,
@@ -837,18 +852,15 @@ function OxireunUI:NewWindow(title)
                         callback(value)
                     end
                 end
-            end)
+            end))
             
-            game:GetService("UserInputService").InputEnded:Connect(function(input)
+            game:GetService("UserInputService").InputEnded:Connect(CreateProtectedCallback(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     draggingSlider = false
-                    if antiLoggerEnabled then
-                        debug.sethook()
-                    end
                 end
-            end)
+            end))
             
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
+            game:GetService("UserInputService").InputChanged:Connect(CreateProtectedCallback(function(input)
                 if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     local pos = UDim2.new(
                         math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1),
@@ -864,7 +876,7 @@ function OxireunUI:NewWindow(title)
                         callback(value)
                     end
                 end
-            end)
+            end))
             
             return Slider
         end
@@ -917,19 +929,11 @@ function OxireunUI:NewWindow(title)
                 activeDropdowns[OptionsContainer] = nil
             end
             
-            DropdownButton.MouseButton1Click:Connect(function()
+            DropdownButton.MouseButton1Click:Connect(CreateProtectedCallback(function()
                 CreateClickEffect(DropdownButton)
-                
-                -- ANTI-LOGGER: Dropdown tıklamasını koru
-                if antiLoggerEnabled then
-                    debug.sethook(function() end, "", 0)
-                end
                 
                 if open then
                     CloseOptions()
-                    if antiLoggerEnabled then
-                        debug.sethook()
-                    end
                     return
                 end
                 
@@ -979,7 +983,7 @@ function OxireunUI:NewWindow(title)
                         OptionButton.BackgroundColor3 = Colors.Button
                     end)
                     
-                    OptionButton.MouseButton1Click:Connect(function()
+                    OptionButton.MouseButton1Click:Connect(CreateProtectedCallback(function()
                         CreateClickEffect(OptionButton)
                         DropdownButton.Text = option
                         if callback then
@@ -987,10 +991,7 @@ function OxireunUI:NewWindow(title)
                         end
                         CloseOptions()
                         OptionsScreenGui:Destroy()
-                        if antiLoggerEnabled then
-                            debug.sethook()
-                        end
-                    end)
+                    end))
                 end
                 
                 activeDropdowns[OptionsContainer] = true
@@ -1028,15 +1029,12 @@ function OxireunUI:NewWindow(title)
                             end
                             CloseOptions()
                             OptionsScreenGui:Destroy()
-                            if antiLoggerEnabled then
-                                debug.sethook()
-                            end
                         end
                     end
                 end
                 
                 UserInputService.InputBegan:Connect(checkClickOutside)
-            end)
+            end))
             
             return Dropdown
         end
@@ -1066,11 +1064,11 @@ function OxireunUI:NewWindow(title)
             inputCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             inputCorner.Parent = InputBox
             
-            InputBox.FocusLost:Connect(function()
+            InputBox.FocusLost:Connect(CreateProtectedCallback(function()
                 if callback then
                     callback(InputBox.Text)
                 end
-            end)
+            end))
             
             return Textbox
         end
@@ -1078,6 +1076,14 @@ function OxireunUI:NewWindow(title)
         table.insert(Window.Sections, Section)
         return Section
     end
+    
+    -- UI BAŞARIYLA OLUŞTURULDU MESAJI (Anti-logger koruması aktif)
+    spawn(function()
+        wait(0.5)
+        if game.CoreGui:FindFirstChild("OxireunUI") then
+            print("[OxireunUI] Başarıyla yüklendi - Anti-logger koruması aktif")
+        end
+    end)
     
     -- Pencereyi parent'e ekle
     ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
