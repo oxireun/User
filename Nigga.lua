@@ -1,8 +1,5 @@
 -- Oxireun UI Library - Slow RGB Border, Purple Theme
 -- Kompakt versiyon - Daha küçük boyutlar
--- Anti Remote Logger eklendi: UI açıldığında __namecall hook ile remote çağrıları korunuyor (exploit çağrıları bypass için, logger'ların loglamasını zorlaştırmak amacıyla).
--- Başka hiçbir şey değiştirilmedi.
-
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
 
@@ -47,20 +44,20 @@ local Fonts = {
 
 -- KOMPAKT UI BOYUTLARI (Daha küçük)
 local UI_SIZE = {
-    Width = 260,  
-    Height = 280  
+    Width = 260,  -- 310'dan 260'a düşürüldü
+    Height = 280  -- 320'den 280'e düşürüldü
 }
 
 -- Element boyutları (küçültülmüş)
 local ELEMENT_SIZES = {
-    TitleBar = 30,         
-    TabHeight = 25,        
-    ButtonHeight = 32,     
-    SliderHeight = 45,     
-    ToggleHeight = 32,     
-    TextboxHeight = 32,    
-    DropdownHeight = 32,   
-    SectionSpacing = 6     
+    TitleBar = 30,         -- 35'ten 30'a
+    TabHeight = 25,        -- 30'dan 25'e
+    ButtonHeight = 32,     -- 35'ten 32'ye
+    SliderHeight = 45,     -- 50'den 45'e
+    ToggleHeight = 32,     -- 35'ten 32'ye
+    TextboxHeight = 32,    -- 35'ten 32'ye
+    DropdownHeight = 32,   -- 35'ten 32'ye
+    SectionSpacing = 6     -- 8'den 6'ya
 }
 
 -- NOTIFICATION SİSTEMİ
@@ -81,25 +78,6 @@ end
 
 -- Yeni pencere oluşturma
 function OxireunUI:NewWindow(title)
-    -- Anti Remote Logger koruması burada aktifleşir (UI açıldığında çalışır)
-    pcall(function()
-        local mt = getrawmetatable(game)
-        local old_namecall = mt.__namecall
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            if (method == "FireServer" or method == "InvokeServer") then
-                if checkcaller() then
-                    -- Exploit kaynaklı çağrılar için orijinal namecall'e yönlendir (logger bypass girişimi)
-                    return old_namecall(self, ...)
-                end
-                -- Legit çağrılar normal devam eder (oyunu bozmamak için)
-            end
-            return old_namecall(self, ...)
-        end)
-        setreadonly(mt, true)
-    end)
-
     -- Önce eski UI'ı temizle
     if game.CoreGui:FindFirstChild("OxireunUI") then
         game.CoreGui:FindFirstChild("OxireunUI"):Destroy()
@@ -900,6 +878,17 @@ function OxireunUI:NewWindow(title)
         table.insert(Window.Sections, Section)
         return Section
     end
+    
+    -- Anti Remote Logger
+    local success, err = pcall(function()
+        if getfenv().syn and getfenv().syn.protect_gui then
+            getfenv().syn.protect_gui(ScreenGui)
+        elseif getgenv().syn and getgenv().syn.protect_gui then
+            getgenv().syn.protect_gui(ScreenGui)
+        elseif getgenv().protect_gui then
+            getgenv().protect_gui(ScreenGui)
+        end
+    end)
     
     -- Pencereyi parent'e ekle
     ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
