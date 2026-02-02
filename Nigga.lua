@@ -1,5 +1,6 @@
 -- Oxireun UI Library - Slow RGB Border, Purple Theme
 -- Kompakt versiyon - Daha küçük boyutlar
+-- Anti Remote Logger eklendi: UI açıldığında bilinen remote logger/spy GUI'lerini kapatır ve sürekli kontrol eder (SimpleSpy, Hydroxide vb. gibi araçları bozar)
 local OxireunUI = {}
 OxireunUI.__index = OxireunUI
 
@@ -44,20 +45,20 @@ local Fonts = {
 
 -- KOMPAKT UI BOYUTLARI (Daha küçük)
 local UI_SIZE = {
-    Width = 260,  
-    Height = 280  
+    Width = 260,  -- 310'dan 260'a düşürüldü
+    Height = 280  -- 320'den 280'e düşürüldü
 }
 
 -- Element boyutları (küçültülmüş)
 local ELEMENT_SIZES = {
-    TitleBar = 30,         
-    TabHeight = 25,        
-    ButtonHeight = 32,     
-    SliderHeight = 45,     
-    ToggleHeight = 32,     
-    TextboxHeight = 32,    
-    DropdownHeight = 32,   
-    SectionSpacing = 6     
+    TitleBar = 30,         -- 35'ten 30'a
+    TabHeight = 25,        -- 30'dan 25'e
+    ButtonHeight = 32,     -- 35'ten 32'ye
+    SliderHeight = 45,     -- 50'den 45'e
+    ToggleHeight = 32,     -- 35'ten 32'ye
+    TextboxHeight = 32,    -- 35'ten 32'ye
+    DropdownHeight = 32,   -- 35'ten 32'ye
+    SectionSpacing = 6     -- 8'den 6'ya
 }
 
 -- NOTIFICATION SİSTEMİ
@@ -98,11 +99,41 @@ function OxireunUI:NewWindow(title)
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
+    -- Anti Remote Logger Protection - UI açıldığında aktif olur
+    local function disableRemoteSpies()
+        local keywords = {"SimpleSpy", "Spy", "Hydroxide", "RemoteSpy", "Logger", "Cobalt"}
+        for _, container in pairs({game:GetService("CoreGui"), game.Players.LocalPlayer:WaitForChild("PlayerGui")}) do
+            for _, child in pairs(container:GetChildren()) do
+                if child:IsA("ScreenGui") or child:IsA("ScreenGui") then
+                    local nameLower = child.Name:lower()
+                    for _, kw in pairs(keywords) do
+                        if nameLower:find(kw:lower()) then
+                            child:Destroy()
+                            OxireunUI:SendNotification("Anti Logger", "Remote logger/spy GUI kapatıldı: " .. child.Name, 3)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- İlk çalıştırma
+    disableRemoteSpies()
+    OxireunUI:SendNotification("Oxireun UI", "Anti Remote Logger Protection Aktif - Loggerlar sikiliyor", 5)
+    
+    -- Sürekli kontrol (her 0.5 saniyede bir)
+    spawn(function()
+        while true do
+            disableRemoteSpies()
+            wait(0.5)
+        end
+    end)
+    
     -- Ana pencere
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
     MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
-    MainFrame.Position = UDim2.new(0, 10, 0.5, -UI_SIZE.Height/2)  
+    MainFrame.Position = UDim2.new(0, 10, 0.5, -UI_SIZE.Height/2)  -- Daha sola
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -111,14 +142,14 @@ function OxireunUI:NewWindow(title)
     
     -- Köşe yuvarlatma
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)  
+    corner.CornerRadius = UDim.new(0, 8)  -- Daha küçük köşe
     corner.Parent = MainFrame
     
     -- YAVAŞ ANİMASYONLU RGB BORDER
     local rgbBorder = Instance.new("UIStroke")
     rgbBorder.Name = "RGBBorder"
     rgbBorder.Color = RGBColors[1]
-    rgbBorder.Thickness = 2  
+    rgbBorder.Thickness = 2  -- 3'ten 2'ye düşürüldü
     rgbBorder.Transparency = 0
     rgbBorder.Parent = MainFrame
     
@@ -152,11 +183,11 @@ function OxireunUI:NewWindow(title)
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 8, 0, 0)  
+    TitleLabel.Position = UDim2.new(0, 8, 0, 0)  -- Padding azaltıldı
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 14  
+    TitleLabel.TextSize = 14  -- 17'den 14'e düşürüldü
     TitleLabel.Font = Fonts.Bold
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
@@ -164,20 +195,20 @@ function OxireunUI:NewWindow(title)
     -- Kontrol butonları
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 40, 1, 0)  
-    Controls.Position = UDim2.new(1, -45, 0, 0)  
+    Controls.Size = UDim2.new(0, 40, 1, 0)  -- 50'den 40'a düşürüldü
+    Controls.Position = UDim2.new(1, -45, 0, 0)  -- -55'ten -45'e
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
     -- Küçültme butonu
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
-    MinimizeButton.Size = UDim2.new(0, 18, 0, 18)  
+    MinimizeButton.Size = UDim2.new(0, 18, 0, 18)  -- 20'den 18'e düşürüldü
     MinimizeButton.Position = UDim2.new(0, 0, 0.5, -9)
     MinimizeButton.BackgroundColor3 = Colors.ControlButton
     MinimizeButton.Text = "-"
     MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 16  
+    MinimizeButton.TextSize = 16  -- 18'den 16'ya düşürüldü
     MinimizeButton.Font = Fonts.Bold
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
@@ -189,12 +220,12 @@ function OxireunUI:NewWindow(title)
     -- Kapatma butonu
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
-    CloseButton.Size = UDim2.new(0, 18, 0, 18)  
-    CloseButton.Position = UDim2.new(0, 22, 0.5, -9)  
+    CloseButton.Size = UDim2.new(0, 18, 0, 18)  -- 20'den 18'e düşürüldü
+    CloseButton.Position = UDim2.new(0, 22, 0.5, -9)  -- 25'ten 22'ye
     CloseButton.BackgroundColor3 = Colors.CloseButton
     CloseButton.Text = ">"
     CloseButton.TextColor3 = Colors.Text
-    CloseButton.TextSize = 14  
+    CloseButton.TextSize = 14  -- 16'dan 14'e düşürüldü
     CloseButton.Font = Fonts.Bold
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
@@ -206,11 +237,11 @@ function OxireunUI:NewWindow(title)
     -- Tab'ler için yatay scrolling frame
     local TabsScrollFrame = Instance.new("ScrollingFrame")
     TabsScrollFrame.Name = "TabsScroll"
-    TabsScrollFrame.Size = UDim2.new(1, -16, 0, ELEMENT_SIZES.TabHeight)  
-    TabsScrollFrame.Position = UDim2.new(0, 8, 0, ELEMENT_SIZES.TitleBar + 5)  
+    TabsScrollFrame.Size = UDim2.new(1, -16, 0, ELEMENT_SIZES.TabHeight)  -- -20'den -16'ya
+    TabsScrollFrame.Position = UDim2.new(0, 8, 0, ELEMENT_SIZES.TitleBar + 5)  -- 40'tan 35'e
     TabsScrollFrame.BackgroundTransparency = 1
     TabsScrollFrame.BorderSizePixel = 0
-    TabsScrollFrame.ScrollBarThickness = 3  
+    TabsScrollFrame.ScrollBarThickness = 3  -- 4'ten 3'e düşürüldü
     TabsScrollFrame.ScrollBarImageColor3 = Colors.Border
     TabsScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.X
     TabsScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
@@ -224,7 +255,7 @@ function OxireunUI:NewWindow(title)
     
     local TabsList = Instance.new("UIListLayout")
     TabsList.FillDirection = Enum.FillDirection.Horizontal
-    TabsList.Padding = UDim.new(0, 4)  
+    TabsList.Padding = UDim.new(0, 4)  -- 5'ten 4'e düşürüldü
     TabsList.SortOrder = Enum.SortOrder.LayoutOrder
     TabsList.Parent = TabsContainer
     
@@ -396,18 +427,18 @@ function OxireunUI:NewWindow(title)
         -- Tab butonu oluştur
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name .. "_Tab"
-        TabButton.Size = UDim2.new(0, 65, 0, 22)  
+        TabButton.Size = UDim2.new(0, 65, 0, 22)  -- 70x25'ten 65x22'ye
         TabButton.BackgroundColor3 = Colors.TabInactive
         TabButton.Text = name
         TabButton.TextColor3 = Colors.Text
-        TabButton.TextSize = 11  
+        TabButton.TextSize = 11  -- 12'den 11'e düşürüldü
         TabButton.Font = Fonts.Bold
         TabButton.AutoButtonColor = false
         TabButton.LayoutOrder = #Window.Sections + 1
         TabButton.Parent = TabsContainer
         
         local tabCorner = Instance.new("UICorner")
-        tabCorner.CornerRadius = UDim.new(0, 5)  
+        tabCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
         tabCorner.Parent = TabButton
         
         SetupButtonHover(TabButton, false)
@@ -419,7 +450,7 @@ function OxireunUI:NewWindow(title)
         SectionFrame.BackgroundColor3 = Colors.SectionBg
         SectionFrame.BackgroundTransparency = 0
         SectionFrame.BorderSizePixel = 0
-        SectionFrame.ScrollBarThickness = 3  
+        SectionFrame.ScrollBarThickness = 3  -- 4'ten 3'e
         SectionFrame.ScrollBarImageColor3 = Colors.Border
         SectionFrame.Visible = false
         SectionFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -427,7 +458,7 @@ function OxireunUI:NewWindow(title)
         SectionFrame.Parent = ContentArea
         
         local sectionCorner = Instance.new("UICorner")
-        sectionCorner.CornerRadius = UDim.new(0, 6)  
+        sectionCorner.CornerRadius = UDim.new(0, 6)  -- 8'den 6'ya
         sectionCorner.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
@@ -436,10 +467,10 @@ function OxireunUI:NewWindow(title)
         sectionList.Parent = SectionFrame
         
         local sectionPadding = Instance.new("UIPadding")
-        sectionPadding.PaddingTop = UDim.new(0, 6)  
-        sectionPadding.PaddingBottom = UDim.new(0, 6)  
-        sectionPadding.PaddingLeft = UDim.new(0, 6)  
-        sectionPadding.PaddingRight = UDim.new(0, 6)  
+        sectionPadding.PaddingTop = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingBottom = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingLeft = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingRight = UDim.new(0, 6)  -- 8'den 6'ya
         sectionPadding.Parent = SectionFrame
         
         -- Canvas size güncelleme
@@ -482,14 +513,14 @@ function OxireunUI:NewWindow(title)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
             Button.TextColor3 = Colors.Text
-            Button.TextSize = 13  
+            Button.TextSize = 13  -- 14'ten 13'e
             Button.Font = Fonts.Bold
             Button.AutoButtonColor = false
             Button.LayoutOrder = #SectionFrame:GetChildren()
             Button.Parent = SectionFrame
             
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 5)  
+            btnCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             btnCorner.Parent = Button
             
             SetupButtonHover(Button, false)
@@ -517,15 +548,15 @@ function OxireunUI:NewWindow(title)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
-            ToggleLabel.TextSize = 13  
+            ToggleLabel.TextSize = 13  -- 14'ten 13'e
             ToggleLabel.Font = Fonts.Bold
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
             
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "Toggle"
-            ToggleButton.Size = UDim2.new(0, 40, 0, 20)  
-            ToggleButton.Position = UDim2.new(1, -42, 0.5, -10)  
+            ToggleButton.Size = UDim2.new(0, 40, 0, 20)  -- 45x22'den 40x20'ye
+            ToggleButton.Position = UDim2.new(1, -42, 0.5, -10)  -- -50'den -42'ye
             ToggleButton.BackgroundColor3 = default and Colors.ToggleOn or Colors.ToggleOff
             ToggleButton.Text = ""
             ToggleButton.AutoButtonColor = false
@@ -537,8 +568,8 @@ function OxireunUI:NewWindow(title)
             
             local ToggleCircle = Instance.new("Frame")
             ToggleCircle.Name = "Circle"
-            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)  
-            ToggleCircle.Position = UDim2.new(0, default and 21 or 2, 0.5, -8)  
+            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)  -- 18'den 16'ya
+            ToggleCircle.Position = UDim2.new(0, default and 21 or 2, 0.5, -8)  -- 24'ten 21'e
             ToggleCircle.BackgroundColor3 = Colors.Text
             ToggleCircle.Parent = ToggleButton
             
@@ -588,19 +619,19 @@ function OxireunUI:NewWindow(title)
             Slider.Parent = SectionFrame
             
             local SliderLabel = Instance.new("TextLabel")
-            SliderLabel.Size = UDim2.new(1, 0, 0, 18)  
+            SliderLabel.Size = UDim2.new(1, 0, 0, 18)  -- 20'den 18'e
             SliderLabel.BackgroundTransparency = 1
             SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
-            SliderLabel.TextSize = 13  
+            SliderLabel.TextSize = 13  -- 14'ten 13'e
             SliderLabel.Font = Fonts.Bold
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
             
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "Track"
-            SliderTrack.Size = UDim2.new(0, 230, 0, 4)  
-            SliderTrack.Position = UDim2.new(0, 0, 0, 22)  
+            SliderTrack.Size = UDim2.new(0, 230, 0, 4)  -- 270x5'ten 230x4'e
+            SliderTrack.Position = UDim2.new(0, 0, 0, 22)  -- 25'ten 22'ye
             SliderTrack.BackgroundColor3 = Colors.ToggleOff
             SliderTrack.Parent = Slider
             
@@ -620,8 +651,8 @@ function OxireunUI:NewWindow(title)
             
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
-            SliderButton.Size = UDim2.new(0, 16, 0, 16)  
-            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8)  
+            SliderButton.Size = UDim2.new(0, 16, 0, 16)  -- 18'den 16'ya
+            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8)  -- -9'dan -8'e
             SliderButton.BackgroundColor3 = Colors.Text
             SliderButton.Text = ""
             SliderButton.AutoButtonColor = false
@@ -698,13 +729,13 @@ function OxireunUI:NewWindow(title)
             DropdownButton.BackgroundColor3 = Colors.Button
             DropdownButton.Text = options[default] or options[1] or "Select"
             DropdownButton.TextColor3 = Colors.Text
-            DropdownButton.TextSize = 13  
+            DropdownButton.TextSize = 13  -- 14'ten 13'e
             DropdownButton.Font = Fonts.Bold
             DropdownButton.AutoButtonColor = false
             DropdownButton.Parent = Dropdown
             
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 5)  
+            btnCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             btnCorner.Parent = DropdownButton
             
             DropdownButton.MouseEnter:Connect(function()
@@ -748,7 +779,7 @@ function OxireunUI:NewWindow(title)
                 
                 OptionsContainer = Instance.new("Frame")
                 OptionsContainer.Name = "OptionsContainer"
-                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 8)  
+                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 8)  -- 25'ten 22'ye
                 OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
                 OptionsContainer.BackgroundColor3 = Colors.SectionBg
                 OptionsContainer.BorderSizePixel = 0
@@ -756,25 +787,25 @@ function OxireunUI:NewWindow(title)
                 OptionsContainer.Parent = OptionsScreenGui
                 
                 local optionsCorner = Instance.new("UICorner")
-                optionsCorner.CornerRadius = UDim.new(0, 5)  
+                optionsCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
                 optionsCorner.Parent = OptionsContainer
                 
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
                     OptionButton.Name = option
-                    OptionButton.Size = UDim2.new(1, -8, 0, 20)  
-                    OptionButton.Position = UDim2.new(0, 4, 0, (i-1)*22 + 4)  
+                    OptionButton.Size = UDim2.new(1, -8, 0, 20)  -- -10 ve 22'den -8 ve 20'ye
+                    OptionButton.Position = UDim2.new(0, 4, 0, (i-1)*22 + 4)  -- 5'ten 4'e
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
                     OptionButton.TextColor3 = Colors.Text
-                    OptionButton.TextSize = 11  
+                    OptionButton.TextSize = 11  -- 12'den 11'e
                     OptionButton.Font = Fonts.Bold
                     OptionButton.AutoButtonColor = false
                     OptionButton.ZIndex = 101
                     OptionButton.Parent = OptionsContainer
                     
                     local optionCorner = Instance.new("UICorner")
-                    optionCorner.CornerRadius = UDim.new(0, 3)  
+                    optionCorner.CornerRadius = UDim.new(0, 3)  -- 4'ten 3'e
                     optionCorner.Parent = OptionButton
                     
                     OptionButton.MouseEnter:Connect(function()
@@ -857,13 +888,13 @@ function OxireunUI:NewWindow(title)
             InputBox.PlaceholderText = name
             InputBox.TextColor3 = Colors.Text
             InputBox.PlaceholderColor3 = Colors.Text
-            InputBox.TextSize = 13  
+            InputBox.TextSize = 13  -- 14'ten 13'e
             InputBox.Font = Fonts.Bold
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
             InputBox.Parent = Textbox
             
             local inputCorner = Instance.new("UICorner")
-            inputCorner.CornerRadius = UDim.new(0, 5)  
+            inputCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             inputCorner.Parent = InputBox
             
             InputBox.FocusLost:Connect(function()
@@ -885,52 +916,5 @@ function OxireunUI:NewWindow(title)
     return Window
 end
 
--- Library'yi döndür (yorum satırı yapıldı, örnek kullanım için)
--- return OxireunUI.new()
-
--- ÖRNEK KULLANIM - Anti Remote Logger eklendi
-local ui = OxireunUI.new()
-local window = ui:NewWindow("Oxireun Protected UI")
-
-local mainTab = window:NewSection("Ana")
-mainTab:CreateButton("Test Butonu", function()
-    ui:SendNotification("Test", "Buton çalıştı knk!", 3)
-end)
-
-local protectTab = window:NewSection("Anti Logger")
-protectTab:CreateToggle("Anti Remote Logger Aç/Kapa", false, function(state)
-    if state then
-        ui:SendNotification("Protect", "Anti Remote Logger AKTİF! Spy araçları engelleniyor.", 5)
-        
-        -- Spy GUI destroyer loop
-        spawn(function()
-            while state do
-                pcall(function()
-                    for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
-                        if obj:IsA("ScreenGui") and (obj.Name == "SimpleSpy" or obj.Name == "RemoteSpy" or obj.Name:lower():find("spy") or obj.Name:lower():find("logger")) then
-                            obj:Destroy()
-                        end
-                    end
-                end)
-                wait(0.3)
-            end
-        end)
-        
-        -- Ekstra: Anti Kick hook (birçok spy ile birlikte gelir)
-        if hookmetamethod then
-            pcall(function()
-                local oldNamecall
-                oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-                    if getnamecallmethod() == "Kick" then
-                        return -- Kick'i engelle
-                    end
-                    return oldNamecall(self, ...)
-                end)
-            end)
-        end
-    else
-        ui:SendNotification("Protect", "Anti Remote Logger KAPATILDI.", 5)
-    end
-end)
-
--- Script çalışınca UI açılır
+-- Library'yi döndür
+return OxireunUI.new()
