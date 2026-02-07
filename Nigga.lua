@@ -1,28 +1,281 @@
--- [[ OXIREUN REMOTE PROTECTION LAYER ]] --
-local original_FireServer = Instance.new("RemoteEvent").FireServer
-local original_InvokeServer = Instance.new("RemoteFunction").InvokeServer
-
--- Logger'ların tespit etmesini zorlaştırmak için ortamı temizle
-local function SecureCall(remote, ...)
-    if typeof(remote) == "Instance" then
-        if remote:IsA("RemoteEvent") then
-            return original_FireServer(remote, ...)
-        elseif remote:IsA("RemoteFunction") then
-            return original_InvokeServer(remote, ...)
+-- Anti Remote Logger Protection System
+-- Bu sistem hydroxide, remotespy, simple spy gibi araçların remoteları tespit etmesini engeller
+local function ApplyAntiLoggerProtection()
+    local protectionActive = false
+    
+    local function SecureRemoteSystem()
+        if protectionActive then return end
+        
+        -- Orijinal fonksiyonları sakla
+        local originalFireServer
+        local originalInvokeServer
+        local originalGetService = game.GetService
+        local originalWaitForChild = game.WaitForChild
+        local originalFindFirstChild = game.FindFirstChild
+        local originalGetChildren = game.GetChildren
+        
+        -- Rastgele string generator
+        local function GenerateRandomString(length)
+            local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            local random = Random.new()
+            local result = ""
+            
+            for i = 1, length do
+                local index = random:NextInteger(1, #chars)
+                result = result .. string.sub(chars, index, index)
+            end
+            
+            return result
         end
+        
+        -- Hooklanmış remotes listesi
+        local HookedRemotes = {}
+        local SecureRemotes = {}
+        
+        -- Remote'u güvenli hale getir
+        local function SecureRemote(remote)
+            if HookedRemotes[remote] then 
+                return HookedRemotes[remote] 
+            end
+            
+            local secureId = GenerateRandomString(12)
+            local isRemoteEvent = remote:IsA("RemoteEvent")
+            local isRemoteFunction = remote:IsA("RemoteFunction")
+            
+            local secureWrapper = {
+                _realRemote = remote,
+                _secureId = secureId,
+                _type = isRemoteEvent and "RemoteEvent" or "RemoteFunction",
+                _hooked = true
+            }
+            
+            setmetatable(secureWrapper, {
+                __index = function(self, key)
+                    if key == "FireServer" and isRemoteEvent then
+                        return function(...)
+                            if originalFireServer then
+                                originalFireServer(self._realRemote, ...)
+                            else
+                                self._realRemote:FireServer(...)
+                            end
+                        end
+                    elseif key == "InvokeServer" and isRemoteFunction then
+                        return function(...)
+                            if originalInvokeServer then
+                                return originalInvokeServer(self._realRemote, ...)
+                            else
+                                return self._realRemote:InvokeServer(...)
+                            end
+                        end
+                    else
+                        return self._realRemote[key]
+                    end
+                end,
+                
+                __newindex = function(self, key, value)
+                    self._realRemote[key] = value
+                end,
+                
+                __tostring = function(self)
+                    return string.format("Secure%s [%s]", self._type, self._secureId)
+                end
+            })
+            
+            HookedRemotes[remote] = secureWrapper
+            SecureRemotes[secureWrapper] = true
+            
+            return secureWrapper
+        end
+        
+        -- GetService'i hookla
+        game.GetService = function(self, serviceName)
+            local service = originalGetService(self, serviceName)
+            
+            if serviceName == "ReplicatedStorage" or serviceName == "Workspace" or 
+               serviceName == "Players" or serviceName == "Lighting" then
+                
+                local serviceMt = getmetatable(service)
+                if not serviceMt then
+                    serviceMt = {}
+                    setmetatable(service, serviceMt)
+                end
+                
+                local originalIndex = serviceMt.__index or function(tbl, key)
+                    return rawget(tbl, key)
+                end
+                
+                serviceMt.__index = function(tbl, key)
+                    local result = originalIndex(tbl, key)
+                    
+                    if result and (result:IsA("RemoteEvent") or result:IsA("RemoteFunction")) then
+                        return SecureRemote(result)
+                    end
+                    
+                    return result
+                end
+            end
+            
+            return service
+        end
+        
+        -- WaitForChild'i hookla
+        game.WaitForChild = function(self, childName, timeout)
+            local child = originalWaitForChild(self, childName, timeout)
+            
+            if child and (child:IsA("RemoteEvent") or child:IsA("RemoteFunction")) then
+                return SecureRemote(child)
+            end
+            
+            return child
+        end
+        
+        -- FindFirstChild'i hookla
+        game.FindFirstChild = function(self, childName, recursive)
+            local child = originalFindFirstChild(self, childName, recursive)
+            
+            if child and (child:IsA("RemoteEvent") or child:IsA("RemoteFunction")) then
+                return SecureRemote(child)
+            end
+            
+            return child
+        end
+        
+        -- GetChildren'i hookla
+        game.GetChildren = function(self)
+            local children = originalGetChildren(self)
+            local securedChildren = {}
+            
+            for _, child in ipairs(children) do
+                if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
+                    table.insert(securedChildren, SecureRemote(child))
+                else
+                    table.insert(securedChildren, child)
+                end
+            end
+            
+            return securedChildren
+        end
+        
+        -- RemoteEvent ve RemoteFunction metatables'ını hookla
+        local function HookRemoteMetatables()
+            local remoteEvent = game:GetService("ReplicatedStorage"):FindFirstChildWhichIsA("RemoteEvent")
+            if remoteEvent then
+                local remoteMt = getmetatable(remoteEvent)
+                if remoteMt and not originalFireServer then
+                    originalFireServer = remoteMt.__namecall
+                    
+                    remoteMt.__namecall = function(self, ...)
+                        local method = getnamecallmethod()
+                        
+                        if method == "FireServer" then
+                            if HookedRemotes[self] then
+                                return HookedRemotes[self]._realRemote:FireServer(...)
+                            end
+                            -- Rastgele micro delay ekle
+                            task.wait(math.random() * 0.0005)
+                        elseif method == "InvokeServer" then
+                            if HookedRemotes[self] then
+                                return HookedRemotes[self]._realRemote:InvokeServer(...)
+                            end
+                            task.wait(math.random() * 0.0005)
+                        end
+                        
+                        if originalFireServer then
+                            return originalFireServer(self, ...)
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- Debug protection
+        local debug = debug
+        local originalDebugGetInfo = debug.getinfo
+        
+        if originalDebugGetInfo then
+            debug.getinfo = function(func, ...)
+                local info = originalDebugGetInfo(func, ...)
+                
+                if info and info.source then
+                    local source = tostring(info.source)
+                    if source:find("oxireun", 1, true) or 
+                       source:find("remote", 1, true) or 
+                       source:find("protection", 1, true) then
+                        info.source = "@[Protected Script]"
+                        info.short_src = "[Protected]"
+                    end
+                end
+                
+                return info
+            end
+        end
+        
+        -- Sürekli tarama
+        task.spawn(function()
+            while true do
+                task.wait(2.5)
+                
+                local containers = {
+                    game:GetService("ReplicatedStorage"),
+                    game:GetService("Workspace"),
+                    game:GetService("Players")
+                }
+                
+                for _, container in ipairs(containers) do
+                    local function scan(obj)
+                        for _, child in ipairs(container:GetChildren()) do
+                            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
+                                SecureRemote(child)
+                            end
+                            
+                            if #child:GetChildren() > 0 then
+                                scan(child)
+                            end
+                        end
+                    end
+                    
+                    pcall(scan, container)
+                end
+            end
+        end)
+        
+        -- Başlangıçta hook'ları uygula
+        task.delay(0.5, function()
+            pcall(HookRemoteMetatables)
+            
+            -- UI remotes'larını da koru
+            local ui = game:GetService("CoreGui"):FindFirstChild("OxireunUI")
+            if ui then
+                SecureRemote(ui)
+            end
+        end)
+        
+        protectionActive = true
+        return true
     end
+    
+    -- Protection'ı uygula
+    local success, err = pcall(SecureRemoteSystem)
+    if not success then
+        warn("Anti-Logger Protection Error:", err)
+        -- Fallback: En azından basic protection
+        local originalNamecall
+        originalNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            if method == "FireServer" or method == "InvokeServer" then
+                if self:IsA("RemoteEvent") or self:IsA("RemoteFunction") then
+                    task.wait(math.random() * 0.001)
+                end
+            end
+            return originalNamecall(self, ...)
+        end)
+    end
+    
+    return true
 end
 
--- Global koruma: Logger'lar metatable üzerinden izleme yaparsa engelle
-local mt = getrawmetatable(game)
-if setreadonly then setreadonly(mt, false) end
-local old_namecall = mt.__namecall
-
-if setupvalue and getrenv then
-    -- Bazı gelişmiş logger'ların (Hydroxide gibi) kullandığı tabloları yanıltma denemesi
-    -- Bu kısım exploit'in yetkisine göre çalışır.
-end
--- [[ END OF PROTECTION LAYER ]] --
+-- Anti-logger protection'ı başlat
+ApplyAntiLoggerProtection()
 
 -- Oxireun UI Library - Slow RGB Border, Purple Theme
 -- Kompakt versiyon - Daha küçük boyutlar
@@ -70,20 +323,20 @@ local Fonts = {
 
 -- KOMPAKT UI BOYUTLARI (Daha küçük)
 local UI_SIZE = {
-    Width = 260,
-    Height = 280
+    Width = 260,  -- 310'dan 260'a düşürüldü
+    Height = 280  -- 320'den 280'e düşürüldü
 }
 
 -- Element boyutları (küçültülmüş)
 local ELEMENT_SIZES = {
-    TitleBar = 30,
-    TabHeight = 25,
-    ButtonHeight = 32,
-    SliderHeight = 45,
-    ToggleHeight = 32,
-    TextboxHeight = 32,
-    DropdownHeight = 32,
-    SectionSpacing = 6
+    TitleBar = 30,         -- 35'ten 30'a
+    TabHeight = 25,        -- 30'dan 25'e
+    ButtonHeight = 32,     -- 35'ten 32'ye
+    SliderHeight = 45,     -- 50'den 45'e
+    ToggleHeight = 32,     -- 35'ten 32'ye
+    TextboxHeight = 32,    -- 35'ten 32'ye
+    DropdownHeight = 32,   -- 35'ten 32'ye
+    SectionSpacing = 6     -- 8'den 6'ya
 }
 
 -- NOTIFICATION SİSTEMİ
@@ -128,7 +381,7 @@ function OxireunUI:NewWindow(title)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
     MainFrame.Size = UDim2.new(0, UI_SIZE.Width, 0, UI_SIZE.Height)
-    MainFrame.Position = UDim2.new(0, 10, 0.5, -UI_SIZE.Height/2)
+    MainFrame.Position = UDim2.new(0, 10, 0.5, -UI_SIZE.Height/2)  -- Daha sola
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -137,14 +390,14 @@ function OxireunUI:NewWindow(title)
     
     -- Köşe yuvarlatma
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
+    corner.CornerRadius = UDim.new(0, 8)  -- Daha küçük köşe
     corner.Parent = MainFrame
     
     -- YAVAŞ ANİMASYONLU RGB BORDER
     local rgbBorder = Instance.new("UIStroke")
     rgbBorder.Name = "RGBBorder"
     rgbBorder.Color = RGBColors[1]
-    rgbBorder.Thickness = 2
+    rgbBorder.Thickness = 2  -- 3'ten 2'ye düşürüldü
     rgbBorder.Transparency = 0
     rgbBorder.Parent = MainFrame
     
@@ -178,11 +431,11 @@ function OxireunUI:NewWindow(title)
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 8, 0, 0)
+    TitleLabel.Position = UDim2.new(0, 8, 0, 0)  -- Padding azaltıldı
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Window.Title
     TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 14
+    TitleLabel.TextSize = 14  -- 17'den 14'e düşürüldü
     TitleLabel.Font = Fonts.Bold
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
@@ -190,20 +443,20 @@ function OxireunUI:NewWindow(title)
     -- Kontrol butonları
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
-    Controls.Size = UDim2.new(0, 40, 1, 0)
-    Controls.Position = UDim2.new(1, -45, 0, 0)
+    Controls.Size = UDim2.new(0, 40, 1, 0)  -- 50'den 40'a düşürüldü
+    Controls.Position = UDim2.new(1, -45, 0, 0)  -- -55'ten -45'e
     Controls.BackgroundTransparency = 1
     Controls.Parent = TitleBar
     
     -- Küçültme butonu
     local MinimizeButton = Instance.new("TextButton")
     MinimizeButton.Name = "Minimize"
-    MinimizeButton.Size = UDim2.new(0, 18, 0, 18)
+    MinimizeButton.Size = UDim2.new(0, 18, 0, 18)  -- 20'den 18'e düşürüldü
     MinimizeButton.Position = UDim2.new(0, 0, 0.5, -9)
     MinimizeButton.BackgroundColor3 = Colors.ControlButton
     MinimizeButton.Text = "-"
     MinimizeButton.TextColor3 = Colors.Text
-    MinimizeButton.TextSize = 16
+    MinimizeButton.TextSize = 16  -- 18'den 16'ya düşürüldü
     MinimizeButton.Font = Fonts.Bold
     MinimizeButton.AutoButtonColor = false
     MinimizeButton.Parent = Controls
@@ -215,12 +468,12 @@ function OxireunUI:NewWindow(title)
     -- Kapatma butonu
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "Close"
-    CloseButton.Size = UDim2.new(0, 18, 0, 18)
-    CloseButton.Position = UDim2.new(0, 22, 0.5, -9)
+    CloseButton.Size = UDim2.new(0, 18, 0, 18)  -- 20'den 18'e düşürüldü
+    CloseButton.Position = UDim2.new(0, 22, 0.5, -9)  -- 25'ten 22'ye
     CloseButton.BackgroundColor3 = Colors.CloseButton
     CloseButton.Text = ">"
     CloseButton.TextColor3 = Colors.Text
-    CloseButton.TextSize = 14
+    CloseButton.TextSize = 14  -- 16'dan 14'e düşürüldü
     CloseButton.Font = Fonts.Bold
     CloseButton.AutoButtonColor = false
     CloseButton.Parent = Controls
@@ -232,11 +485,11 @@ function OxireunUI:NewWindow(title)
     -- Tab'ler için yatay scrolling frame
     local TabsScrollFrame = Instance.new("ScrollingFrame")
     TabsScrollFrame.Name = "TabsScroll"
-    TabsScrollFrame.Size = UDim2.new(1, -16, 0, ELEMENT_SIZES.TabHeight)
-    TabsScrollFrame.Position = UDim2.new(0, 8, 0, ELEMENT_SIZES.TitleBar + 5)
+    TabsScrollFrame.Size = UDim2.new(1, -16, 0, ELEMENT_SIZES.TabHeight)  -- -20'den -16'ya
+    TabsScrollFrame.Position = UDim2.new(0, 8, 0, ELEMENT_SIZES.TitleBar + 5)  -- 40'tan 35'e
     TabsScrollFrame.BackgroundTransparency = 1
     TabsScrollFrame.BorderSizePixel = 0
-    TabsScrollFrame.ScrollBarThickness = 3
+    TabsScrollFrame.ScrollBarThickness = 3  -- 4'ten 3'e düşürüldü
     TabsScrollFrame.ScrollBarImageColor3 = Colors.Border
     TabsScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.X
     TabsScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
@@ -250,7 +503,7 @@ function OxireunUI:NewWindow(title)
     
     local TabsList = Instance.new("UIListLayout")
     TabsList.FillDirection = Enum.FillDirection.Horizontal
-    TabsList.Padding = UDim.new(0, 4)
+    TabsList.Padding = UDim.new(0, 4)  -- 5'ten 4'e düşürüldü
     TabsList.SortOrder = Enum.SortOrder.LayoutOrder
     TabsList.Parent = TabsContainer
     
@@ -422,18 +675,18 @@ function OxireunUI:NewWindow(title)
         -- Tab butonu oluştur
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name .. "_Tab"
-        TabButton.Size = UDim2.new(0, 65, 0, 22)
+        TabButton.Size = UDim2.new(0, 65, 0, 22)  -- 70x25'ten 65x22'ye
         TabButton.BackgroundColor3 = Colors.TabInactive
         TabButton.Text = name
         TabButton.TextColor3 = Colors.Text
-        TabButton.TextSize = 11
+        TabButton.TextSize = 11  -- 12'den 11'e düşürüldü
         TabButton.Font = Fonts.Bold
         TabButton.AutoButtonColor = false
         TabButton.LayoutOrder = #Window.Sections + 1
         TabButton.Parent = TabsContainer
         
         local tabCorner = Instance.new("UICorner")
-        tabCorner.CornerRadius = UDim.new(0, 5)
+        tabCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
         tabCorner.Parent = TabButton
         
         SetupButtonHover(TabButton, false)
@@ -445,7 +698,7 @@ function OxireunUI:NewWindow(title)
         SectionFrame.BackgroundColor3 = Colors.SectionBg
         SectionFrame.BackgroundTransparency = 0
         SectionFrame.BorderSizePixel = 0
-        SectionFrame.ScrollBarThickness = 3
+        SectionFrame.ScrollBarThickness = 3  -- 4'ten 3'e
         SectionFrame.ScrollBarImageColor3 = Colors.Border
         SectionFrame.Visible = false
         SectionFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -453,7 +706,7 @@ function OxireunUI:NewWindow(title)
         SectionFrame.Parent = ContentArea
         
         local sectionCorner = Instance.new("UICorner")
-        sectionCorner.CornerRadius = UDim.new(0, 6)
+        sectionCorner.CornerRadius = UDim.new(0, 6)  -- 8'den 6'ya
         sectionCorner.Parent = SectionFrame
         
         local sectionList = Instance.new("UIListLayout")
@@ -462,10 +715,10 @@ function OxireunUI:NewWindow(title)
         sectionList.Parent = SectionFrame
         
         local sectionPadding = Instance.new("UIPadding")
-        sectionPadding.PaddingTop = UDim.new(0, 6)
-        sectionPadding.PaddingBottom = UDim.new(0, 6)
-        sectionPadding.PaddingLeft = UDim.new(0, 6)
-        sectionPadding.PaddingRight = UDim.new(0, 6)
+        sectionPadding.PaddingTop = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingBottom = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingLeft = UDim.new(0, 6)  -- 8'den 6'ya
+        sectionPadding.PaddingRight = UDim.new(0, 6)  -- 8'den 6'ya
         sectionPadding.Parent = SectionFrame
         
         -- Canvas size güncelleme
@@ -508,14 +761,14 @@ function OxireunUI:NewWindow(title)
             Button.BackgroundColor3 = Colors.Button
             Button.Text = name
             Button.TextColor3 = Colors.Text
-            Button.TextSize = 13
+            Button.TextSize = 13  -- 14'ten 13'e
             Button.Font = Fonts.Bold
             Button.AutoButtonColor = false
             Button.LayoutOrder = #SectionFrame:GetChildren()
             Button.Parent = SectionFrame
             
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             btnCorner.Parent = Button
             
             SetupButtonHover(Button, false)
@@ -543,15 +796,15 @@ function OxireunUI:NewWindow(title)
             ToggleLabel.BackgroundTransparency = 1
             ToggleLabel.Text = name
             ToggleLabel.TextColor3 = Colors.Text
-            ToggleLabel.TextSize = 13
+            ToggleLabel.TextSize = 13  -- 14'ten 13'e
             ToggleLabel.Font = Fonts.Bold
             ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
             ToggleLabel.Parent = Toggle
             
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "Toggle"
-            ToggleButton.Size = UDim2.new(0, 40, 0, 20)
-            ToggleButton.Position = UDim2.new(1, -42, 0.5, -10)
+            ToggleButton.Size = UDim2.new(0, 40, 0, 20)  -- 45x22'den 40x20'ye
+            ToggleButton.Position = UDim2.new(1, -42, 0.5, -10)  -- -50'den -42'ye
             ToggleButton.BackgroundColor3 = default and Colors.ToggleOn or Colors.ToggleOff
             ToggleButton.Text = ""
             ToggleButton.AutoButtonColor = false
@@ -563,8 +816,8 @@ function OxireunUI:NewWindow(title)
             
             local ToggleCircle = Instance.new("Frame")
             ToggleCircle.Name = "Circle"
-            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)
-            ToggleCircle.Position = UDim2.new(0, default and 21 or 2, 0.5, -8)
+            ToggleCircle.Size = UDim2.new(0, 16, 0, 16)  -- 18'den 16'ya
+            ToggleCircle.Position = UDim2.new(0, default and 21 or 2, 0.5, -8)  -- 24'ten 21'e
             ToggleCircle.BackgroundColor3 = Colors.Text
             ToggleCircle.Parent = ToggleButton
             
@@ -614,19 +867,19 @@ function OxireunUI:NewWindow(title)
             Slider.Parent = SectionFrame
             
             local SliderLabel = Instance.new("TextLabel")
-            SliderLabel.Size = UDim2.new(1, 0, 0, 18)
+            SliderLabel.Size = UDim2.new(1, 0, 0, 18)  -- 20'den 18'e
             SliderLabel.BackgroundTransparency = 1
             SliderLabel.Text = name .. ": " .. default
             SliderLabel.TextColor3 = Colors.Text
-            SliderLabel.TextSize = 13
+            SliderLabel.TextSize = 13  -- 14'ten 13'e
             SliderLabel.Font = Fonts.Bold
             SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
             SliderLabel.Parent = Slider
             
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "Track"
-            SliderTrack.Size = UDim2.new(0, 230, 0, 4)
-            SliderTrack.Position = UDim2.new(0, 0, 0, 22)
+            SliderTrack.Size = UDim2.new(0, 230, 0, 4)  -- 270x5'ten 230x4'e
+            SliderTrack.Position = UDim2.new(0, 0, 0, 22)  -- 25'ten 22'ye
             SliderTrack.BackgroundColor3 = Colors.ToggleOff
             SliderTrack.Parent = Slider
             
@@ -646,8 +899,8 @@ function OxireunUI:NewWindow(title)
             
             local SliderButton = Instance.new("TextButton")
             SliderButton.Name = "SliderButton"
-            SliderButton.Size = UDim2.new(0, 16, 0, 16)
-            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8)
+            SliderButton.Size = UDim2.new(0, 16, 0, 16)  -- 18'den 16'ya
+            SliderButton.Position = UDim2.new(SliderFill.Size.X.Scale, -8, 0.5, -8)  -- -9'dan -8'e
             SliderButton.BackgroundColor3 = Colors.Text
             SliderButton.Text = ""
             SliderButton.AutoButtonColor = false
@@ -724,13 +977,13 @@ function OxireunUI:NewWindow(title)
             DropdownButton.BackgroundColor3 = Colors.Button
             DropdownButton.Text = options[default] or options[1] or "Select"
             DropdownButton.TextColor3 = Colors.Text
-            DropdownButton.TextSize = 13
+            DropdownButton.TextSize = 13  -- 14'ten 13'e
             DropdownButton.Font = Fonts.Bold
             DropdownButton.AutoButtonColor = false
             DropdownButton.Parent = Dropdown
             
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             btnCorner.Parent = DropdownButton
             
             DropdownButton.MouseEnter:Connect(function()
@@ -774,7 +1027,7 @@ function OxireunUI:NewWindow(title)
                 
                 OptionsContainer = Instance.new("Frame")
                 OptionsContainer.Name = "OptionsContainer"
-                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 8)
+                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 8)  -- 25'ten 22'ye
                 OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
                 OptionsContainer.BackgroundColor3 = Colors.SectionBg
                 OptionsContainer.BorderSizePixel = 0
@@ -782,25 +1035,25 @@ function OxireunUI:NewWindow(title)
                 OptionsContainer.Parent = OptionsScreenGui
                 
                 local optionsCorner = Instance.new("UICorner")
-                optionsCorner.CornerRadius = UDim.new(0, 5)
+                optionsCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
                 optionsCorner.Parent = OptionsContainer
                 
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
                     OptionButton.Name = option
-                    OptionButton.Size = UDim2.new(1, -8, 0, 20)
-                    OptionButton.Position = UDim2.new(0, 4, 0, (i-1)*22 + 4)
+                    OptionButton.Size = UDim2.new(1, -8, 0, 20)  -- -10 ve 22'den -8 ve 20'ye
+                    OptionButton.Position = UDim2.new(0, 4, 0, (i-1)*22 + 4)  -- 5'ten 4'e
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
                     OptionButton.TextColor3 = Colors.Text
-                    OptionButton.TextSize = 11
+                    OptionButton.TextSize = 11  -- 12'den 11'e
                     OptionButton.Font = Fonts.Bold
                     OptionButton.AutoButtonColor = false
                     OptionButton.ZIndex = 101
                     OptionButton.Parent = OptionsContainer
                     
                     local optionCorner = Instance.new("UICorner")
-                    optionCorner.CornerRadius = UDim.new(0, 3)
+                    optionCorner.CornerRadius = UDim.new(0, 3)  -- 4'ten 3'e
                     optionCorner.Parent = OptionButton
                     
                     OptionButton.MouseEnter:Connect(function()
@@ -883,13 +1136,13 @@ function OxireunUI:NewWindow(title)
             InputBox.PlaceholderText = name
             InputBox.TextColor3 = Colors.Text
             InputBox.PlaceholderColor3 = Colors.Text
-            InputBox.TextSize = 13
+            InputBox.TextSize = 13  -- 14'ten 13'e
             InputBox.Font = Fonts.Bold
             InputBox.TextXAlignment = Enum.TextXAlignment.Center
             InputBox.Parent = Textbox
             
             local inputCorner = Instance.new("UICorner")
-            inputCorner.CornerRadius = UDim.new(0, 5)
+            inputCorner.CornerRadius = UDim.new(0, 5)  -- 6'dan 5'e
             inputCorner.Parent = InputBox
             
             InputBox.FocusLost:Connect(function()
