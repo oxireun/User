@@ -1,4 +1,4 @@
--- Remote Detector V1 - Ultimate Speed & Stock Sort Edition
+-- Remote Detector op script 
 local P,lp=game:GetService("Players"),game:GetService("Players").LocalPlayer;local RS,CG,RnS,TS,TpS,VU,HS,MS,CPv=game:GetService("ReplicatedStorage"),game:GetService("CoreGui"),game:GetService("RunService"),game:GetService("TweenService"),game:GetService("TeleportService"),game:GetService("VirtualUser"),game:GetService("HttpService"),game:GetService("MarketplaceService"),game:GetService("ContentProvider")
 local sg=Instance.new("ScreenGui");sg.Name="RemoteDetector";sg.ResetOnSpawn=false;pcall(function()sg.Parent=CG end)if not sg.Parent then sg.Parent=lp:WaitForChild("PlayerGui")end
 local function AddS(p,c,t)local s=Instance.new("UIStroke");s.Color=c or Color3.fromRGB(60,60,65);s.Thickness=t or 1;s.LineJoinMode=Enum.LineJoinMode.Round;s.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;s.Parent=p;return s end
