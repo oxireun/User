@@ -5,31 +5,31 @@ content_copy
 expand_less
 # Oxireun UI Library
 
-Bu dokümantasyon **Oxireun UI Library**'nin kullanımı içindir.
+This documentation is for the stable release of the Oxireun UI Library.
 
-## Booting the Library (Kütüphaneyi Yükleme)
+## Booting the Library
 
-Kütüphaneyi scriptinize dahil etmek için aşağıdaki kodu kullanın:
+To load the library into your script, use the following code:
 
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/oxireun/User/refs/heads/main/Oxireunuilibrary.lua"))()
-Creating a Window (Pencere Oluşturma)
+Creating a Window
 
-Ana arayüz penceresini oluşturur.
+This function creates the main window for your script.
 
 code
 Lua
 download
 content_copy
 expand_less
-local Window = Library:NewWindow("Script")
+local Window = Library:NewWindow("Script Title")
 
 --[[
-Name = <string> - Pencerenin başlığı.
+Name = <string> - The title displayed on the UI window.
 ]]
-Creating a Section (Bölüm Oluşturma)
+Creating a Section
 
-Elementleri düzenli tutmak için pencerelerin altına bölümler ekleyebilirsiniz.
+Sections are used to group different elements within the window.
 
 code
 Lua
@@ -39,86 +39,86 @@ expand_less
 local MainSection = Window:NewSection("Main")
 
 --[[
-Name = <string> - Bölümün adı.
+Name = <string> - The name of the section.
 ]]
-UI Elements (Elementler)
-Creating a Button (Buton)
+UI Elements
+Creating a Button
 code
 Lua
 download
 content_copy
 expand_less
-MainSection:CreateButton("Buton Yazısı", function()
-    print("Butona basıldı!")
+MainSection:CreateButton("Button Name", function()
+    print("Button clicked!")
 end)
 
 --[[
-Name = <string> - Butonun üzerinde yazacak yazı.
-Callback = <function> - Butona tıklandığında çalışacak fonksiyon.
+Name = <string> - The text displayed on the button.
+Callback = <function> - The function to execute when the button is pressed.
 ]]
-Creating a Toggle (Aç/Kapat)
+Creating a Toggle
 code
 Lua
 download
 content_copy
 expand_less
-MainSection:CreateToggle("Toggle", false, function(value)
-    print("Toggle Durumu:", value)
+MainSection:CreateToggle("Toggle Name", false, function(value)
+    print("Toggle State:", value)
 end)
 
 --[[
-Name = <string> - Toggle adı.
-Default = <bool> - Başlangıç değeri (true/false).
-Callback = <function> - Durum değiştiğinde çalışacak fonksiyon (value döner).
+Name = <string> - The name of the toggle.
+DefaultIndex = <bool> - The initial state (true or false).
+Callback = <function> - The function to execute when the toggle state changes.
 ]]
-Creating a Textbox (Yazı Kutusu)
+Creating a Textbox
 code
 Lua
 download
 content_copy
 expand_less
-MainSection:CreateTextbox("Yazı Yaz", function(text)
-    print("Girilen Yazı:", text)
+MainSection:CreateTextbox("Textbox Name", function(text)
+    print("Inputted Text:", text)
 end)
 
 --[[
-Name = <string> - Textbox başlığı.
-Callback = <function> - Yazı girilip enterlandığında çalışacak fonksiyon (text döner).
+Name = <string> - The placeholder or label for the textbox.
+Callback = <function> - The function to execute when text is entered and confirmed.
 ]]
-Creating a Dropdown (Açılır Menü)
+Creating a Dropdown
 code
 Lua
 download
 content_copy
 expand_less
-MainSection:CreateDropdown("Dropdown", {"Seçenek 1", "Seçenek 2", "Seçenek 3"}, 1, function(selected)
-    print("Seçilen:", selected)
+MainSection:CreateDropdown("Dropdown Name", {"Option 1", "Option 2", "Option 3"}, 1, function(selected)
+    print("Selected Option:", selected)
 end)
 
 --[[
-Name = <string> - Dropdown adı.
-Options = <table> - Seçenek listesi.
-DefaultIndex = <number> - Kaçıncı sıradakinin seçili başlayacağı.
-Callback = <function> - Seçim yapıldığında çalışacak fonksiyon.
+Name = <string> - The name of the dropdown.
+Options = <table> - A list of strings for the dropdown choices.
+DefaultIndex = <number> - The index of the option selected by default.
+Callback = <function> - The function to execute when an option is selected.
 ]]
-Creating a Slider (Kaydırıcı)
+Creating a Slider
 code
 Lua
 download
 content_copy
 expand_less
-MainSection:CreateSlider("Hız Ayarı", 1, 100, 50, function(value)
-    print("Değer:", value)
+MainSection:CreateSlider("Slider Name", 1, 100, 50, function(value)
+    print("Slider Value:", value)
 end)
 
 --[[
-Name = <string> - Slider adı.
-Min = <number> - Minimum değer.
-Max = <number> - Maksimum değer.
-Default = <number> - Başlangıç değeri.
-Callback = <function> - Kaydırıldığında çalışacak fonksiyon.
+Name = <string> - The name of the slider.
+Min = <number> - The minimum value.
+Max = <number> - The maximum value.
+Default = <number> - The starting value.
+Callback = <function> - The function to execute when the slider is moved.
 ]]
-Full Example (Tam Örnek)
+Full Usage Example
 code
 Lua
 download
@@ -130,10 +130,10 @@ local Window = Library:NewWindow("Oxireun Hub")
 local MainSection = Window:NewSection("Main")
 
 MainSection:CreateButton("UGC 1", function()
-    print("UGC Butonuna Basıldı")
+    -- Your code here
 end)
 
-MainSection:CreateSlider("Speed", 1, 100, 50, function(v)
+MainSection:CreateSlider("WalkSpeed", 16, 200, 16, function(v)
     game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
 end)
 
