@@ -5,15 +5,15 @@ This documentation is for the stable release of the **Oxireun UI Library**.
 ## Booting the Library
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/oxireun/User/refs/heads/main/Oxireunuilibrary.lua"))()
-
+```
 Creating a Window
-
+```lua
 local Window = Library:NewWindow("Script Title")
-
+```
 Creating a Section
-
+```lua
 local MainSection = Window:NewSection("Main")
-
+```
 UI Elements
 
 Button
