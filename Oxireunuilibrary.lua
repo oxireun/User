@@ -673,7 +673,7 @@ function OxireunUI:NewWindow(title)
                     OptionButton.MouseLeave:Connect(function()
                         OptionButton.BackgroundColor3 = Colors.Button
                     end)
-                    OptionButton.Activated:Connect(function()
+                    OptionButton.MouseButton1Click:Connect(function()
                         CreateClickEffect(OptionButton)
                         DropdownButton.Text = option
                         if callback then
