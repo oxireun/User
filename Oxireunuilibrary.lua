@@ -619,7 +619,7 @@ function OxireunUI:NewWindow(title)
                 OptionsScreenGui.Parent = ScreenGui
                 OptionsContainer = Instance.new("ScrollingFrame")
                 OptionsContainer.Name = "OptionsContainer"
-                OptionsContainer.Size = UDim2.new(0, 160, 0, UI_SIZE.Height)
+                OptionsContainer.Size = UDim2.new(0, 160, 0, 125)
                 OptionsContainer.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + MainFrame.AbsoluteSize.X + 10, 0, MainFrame.AbsolutePosition.Y)
                 OptionsContainer.BackgroundColor3 = Colors.Background
                 OptionsContainer.BorderSizePixel = 0
@@ -649,17 +649,23 @@ function OxireunUI:NewWindow(title)
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
                     OptionButton.Name = option
-                    OptionButton.Size = UDim2.new(1, 0, 0, 28)
+                    OptionButton.Size = UDim2.new(1, 0, 0, 24)
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
                     OptionButton.TextColor3 = Colors.Text
                     OptionButton.TextSize = 12
+                    OptionButton.TextScaled = true
+                    OptionButton.TextWrapped = true
                     OptionButton.Font = Fonts.Bold
                     OptionButton.AutoButtonColor = false
                     OptionButton.ZIndex = 101
                     OptionButton.Parent = OptionsContainer
+                    local textConstraint = Instance.new("UITextSizeConstraint")
+                    textConstraint.MaxTextSize = 12
+                    textConstraint.MinTextSize = 8
+                    textConstraint.Parent = OptionButton
                     local optionCorner = Instance.new("UICorner")
-                    optionCorner.CornerRadius = UDim.new(0, 5)
+                    optionCorner.CornerRadius = UDim.new(0, 6)
                     optionCorner.Parent = OptionButton
                     OptionButton.MouseEnter:Connect(function()
                         OptionButton.BackgroundColor3 = Colors.Border
