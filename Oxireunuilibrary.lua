@@ -588,10 +588,20 @@ function OxireunUI:NewWindow(title)
             end)
             local open = false
             local OptionsContainer
+            local clickConnection
+            local dropdownConnection
             local function CloseOptions()
                 if OptionsContainer then
                     OptionsContainer:Destroy()
                     OptionsContainer = nil
+                end
+                if dropdownConnection then
+                    dropdownConnection:Disconnect()
+                    dropdownConnection = nil
+                end
+                if clickConnection then
+                    clickConnection:Disconnect()
+                    clickConnection = nil
                 end
                 open = false
                 activeDropdowns[OptionsContainer] = nil
@@ -659,15 +669,14 @@ function OxireunUI:NewWindow(title)
                         OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
                     end
                 end
-                local dropdownConnection
                 dropdownConnection = RunService.Heartbeat:Connect(function()
                     if OptionsContainer and open then
                         updateDropdownPosition()
                     end
                 end)
                 local function checkClickOutside(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        local mousePos = UserInputService:GetMouseLocation()
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        local mousePos = input.Position
                         local buttonPos = DropdownButton.AbsolutePosition
                         local buttonSize = DropdownButton.AbsoluteSize
                         local containerPos = OptionsContainer and OptionsContainer.AbsolutePosition
@@ -677,15 +686,12 @@ function OxireunUI:NewWindow(title)
                            not (containerPos and containerSize and 
                                mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
                                mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
-                            if dropdownConnection then
-                                dropdownConnection:Disconnect()
-                            end
                             CloseOptions()
                             OptionsScreenGui:Destroy()
                         end
                     end
                 end
-                UserInputService.InputBegan:Connect(checkClickOutside)
+                clickConnection = UserInputService.InputBegan:Connect(checkClickOutside)
             end)
             return Dropdown
         end
