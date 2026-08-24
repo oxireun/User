@@ -248,16 +248,6 @@ function OxireunUI:NewWindow(title)
             startPos.Y.Scale,
             startPos.Y.Offset + delta.Y
         )
-        for dropdownFrame, _ in pairs(activeDropdowns) do
-            if dropdownFrame and dropdownFrame.Parent then
-                local dropdownButton = dropdownFrame.Parent:FindFirstChild("DropdownButton")
-                if dropdownButton then
-                    local buttonPos = dropdownButton.AbsolutePosition
-                    local buttonSize = dropdownButton.AbsoluteSize
-                    dropdownFrame.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
-                end
-            end
-        end
     end
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -618,13 +608,16 @@ function OxireunUI:NewWindow(title)
                 OptionsScreenGui.ResetOnSpawn = false
                 OptionsScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
                 OptionsScreenGui.Parent = ScreenGui
-                OptionsContainer = Instance.new("Frame")
+                OptionsContainer = Instance.new("ScrollingFrame")
                 OptionsContainer.Name = "OptionsContainer"
-                OptionsContainer.Size = UDim2.new(0, DropdownButton.AbsoluteSize.X, 0, #options * 22 + 8)
-                OptionsContainer.Position = UDim2.new(0, DropdownButton.AbsolutePosition.X, 0, DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y + 5)
+                local maxH = math.clamp(#options * 22 + 8, 0, 160)
+                OptionsContainer.Size = UDim2.new(0, 140, 0, maxH)
                 OptionsContainer.BackgroundColor3 = Colors.SectionBg
                 OptionsContainer.BorderSizePixel = 0
                 OptionsContainer.ZIndex = 100
+                OptionsContainer.ScrollBarThickness = 2
+                OptionsContainer.ScrollBarImageColor3 = Colors.Border
+                OptionsContainer.CanvasSize = UDim2.new(0, 0, 0, #options * 22 + 8)
                 OptionsContainer.Parent = OptionsScreenGui
                 local optionsCorner = Instance.new("UICorner")
                 optionsCorner.CornerRadius = UDim.new(0, 5)
@@ -632,7 +625,7 @@ function OxireunUI:NewWindow(title)
                 for i, option in pairs(options) do
                     local OptionButton = Instance.new("TextButton")
                     OptionButton.Name = option
-                    OptionButton.Size = UDim2.new(1, -8, 0, 20)
+                    OptionButton.Size = UDim2.new(1, -12, 0, 20)
                     OptionButton.Position = UDim2.new(0, 4, 0, (i-1)*22 + 4)
                     OptionButton.BackgroundColor3 = Colors.Button
                     OptionButton.Text = option
@@ -651,22 +644,37 @@ function OxireunUI:NewWindow(title)
                     OptionButton.MouseLeave:Connect(function()
                         OptionButton.BackgroundColor3 = Colors.Button
                     end)
-                    OptionButton.MouseButton1Click:Connect(function()
-                        CreateClickEffect(OptionButton)
-                        DropdownButton.Text = option
-                        if callback then
-                            callback(option)
+                    local inputStart
+                    OptionButton.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            inputStart = input.Position
                         end
-                        CloseOptions()
-                        OptionsScreenGui:Destroy()
+                    end)
+                    OptionButton.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            if inputStart then
+                                local distance = (input.Position - inputStart).Magnitude
+                                if distance < 10 then
+                                    CreateClickEffect(OptionButton)
+                                    DropdownButton.Text = option
+                                    if callback then
+                                        callback(option)
+                                    end
+                                    CloseOptions()
+                                    OptionsScreenGui:Destroy()
+                                end
+                                inputStart = nil
+                            end
+                        end
                     end)
                 end
                 activeDropdowns[OptionsContainer] = true
                 local function updateDropdownPosition()
-                    if OptionsContainer and DropdownButton then
-                        local buttonPos = DropdownButton.AbsolutePosition
-                        local buttonSize = DropdownButton.AbsoluteSize
-                        OptionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+                    if OptionsContainer and DropdownButton and MainFrame then
+                        local mainPos = MainFrame.AbsolutePosition
+                        local mainSize = MainFrame.AbsoluteSize
+                        local btnPos = DropdownButton.AbsolutePosition
+                        OptionsContainer.Position = UDim2.new(0, mainPos.X + mainSize.X + 8, 0, btnPos.Y)
                     end
                 end
                 dropdownConnection = RunService.Heartbeat:Connect(function()
