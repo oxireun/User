@@ -250,7 +250,7 @@ function OxireunUI:NewWindow(title)
         )
         for dropdownFrame, _ in pairs(activeDropdowns) do
             if dropdownFrame then
-                dropdownFrame.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + MainFrame.AbsoluteSize.X + 10, 0, MainFrame.AbsolutePosition.Y)
+                dropdownFrame.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + MainFrame.AbsoluteSize.X + 10, 0, MainFrame.AbsolutePosition.Y + MainFrame.AbsoluteSize.Y)
             end
         end
     end
@@ -619,8 +619,9 @@ function OxireunUI:NewWindow(title)
                 OptionsScreenGui.Parent = ScreenGui
                 OptionsContainer = Instance.new("ScrollingFrame")
                 OptionsContainer.Name = "OptionsContainer"
+                OptionsContainer.AnchorPoint = Vector2.new(0, 1)
                 OptionsContainer.Size = UDim2.new(0, 160, 0, 125)
-                OptionsContainer.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + MainFrame.AbsoluteSize.X + 10, 0, MainFrame.AbsolutePosition.Y)
+                OptionsContainer.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + MainFrame.AbsoluteSize.X + 10, 0, MainFrame.AbsolutePosition.Y + MainFrame.AbsoluteSize.Y)
                 OptionsContainer.BackgroundColor3 = Colors.Background
                 OptionsContainer.BorderSizePixel = 0
                 OptionsContainer.ZIndex = 100
@@ -685,7 +686,7 @@ function OxireunUI:NewWindow(title)
                 activeDropdowns[OptionsContainer] = true
                 dropdownConnection = RunService.Heartbeat:Connect(function()
                     if OptionsContainer and open then
-                        OptionsContainer.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + MainFrame.AbsoluteSize.X + 10, 0, MainFrame.AbsolutePosition.Y)
+                        OptionsContainer.Position = UDim2.new(0, MainFrame.AbsolutePosition.X + MainFrame.AbsoluteSize.X + 10, 0, MainFrame.AbsolutePosition.Y + MainFrame.AbsoluteSize.Y)
                         dropBorder.Color = rgbBorder.Color
                     end
                 end)
@@ -700,7 +701,7 @@ function OxireunUI:NewWindow(title)
                                mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y) and
                            not (containerPos and containerSize and 
                                mousePos.X >= containerPos.X and mousePos.X <= containerPos.X + containerSize.X and
-                               mousePos.Y >= containerPos.Y and mousePos.Y <= containerPos.Y + containerSize.Y) then
+                               mousePos.Y >= containerPos.Y - containerSize.Y and mousePos.Y <= containerPos.Y) then
                             CloseOptions()
                         end
                     end
