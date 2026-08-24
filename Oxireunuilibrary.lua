@@ -70,7 +70,8 @@ function OxireunUI:SendNotification(title, text, duration, icon)
         NotificationContainer = Instance.new("Frame")
         NotificationContainer.Name = "Container"
         NotificationContainer.Size = UDim2.new(0, 280, 1, 0)
-        NotificationContainer.Position = UDim2.new(1, -300, 0, 0)
+        -- Kanka ekranın sağ kenarına çok daha yakın olması için -285'e çektim (Sıfıra yakın)
+        NotificationContainer.Position = UDim2.new(1, -285, 0, 0)
         NotificationContainer.BackgroundTransparency = 1
         NotificationContainer.Parent = NotificationGui
         
@@ -82,7 +83,8 @@ function OxireunUI:SendNotification(title, text, duration, icon)
         
         local UIPadding = Instance.new("UIPadding")
         UIPadding.PaddingBottom = UDim.new(0, 20)
-        UIPadding.PaddingRight = UDim.new(0, 20)
+        -- Sağ boşluğu iyice kıstım tam kenarda dursun diye
+        UIPadding.PaddingRight = UDim.new(0, 5)
         UIPadding.Parent = NotificationContainer
     end
 
@@ -92,10 +94,28 @@ function OxireunUI:SendNotification(title, text, duration, icon)
 
     local textOffsetX = 12
     local iconSize = 0
+    local finalIcon = nil
 
+    -- Kanka burada sadece sayı girsen bile otomatik rbxassetid formatına çeviriyor
     if icon and icon ~= "" then
-        iconSize = 32
-        textOffsetX = 12 + iconSize + 10
+        local iconStr = tostring(icon)
+        if tonumber(iconStr) then
+            finalIcon = "rbxassetid://" .. iconStr
+        elseif not string.find(iconStr, "://") then
+            local extractedId = string.match(iconStr, "%d+")
+            if extractedId then
+                finalIcon = "rbxassetid://" .. extractedId
+            else
+                finalIcon = iconStr
+            end
+        else
+            finalIcon = iconStr
+        end
+        
+        if finalIcon then
+            iconSize = 32
+            textOffsetX = 12 + iconSize + 10
+        end
     end
 
     local textBounds = TextService:GetTextSize(
@@ -130,15 +150,22 @@ function OxireunUI:SendNotification(title, text, duration, icon)
     stroke.Thickness = 1.5
     stroke.Parent = Notification
 
-    if icon and icon ~= "" then
+    if finalIcon then
         local IconImage = Instance.new("ImageLabel")
         IconImage.Name = "Icon"
         IconImage.Size = UDim2.new(0, iconSize, 0, iconSize)
         IconImage.Position = UDim2.new(0, 12, 0, 12)
         IconImage.BackgroundTransparency = 1
-        IconImage.Image = icon
+        IconImage.Image = finalIcon
         IconImage.ScaleType = Enum.ScaleType.Fit
         IconImage.Parent = Notification
+        
+        -- Hızlı yüklenmesi için arkada roblox ön yükleme sistemini zorluyoruz
+        task.spawn(function()
+            pcall(function()
+                game:GetService("ContentProvider"):PreloadAsync({IconImage})
+            end)
+        end)
     end
 
     local TitleLabel = Instance.new("TextLabel")
